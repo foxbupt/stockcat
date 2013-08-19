@@ -16,7 +16,13 @@ main()
     then
         day=$2
     fi
-    echo "stype=$stype day=$day"
+
+    open=`is_market_open "$day"`
+    echo "stype=$stype day=$day open=$open"
+    if [ "$open" == "0" ]
+    then
+        exit
+    fi
 
     cd $STOCK_SCRAPY_PATH
     result_path=$STOCK_SCRAPY_PATH/data/$day
