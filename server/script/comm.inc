@@ -19,18 +19,20 @@ is_market_open()
 {
     day=$1
     weekday=`date -d "$day" "+%w"`
+
     if [ 0 -eq $weekday -o 6 -eq $weekday ]
     then
         echo "0"
     else 
         for loop_day in ${HOLIDAYS[@]}
         do
-            if [ $loop_day -eq $day ] 
+            if [ "$loop_day" == "$day" ] 
             then
                 echo "0"
+                return
             fi
         done
-    fi
 
-    echo "1"
+        echo "1"
+    fi
 }
