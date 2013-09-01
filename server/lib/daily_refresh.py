@@ -66,21 +66,24 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
         if sid not in today_data_list:
             continue
 
+        #print stock_info
         stock_data = today_data_list[sid]
+        #print stock_data
         high_index = 4
         low_index = 4
 
         for index, field_name in enumerate(high_field_list):
-            if stock_data['high_price'] > stock_info[field_name]:
+            if float(stock_data['high_price']) > float(stock_info[field_name]):
                 high_index = index
                 break
 
         for index, field_name in enumerate(low_field_list):
-            if stock_data['low_price'] < stock_info[field_name]:
+            if float(stock_data['low_price']) < float(stock_info[field_name]):
                 low_index = index
                 break
 
         # 表明当天价格存在最高价或者最低价
+        #print sid, high_index, low_index
         if high_index < 4 or low_index < 4:  
             vary_stock_list[sid] = {'high_index': high_index, 'low_index': low_index}
             sql = "update t_stock set "
@@ -97,7 +100,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
                     field_list.append(field_name + "=" + stock_info[field_name])
            
             sql = sql + ", ".join(field_list) + " where id=" + str(stock_info['id'])
-            #print sql
+            print sql
 
             try:
                 db_conn.query_sql(sql, True)
