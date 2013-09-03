@@ -5,28 +5,27 @@
 #date: 2013-08-21
 
 import sys, re, json, random
-sys.path.append('../../../server')  
+sys.path.append('../../../../server')  
 from pyutil.util import safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 
 class StockAnalyzer:
     sid = 0
-    code = ""
     config_info = dict()
 
-    def __init__(self, sid, code, config_info):
+    def __init__(self, sid, config_info):
         self.sid = sid
-        self.code = code
         self.config_info = config_info
-        self.db_conn = SqlUtil.get_db(config_info['db'])
+        self.db_conn = SqlUtil.get_db(config_info['DB'])
         
     '''
         @desc: 分析该股票是否值得买入卖出
+        @param: day int 所在日期
         @param: policy dict() 分析策略
         @return dict() 分析详情
     '''
-    def analyze(self, policy):
+    def evaluate(self, day, policy):
         pass
 
     '''
@@ -35,17 +34,18 @@ class StockAnalyzer:
         @return None/dict()
     '''
     def get_stock_info(self, sid):
-        conn = redis.StrictRedis(config_info['redis'])
+        conn = redis.StrictRedis(self.config_info['REDIS']['host'], self.config_info['REDIS']['port'])
         stock_key = "stock:info-" + str(sid)
 
         cache_info = conn.get(stock_key)
         if cache_info is None:
-            sql = "select id, type, code, name, pinyin, ecode, alias, company, business, captial, out_captial, profit, assets, \
+            sql = "select id, type, code, name, pinyin, ecode, alias, company, business, capital, out_capital, profit, assets, \
                     hist_high, hist_low, year_high, year_low, month6_high, \
                     month6_low, month3_high, month3_low from t_stock where id = " + str(sid)
             try:
                 record_list = self.db_conn.query_sql(sql)
             except Exception as e:
+                print e
                 return None
 
             if len(record_list) < 1:
@@ -56,7 +56,7 @@ class StockAnalyzer:
             return stock_info
 
         stock_info = json.loads(cache_info)
-        print stock_info
+        #print stock_info
         return stock_info
 
     '''
@@ -102,26 +102,58 @@ class StockAnalyzer:
         return record_list
 
     '''
-        @desc: 根据历史数据列表来判断股票价格近期趋势
-            [-3% - 3%] 震荡区间
+        @desc: 根据指定日期区间内的历史数据列表来判断股票价格近期趋势
+               默认为10个交易日, 5%为设定比例, >= 5% 为上涨, <= -%5% 为下降, (-5%, 5%)为震荡
         @param: data_list list
-        @return: int -1 下降, 0 震荡, 1 上升
+        @param: vary_threshold float 设定涨幅比例
+        @return: dict('trend', 'wave', 'vary_portion') trend 趋势, wave 波段, vary_portion 涨跌幅
+                trend/wave: 0 震荡, 1 上升, 2 下降
     '''
-    def get_trend(self, data_list):
+    def get_trend(self, data_list, vary_threshold):
         first_close_price = float(data_list[0]['close_price']) 
         last_close_price = float(data_list[-1]['close_price']) 
+        close_price_list = [ float(day_info['close_price']) for day_info in data_list ] 
 
-        vary_portion_list = [ float(data_info['vary_portion']) for day_info in data_list ]
-        vary_portion_list.sort()
-        max_portion = vary_portion_list[0]
-        min_portion = vary_portion_list[-1]
-        #TODO: 根据上涨/下降的最大幅度判断趋势
+        # 日期区间内涨幅
+        vary_portion = (first_close_price - last_close_price) / last_close_price
+        min_close_price = min(close_price_list)
+        max_close_price = max(close_price_list)
 
-        if first_close_price < last_close_price * (1 - 0.03):
-            return -1
-        elif first_close_price > last_close_price * (1 + 0.03):
-            return 1
+        # 日期区间内最低价/最高价出现的日期, 多个最高/最低价时, 选择离当前日期最近的一个
+        min_index = -1
+        max_index = - 1
+        for index, day_info in enumerate(data_list):
+            if float(day_info['close_price']) == min_close_price and min_index < 0:
+                min_index = index
+
+            if float(day_info['close_price']) == max_close_price and max_index < 0:
+                max_index = index
+
+        #vary_portion_list = [ float(data_info['vary_portion']) for day_info in data_list ]
+        trend_info = {'vary_portion': vary_portion}
+        
+        # 涨幅超过最大比例
+        if vary_portion >= vary_threshold:
+            trend_info['trend'] = 1
+            if max_index > 0 and min_index > max_index: 
+                trend_info['wave'] = 2
+            else:
+                trend_info['wave'] = 1
+
+        # 跌幅超过最大比例         
+        elif vary_portion <= -1 * vary_threshold:
+            trend_info['trend'] = 2
+            if min_index > 0 and max_index > min_index:
+                trend_info['wave'] = 2
+            else:
+                trend_info['wave'] = 1
+
+        # 涨幅位于(-threshold, threashold) 比例
         else:
-            return 0
+            trend_info['trend'] = 0
+            if max_index == 0 or (min_index > 0 and max_index > min_index):
+                trend_info['wave'] = 1
+            elif min_index == 0 or (max_index > 0 and min_index > max_index):
+                trend_info['wave'] = 2
 
-
+        return trend_info
