@@ -6,10 +6,12 @@
 
 import os, sys, re, json, random
 import datetime
+#sys.path.append('../../../server')  
 sys.path.append('../../../../server')  
 from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
+from buy_analyzer import StockBuyAnalyzer
 
 
 # 获取所有股票列表, 包含指数
@@ -71,14 +73,15 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
         #print stock_data
         high_index = 4
         low_index = 4
+        close_price = float(stock_data['close_price'])
 
         for index, field_name in enumerate(high_field_list):
-            if float(stock_data['high_price']) > float(stock_info[field_name]):
+            if close_price > float(stock_info[field_name]):
                 high_index = index
                 break
 
         for index, field_name in enumerate(low_field_list):
-            if float(stock_data['low_price']) < float(stock_info[field_name]):
+            if close_price < float(stock_info[field_name]):
                 low_index = index
                 break
 
@@ -91,13 +94,13 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
 
             if high_index < 4:
                 for field_name in high_field_list[high_index:]:
-                    stock_info[field_name] = stock_data['high_price']
-                    field_list.append(field_name + "=" + stock_info[field_name])
+                    stock_info[field_name] = close_price
+                    field_list.append(field_name + "=" + str(stock_info[field_name]))
 
             if low_index < 4:
                 for field_name in low_field_list[low_index:]:
-                    stock_info[field_name] = stock_data['low_price']
-                    field_list.append(field_name + "=" + stock_info[field_name])
+                    stock_info[field_name] = close_price
+                    field_list.append(field_name + "=" + str(stock_info[field_name]))
            
             sql = sql + ", ".join(field_list) + " where id=" + str(stock_info['id'])
             print sql
@@ -108,7 +111,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
                 continue
             
             log_info = {'sid': sid, 'code': stock_info['code'], 'name': stock_info['name'], 'day': day, 
-                        'high_price': stock_data['high_price'], 'low_price': stock_data['low_price'], 
+                        'close_price': stock_data['close_price'], 'high_price': stock_data['high_price'], 'low_price': stock_data['low_price'], 
                        'high_index': high_index, 'low_index': low_index}
 
             print format_log("refresh_stock_info", log_info)
@@ -143,6 +146,24 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
-
         vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
+
         print len(vary_stock_list)
+        for sid, vary_info in vary_stock_list.items():
+            #print sid, vary_info
+           
+            policy = dict()
+            analyzer = StockBuyAnalyzer(sid, config_info)
+
+            analyze_info = analyzer.evaluate(day, policy)
+            #print analyze_info
+            if analyze_info is None:
+                print "not suitable, sid=" + str(sid)
+            else:
+                log_info = {'sid': sid, 'day': analyze_info['day'], 'trend': analyze_info['trend_info']['trend'], 
+                            'wave': analyze_info['trend_info']['wave'],
+                            'low_buy_price': analyze_info['judge_info']['low_buy_price'],
+                            'high_buy_price': analyze_info['judge_info']['high_buy_price'],
+                            'close_price': analyze_info['today_data']['close_price']}
+                print format_log(log_info)
+                #TODO: 根据评估结果写入DB
