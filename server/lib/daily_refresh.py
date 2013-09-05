@@ -148,7 +148,7 @@ if __name__ == "__main__":
         stock_list = get_stock_list(db_config)
         vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
 
-        print len(vary_stock_list)
+        #print len(vary_stock_list)
         for sid, vary_info in vary_stock_list.items():
             #print sid, vary_info
            
@@ -162,8 +162,10 @@ if __name__ == "__main__":
             else:
                 log_info = {'sid': sid, 'day': analyze_info['day'], 'trend': analyze_info['trend_info']['trend'], 
                             'wave': analyze_info['trend_info']['wave'],
+                            'high_index': vary_info['high_index'], 'low_index': vary_info['low_index'],
                             'low_buy_price': analyze_info['judge_info']['low_buy_price'],
                             'high_buy_price': analyze_info['judge_info']['high_buy_price'],
                             'close_price': analyze_info['today_data']['close_price']}
-                print format_log(log_info)
+
+                print format_log("analyze_stock_info", log_info)
                 #TODO: 根据评估结果写入DB
