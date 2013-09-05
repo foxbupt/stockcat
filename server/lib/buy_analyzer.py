@@ -25,7 +25,7 @@ class StockBuyAnalyzer(StockAnalyzer):
 
         cur_day = str(day)
         current_time = datetime.datetime(int(cur_day[0:4]), int(cur_day[4:6]), int(cur_day[6:8]))  
-        start_day = '{:%Y%m%d}'.format(current_time + datetime.timedelta(days = -60))
+        start_day = '{0:%Y%m%d}'.format(current_time + datetime.timedelta(days = -60))
         
         #today = datetime.date.today() 
         #cur_day = '{:%Y%m%d}'.format(today)
@@ -57,7 +57,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         analyze_data['day'] = cur_day
         analyze_data['stock_info'] = stock_info
         analyze_data['today_data'] = today_data
-        analyze_data['trend'] = trend_info
+        analyze_data['trend_info'] = trend_info
         analyze_data['judge_info'] = {'low_buy_price': judge_info[0], 'high_buy_price': judge_info[1]}
         
         return analyze_data
@@ -110,7 +110,8 @@ class StockBuyAnalyzer(StockAnalyzer):
         high_buy_price = 0.0
 
         # 30日内最高价 与 30日最低价涨幅 < 10%, 直接忽略
-        if high_portion < 0.10:
+        # 单日内涨幅或跌幅超过10%, 直接忽略
+        if high_portion < 0.10 or abs(float(today_data['vary_portion'])) >= 11 :
             return False
 
         trend = trend_info['trend']
@@ -120,7 +121,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         if trend == 1:
             #TODO: 需要细化wave代表的波段类型, 如一直上涨/冲高回落
             # 上涨比例不超过15%, 当天为30天最高价
-            if float(today_data['close_price']) == day30_high and rise_portion <= 0.15:
+            if today_close_price == day30_high and rise_portion <= 0.15:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price * (1 + 0.02)
             
@@ -128,10 +129,14 @@ class StockBuyAnalyzer(StockAnalyzer):
             elif rise_portion <= 0.10 and high_portion - rise_portion >= 0.60:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price 
+            else:
+                return False
 
         # 震荡/下降趋势中, 离最低价在3%以下
         elif rise_portion <= 0.03:
-             low_buy_price = day30_low
-             high_buy_price = today_close_price * (1 + 0.02)
+            low_buy_price = today_close_price * (1 - 0.02)
+            high_buy_price = today_close_price * (1 + 0.02)
+        else:
+            return False
         
         return (round(low_buy_price, 2), round(high_buy_price, 2))
