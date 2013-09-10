@@ -27,10 +27,6 @@ class StockBuyAnalyzer(StockAnalyzer):
         current_time = datetime.datetime(int(cur_day[0:4]), int(cur_day[4:6]), int(cur_day[6:8]))  
         start_day = '{0:%Y%m%d}'.format(current_time + datetime.timedelta(days = -60))
         
-        #today = datetime.date.today() 
-        #cur_day = '{:%Y%m%d}'.format(today)
-        #start_day = '{:%Y%m%d}'.format(today + datetime.timedelta(days = -60)) 
-
         # 获取最近60天内的交易数据
         history_data = self.get_histdata_range(self.sid, start_day, cur_day)
         today_data = history_data[0]
@@ -38,29 +34,39 @@ class StockBuyAnalyzer(StockAnalyzer):
          
         check_result = self.check(stock_info, history_data, today_data)
         if check_result < 0:
-            print check_result
+            print format_log("check_failed", {'sid': self.sid, 'name': stock_info['name'], 
+                'day': day, 'result': 'check_result', 'close_price': today_data['close_price']})
             return None
 
         today_open_price = float(today_data['open_price'])
         today_close_price = float(today_data['close_price'])
         
         # 股票趋势
-        trend_info = self.get_trend(history_data[0 : 10], 0.05)
+        trend_info = self.get_trend(history_data[0 : 10], 5)
         print trend_info
 
-        judge_info = self.judge(trend_info, stock_info, history_data)
+        # 判断股票是否符合指定的分析策略
+        judge_info = self.judge(trend_info, stock_info, history_data, policy)
         print judge_info
         if judge_info is False:
+            print format_log("judge_failed", {'sid': self.sid, 'name': stock_info['name'], 'day': day,
+                'trend': trend_info['trend'], 'wave': trend_info['wave'], 'close_price': today_data['close_price']})
             return None
 
-        analyze_data = dict()
-        analyze_data['day'] = cur_day
-        analyze_data['stock_info'] = stock_info
-        analyze_data['today_data'] = today_data
-        analyze_data['trend_info'] = trend_info
-        analyze_data['judge_info'] = {'low_buy_price': judge_info[0], 'high_buy_price': judge_info[1]}
-        
-        return analyze_data
+        # TODO: 评估股票的综合得分
+        score = 1
+
+        pool_info = {'low_price': judge_info[0], 'high_price': judge_info[1]}
+        pool_info.extend(trend_info)
+        pool_info['current_price'] = today_data['close_price']
+        pool_info['sid'] = sid
+        pool_info['day'] = cur_day
+        pool_info['score'] = score
+
+        # 把股票加入股票池中
+        add = self.add_stock_pool(self.sid, day, pool_info)
+
+        return pool_info
 
     # 检查股票是否满足基本条件
     def check(self, stock_info, day60_data, today_data):
@@ -93,7 +99,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         return 0
 
     # 判断股票当前是否值得买入
-    def judge(self, trend_info, stock_info, day60_data):
+    def judge(self, trend_info, stock_info, day60_data, policy):
         today_data = day60_data[0]
         today_open_price = float(today_data['open_price'])
         today_close_price = float(today_data['close_price'])
@@ -101,8 +107,8 @@ class StockBuyAnalyzer(StockAnalyzer):
         day30_high = float(stock_info['month3_high'])
         day30_low = float(stock_info['month3_low'])
 
-        rise_portion = (today_close_price - day30_low) / day30_low
-        high_portion = (day30_high - day30_low) / day30_low
+        rise_portion = (today_close_price - day30_low) / day30_low * 100
+        high_portion = (day30_high - day30_low) / day30_low * 100
         print rise_portion, high_portion
         #vary_portion_list = [ float(data_info['vary_portion']) for day_info in data_list ]
 
@@ -111,7 +117,7 @@ class StockBuyAnalyzer(StockAnalyzer):
 
         # 30日内最高价 与 30日最低价涨幅 < 10%, 直接忽略
         # 单日内涨幅或跌幅超过10%, 直接忽略
-        if high_portion < 0.10 or abs(float(today_data['vary_portion'])) >= 11 :
+        if high_portion < 10 or abs(float(today_data['vary_portion'])) >= 11 :
             return False
 
         trend = trend_info['trend']
@@ -121,22 +127,32 @@ class StockBuyAnalyzer(StockAnalyzer):
         if trend == 1:
             #TODO: 需要细化wave代表的波段类型, 如一直上涨/冲高回落
             # 上涨比例不超过15%, 当天为30天最高价
-            if today_close_price == day30_high and rise_portion <= 0.15:
+            if today_close_price == day30_high and rise_portion <= 15:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price * (1 + 0.02)
             
             # 当前上涨比例低于10% 且 当前价格离最高价在6%以上
-            elif rise_portion <= 0.10 and high_portion - rise_portion >= 0.60:
+            elif rise_portion <= 10 and high_portion - rise_portion >= 6:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price 
             else:
                 return False
 
         # 震荡/下降趋势中, 离最低价在3%以下
-        elif rise_portion <= 0.03:
+        elif rise_portion <= 3:
             low_buy_price = today_close_price * (1 - 0.02)
             high_buy_price = today_close_price * (1 + 0.02)
         else:
             return False
         
         return (round(low_buy_price, 2), round(high_buy_price, 2))
+
+    # 对股票进行买入评分
+    def rank(self, trend_info, stock_info, day60_data, policy):
+        today_data = day60_data[0]
+        today_open_price = float(today_data['open_price'])
+
+        # 默认为10分, 判断某项条件符合进行扣分
+        score = 10
+
+        return score
