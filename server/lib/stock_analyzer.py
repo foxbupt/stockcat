@@ -5,6 +5,7 @@
 #date: 2013-08-21
 
 import sys, re, json, random
+import datetime, time
 sys.path.append('../../../../server')  
 from pyutil.util import safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
@@ -34,30 +35,31 @@ class StockAnalyzer:
         @return None/dict()
     '''
     def get_stock_info(self, sid):
-        conn = redis.StrictRedis(self.config_info['REDIS']['host'], self.config_info['REDIS']['port'])
-        stock_key = "stock:info-" + str(sid)
+        #conn = redis.StrictRedis(self.config_info['REDIS']['host'], self.config_info['REDIS']['port'])
+        #stock_key = "stock:info-" + str(sid)
 
-        cache_info = conn.get(stock_key)
-        if cache_info is None:
-            sql = "select id, type, code, name, pinyin, ecode, alias, company, business, capital, out_capital, profit, assets, \
-                    hist_high, hist_low, year_high, year_low, month6_high, \
-                    month6_low, month3_high, month3_low from t_stock where id = " + str(sid)
-            try:
-                record_list = self.db_conn.query_sql(sql)
-            except Exception as e:
-                print e
-                return None
+        #cache_info = conn.get(stock_key)
+        #if cache_info is None:
 
-            if len(record_list) < 1:
-                return None
+        sql = "select id, type, code, name, pinyin, ecode, alias, company, business, capital, out_capital, profit, assets, \
+                hist_high, hist_low, year_high, year_low, month6_high, \
+                month6_low, month3_high, month3_low from t_stock where id = " + str(sid)
+        try:
+            record_list = self.db_conn.query_sql(sql)
+        except Exception as e:
+            print e
+            return None
 
-            stock_info = record_list[0]
-            conn.set(stock_key, json.dumps(stock_info))
-            return stock_info
+        if len(record_list) < 1:
+            return None
 
-        stock_info = json.loads(cache_info)
-        #print stock_info
+        stock_info = record_list[0]
+        #conn.set(stock_key, json.dumps(stock_info))
         return stock_info
+
+        #stock_info = json.loads(cache_info)
+        ##print stock_info
+        #return stock_info
 
     '''
         @desc: 获取股票指定日期范围[start_day, end_day]的历史数据
@@ -107,7 +109,7 @@ class StockAnalyzer:
         @param: data_list list
         @param: vary_threshold float 设定涨幅比例
         @return: dict('trend', 'wave', 'vary_portion') trend 趋势, wave 波段, vary_portion 涨跌幅
-                trend/wave: 0 震荡, 1 上升, 2 下降
+                trend/wave: 0 震荡, 1 上升, -1 下降
     '''
     def get_trend(self, data_list, vary_threshold):
         first_close_price = float(data_list[0]['close_price']) 
@@ -115,7 +117,7 @@ class StockAnalyzer:
         close_price_list = [ float(day_info['close_price']) for day_info in data_list ] 
 
         # 日期区间内涨幅
-        vary_portion = (first_close_price - last_close_price) / last_close_price
+        vary_portion = (first_close_price - last_close_price) / last_close_price * 100
         min_close_price = min(close_price_list)
         max_close_price = max(close_price_list)
 
@@ -136,15 +138,15 @@ class StockAnalyzer:
         if vary_portion >= vary_threshold:
             trend_info['trend'] = 1
             if max_index > 0 and min_index > max_index: 
-                trend_info['wave'] = 2
+                trend_info['wave'] = -1
             else:
                 trend_info['wave'] = 1
 
         # 跌幅超过最大比例         
         elif vary_portion <= -1 * vary_threshold:
-            trend_info['trend'] = 2
+            trend_info['trend'] = -1
             if min_index > 0 and max_index > min_index:
-                trend_info['wave'] = 2
+                trend_info['wave'] = -1
             else:
                 trend_info['wave'] = 1
 
@@ -154,6 +156,37 @@ class StockAnalyzer:
             if max_index == 0 or (min_index > 0 and max_index > min_index):
                 trend_info['wave'] = 1
             elif min_index == 0 or (max_index > 0 and min_index > max_index):
-                trend_info['wave'] = 2
+                trend_info['wave'] = -1
 
         return trend_info
+
+    # 添加股票到股票池中, day为当前添加的日期, 一周内同一支股票仅添加一次
+    def add_stock_pool(self, sid, day, info):
+        cur_day = str(day)
+        current_time = datetime.datetime(int(cur_day[0:4]), int(cur_day[4:6]), int(cur_day[6:8]))
+        # 本周一
+        start_time = current_time + datetime.timedelta(days = -1 * (current_time.isoweekday() - 1))
+        start_day = '{0:%Y%m%d}'.format(start_time)
+
+        sql = "select id from t_stock_pool where sid={sid} and status = 'Y' and day >= {start_day} and day < {end_day}"\
+                .format(sid=sid, start_day=start_day, end_day=day)
+        print sql
+
+        try:
+            record_list = self.db_conn.query_sql(sql)
+        except Exception as e:
+            return False
+        
+        if len(record_list) >= 1:
+            return True
+
+        info['add_time'] = time.mktime( datetime.datetime.now().timetuple() )
+        info['status'] = 'Y'
+
+        sql = SqlUtil.create_insert_sql("t_stock_pool", info)
+        try:
+            record_list = self.db_conn.query_sql(sql)
+        except Exception as e:
+            return False
+
+        return True
