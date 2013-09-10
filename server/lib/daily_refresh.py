@@ -156,16 +156,11 @@ if __name__ == "__main__":
             analyzer = StockBuyAnalyzer(sid, config_info)
 
             analyze_info = analyzer.evaluate(day, policy)
-            #print analyze_info
             if analyze_info is None:
                 print "not suitable, sid=" + str(sid)
+                continue
             else:
-                log_info = {'sid': sid, 'day': analyze_info['day'], 'trend': analyze_info['trend_info']['trend'], 
-                            'wave': analyze_info['trend_info']['wave'],
-                            'high_index': vary_info['high_index'], 'low_index': vary_info['low_index'],
-                            'low_buy_price': analyze_info['judge_info']['low_buy_price'],
-                            'high_buy_price': analyze_info['judge_info']['high_buy_price'],
-                            'close_price': analyze_info['today_data']['close_price']}
+                analyze_info['high_index'] = vary_info['high_index']
+                analyze_info['low_index'] = vary_info['low_index']
 
-                print format_log("analyze_stock_info", log_info)
-                #TODO: 根据评估结果写入DB
+                print format_log("analyze_stock_info", analyze_info)
