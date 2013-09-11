@@ -38,7 +38,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         check_result = self.check(stock_info, history_data, today_data)
         if check_result < 0:
             print format_log("check_failed", {'sid': self.sid, 'name': stock_info['name'], 
-                'day': day, 'result': 'check_result', 'close_price': today_data['close_price']})
+                'day': day, 'result': check_result, 'close_price': today_data['close_price']})
             return None
 
         today_open_price = float(today_data['open_price'])
@@ -130,7 +130,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         wave = trend_info['wave']
 
         # 处于上升趋势
-        if trend == 1:
+        if trend == 3:
             #TODO: 需要细化wave代表的波段类型, 如一直上涨/冲高回落
             # 上涨比例不超过15%, 当天为30天最高价
             if today_close_price == day30_high and rise_portion <= 15:

@@ -12,6 +12,7 @@ from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 from buy_analyzer import StockBuyAnalyzer
+from stock_util import get_cont_stock
 
 
 # 获取所有股票列表, 包含指数
@@ -58,7 +59,7 @@ def get_stock_data(db_config, day):
     return data
 
 # 刷新股票的历史最高/最低价
-def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list):
+def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, refresh = True):
     db_conn = SqlUtil.get_db(db_config)
     high_field_list = ["hist_high", "year_high", "month6_high", "month3_high"]
     low_field_list = ["hist_low", "year_low", "month6_low", "month3_low"]
@@ -105,10 +106,11 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
             sql = sql + ", ".join(field_list) + " where id=" + str(stock_info['id'])
             print sql
 
-            try:
-                db_conn.query_sql(sql, True)
-            except Exception as e:
-                continue
+            if refresh:
+                try:
+                    db_conn.query_sql(sql, True)
+                except Exception as e:
+                    continue
             
             log_info = {'sid': sid, 'code': stock_info['code'], 'name': stock_info['name'], 'day': day, 
                         'close_price': stock_data['close_price'], 'high_price': stock_data['high_price'], 'low_price': stock_data['low_price'], 
@@ -117,9 +119,10 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
             print format_log("refresh_stock_info", log_info)
 
     #TODO: 统一删除变化的stock_info
-    conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
-    key_list = [ "stock:info-" + str(sid) for sid in vary_stock_list.keys() ]
-    conn.delete(tuple(key_list))
+    if refresh:
+        conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
+        key_list = [ "stock:info-" + str(sid) for sid in vary_stock_list.keys() ]
+        conn.delete(tuple(key_list))
 
     return vary_stock_list
 
@@ -146,20 +149,33 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
-        #vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
+        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, False)
 
         #print len(vary_stock_list)
-        #for sid, vary_info in vary_stock_list.items():
-        for sid in stock_list.keys():
-            #sid = int(sid)
-            #print sid, vary_info
-           
+        analyze_stock_set = set()
+        for sid, vary_info in vary_stock_list.items():
+            analyze_stock_set.add(sid)
+
+        # 连续3日上涨且涨幅在5%以内的股票
+        cont_rise_stock = get_cont_stock(db_config, str(day), 3, (2, 5))
+        print cont_rise_stock
+        for sid in cont_rise_stock:
+            analyze_stock_set.add(sid)
+
+        # 连续3日下跌且跌幅在10%以内的股票
+        cont_fall_stock = get_cont_stock(db_config, str(day), 3, (-10, -3), False)
+        print cont_fall_stock
+        for sid in cont_fall_stock:
+            analyze_stock_set.add(sid)
+
+        print len(analyze_stock_set)
+        for sid in analyze_stock_set:
             policy = dict()
             analyzer = StockBuyAnalyzer(sid, config_info)
 
             analyze_info = analyzer.evaluate(day, policy)
             if analyze_info is None:
-                print "not suitable, sid=" + str(sid)
+                print "not suitable, sid=" + sid
                 continue
             else:
                 #analyze_info['high_index'] = vary_info['high_index']
