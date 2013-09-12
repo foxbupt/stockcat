@@ -146,9 +146,9 @@ class StockAnalyzer:
         elif vary_portion <= -1 * vary_threshold:
             trend_info['trend'] = -1
             if min_index > 0 and max_index > min_index:
-                trend_info['wave'] = -1
-            else:
                 trend_info['wave'] = 1
+            else:
+                trend_info['wave'] = -1
 
         # 涨幅位于(-threshold, threashold) 比例
         else:
