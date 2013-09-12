@@ -40,12 +40,10 @@ class PolicyUtil
 	/* 逻辑操作符(Logic Operator) */
 	const LOP_AND = 1;
 	const LOP_OR = 2;
-	const LOP_ANDOR = 3;
 	
 	public $lopMap = array(
 			self::LOP_AND => "and",
 			self::LOP_OR => "or",
-			self::LOP_ANDOR => "and / or"
 		);
 
 	// 策略分析器json中字段名称	
@@ -79,5 +77,71 @@ class PolicyUtil
 		Yii::app()->redis->set(self::CACHE_KEY_VAR_LIST, json_encode($varList));
 		return (0 == $vid)? $varList : $varList[$vid];
 	}
+	
+	/**
+	 * @desc 加载分析器详细信息
+	 *
+	 * @param int $policyId
+	 * @return array
+	 */
+	public static function loadPolicy($policyId)
+	{
+		$policyInfo = PolicyInfo::model()->findByPk($policyId, "status = 'Y'");
+		if (empty($policyInfo))
+		{
+			return array();
+		}
+		
+		$policyInfo['expression'] = json_decode($policyInfo['expression'], true);
+		$policyInfo['items'] = self::expandPolicyItem($policyInfo['expression']);
+		
+		return $policyInfo;
+	}
+	
+	/**
+	 * @desc 把策略表达式中的条件项展开
+	 *
+	 * @param array $policyExpressionInfo
+	 * @return array
+	 */
+	public static function expandPolicyItem($policyExpressionInfo)
+	{
+		$expandInfo = array('logic' => $policyExpressionInfo['logic'], 'items' => array());
+		
+		foreach ($policyExpressionInfo['conditions'] as $condItem)
+		{
+			if (is_array($condItem)) // 嵌套的子表达式
+			{
+				$expandInfo['items'][] = self::expandPolicyItem($condItem);
+			}
+			else // item_id
+			{
+				$expandInfo['items'][] = self::loadPolicyItem($condItem);
+			}
+		}
+		
+		return $expandInfo;
+	}
+	
+	/**
+	 * @desc 加载策略条件项
+	 *
+	 * @param int $itemId
+	 * @return array
+	 */
+	public static function loadPolicyItem($itemId)
+	{
+		$record = PolicyItem::model()->findByPk($itemId, "status = 'Y'");
+		if (empty($record))
+		{
+			return array();
+		}
+		
+		$itemInfo = $record->getAttributes();
+		unset($itemInfo['create_time'], $itemInfo['status']);
+		
+		return $itemInfo;
+	}
+	
 }
 ?>
