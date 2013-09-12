@@ -12,51 +12,8 @@ from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 from buy_analyzer import StockBuyAnalyzer
-from stock_util import get_cont_stock
+from stock_util import *
 
-
-# 获取所有股票列表, 包含指数
-def get_stock_list(db_config, type = 0):
-    sql = "select id, code, name, pinyin, ecode, alias, company, business, hist_high, hist_low, year_high, year_low, month6_high, \
-            month6_low, month3_high, month3_low from t_stock where status = 'Y' "
-    if type > 0:
-        sql = sql + " and type = " + str(type)
-    #print sql
-
-    record_list = []
-
-    try:
-        db_conn = SqlUtil.get_db(db_config)
-        record_list = db_conn.query_sql(sql)
-    except Exception as e:
-        print e
-        return None
-
-    stock_list = dict()
-    for stock_info in record_list:
-        stock_list[stock_info['id']] = stock_info
-
-    return stock_list
-
-# 获取当天所有的股票数据
-def get_stock_data(db_config, day):
-    sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
-            vary_price, vary_portion from t_stock_data where day = {day} and status = 'Y'".format(day=day)
-    #print sql
-    record_list = []
-
-    try:
-        db_conn = SqlUtil.get_db(db_config)
-        record_list = db_conn.query_sql(sql)
-    except Exception as e:
-        print e
-        return None
-    
-    data = dict()
-    for stock_data in record_list:
-        data[stock_data['sid']] = stock_data
-
-    return data
 
 # 刷新股票的历史最高/最低价
 def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, refresh = True):

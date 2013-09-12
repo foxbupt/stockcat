@@ -60,3 +60,27 @@ class StockEventItem(Item):
     event_date = Field()
     title = Field()
     content = Field()
+
+class StockFundItem(Item):
+    id = Field()
+    code = Field()
+    day = Field()
+    total = Field()
+    small = Field()
+    medium = Field()
+    large = Field()
+    super = Field()
+    amount = Field()
+    vary_portion = Field()
+
+class StockEarningItem(item):
+    code = Field()
+    name = Field()
+    type = Field()
+    event_date = Field()
+    report_date = Field()
+    past_profit = Field()
+    min_portion = Field()
+    max_portion = Field()
+    digest = Field()
+    content = Field()

@@ -153,7 +153,7 @@ class PolicyUtil
 		$data = $itemList[$nodeId];
 		$data['children'] = array();
 
-		if ($nodes[$nodeId])
+		if (!empty($nodes[$nodeId]))
 		{
 			foreach ($nodes[$nodeId] as $childNodeId)
 			{
