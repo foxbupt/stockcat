@@ -170,3 +170,41 @@ CREATE TABLE IF NOT EXISTS `t_stock_bulletin`
 	PRIMARY KEY(`id`),
 	INDEX `idx_sid` (`sid`, `day`, `trend`)		
 )ENGINE=Innodb DEFAULT CHARSET=utf8; 
+
+/**
+ * 满足指定条件变量的股票记录, 如连续N天上涨, var_param是天数, var_value是累计涨幅
+ */
+CREATE TABLE IF NOT EXISTS `t_stock_var`
+(
+	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `sid`   int(11) NOT NULL default 0,
+    `vid`   int(11) NOT NULL default 0 COMMENT '变量id',
+    `day`   int(11) NOT NULL default 0 COMMENT '符合日期',
+    `cont`  tinyint(2) NOT NULL default 0 COMMENT '连续天数/次数',
+    `sum`   decimal(8,3) NOT NULL default 0.0 COMMENT '累计值',
+	`create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
+    `status`	  enum('Y', 'N') default 'Y',
+    	
+    PRIMARY KEY(`id`),
+    INDEX `idx_vid` (`vid`, `day`),
+    INDEX `idx_sid` (`sid`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8;
+ 
+ 
+/**
+ * 股票价格趋势数据表
+ */  
+CREATE TABLE IF NOT EXISTS `t_stock_price_trend`
+(
+	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+	`sid`   int(11) NOT NULL default 0 COMMENT '股票id',
+	`day`	int(11) NOT NULL default 0 COMMENT '交易日期',
+	`price`	decimal(6,2) NOT NULL default 0.00 COMMENT '当前价格',
+	`low_type` tinyint(1) NOT NULL default 0 COMMENT '低点类型: 1 30日, 2 60日, 3 年内, 4 历史',
+	`high_type` tinyint(1) NOT NULL default 0 COMMENT '高点类型: 1 30日, 2 60日, 3 年内, 4 历史',
+	`create_time` 	int(11) NOT NULL default 0,
+	`status`	  	enum('Y', 'N') default 'Y',
+	
+	PRIMARY KEY(`id`),
+	INDEX `idx_sid` (`sid`, `low_type`, `high_type`, `day`)		
+)ENGINE=Innodb DEFAULT CHARSET=utf8; 
