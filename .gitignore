@@ -4,3 +4,5 @@ themes/classic/views/
 web/config/
 web/runtime/
 spider/stock/data
+server/lib/*.pyc
+web/import_*.log

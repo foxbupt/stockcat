@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `t_account`
 	`birthday`  int(11) NOT NULL default 0 COMMENT '出生日期',
 	`active_code` varchar(32) NOT NULL default '' COMMENT '账号激活码',
     `referer_code` varchar(32) NOT NULL default '' COMMENT '账号邀请注册码',
-    `register_ip` unsigned int(11) NOT NULL default 0 COMMENT '注册ip',  
+    `register_ip`  int(11) unsigned NOT NULL default 0 COMMENT '注册ip',  
 	`update_time` int(11) NOT NULL default 0 COMMENT '最近修改时间',
     `create_time` int(11) NOT NULL default 0 COMMENT '注册时间',
     `status`    enum('Y', 'U', 'N') default 'Y' COMMENT '账号状态取值: U 未激活, Y 已激活, N 禁用',
