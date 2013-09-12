@@ -47,7 +47,7 @@
 							</p>							
 							<ul class="nav nav-list">
 								<li class="nav-header"></li>
-								<li class="active"><a href="<?php echo Yii::app()->createUrl('/member/my/index'); ?>">管理分析器</a></li>
+								<li class="active"><a href="<?php echo Yii::app()->createUrl('/member/policy/index'); ?>">管理分析器</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/member/my/setting'); ?>">个人设置</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/member/my/profile'); ?>">基本资料</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/member/my/password'); ?>">修改密码</a></li>
