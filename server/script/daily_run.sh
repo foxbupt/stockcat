@@ -15,7 +15,7 @@ main()
     log="analyze_$day.log"
 
     # 更新每日的最高价/最低价
-    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $day >> $result_path/$log
+    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $day >> $result_path/$log 2>1
 
     # TODO: 深入分析
 
