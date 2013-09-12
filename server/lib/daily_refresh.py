@@ -150,6 +150,8 @@ if __name__ == "__main__":
 
         #print len(vary_stock_list)
         for sid, vary_info in vary_stock_list.items():
+        #for sid in stock_list.keys():
+            #sid = int(sid)
             #print sid, vary_info
            
             policy = dict()
@@ -162,5 +164,7 @@ if __name__ == "__main__":
             else:
                 analyze_info['high_index'] = vary_info['high_index']
                 analyze_info['low_index'] = vary_info['low_index']
+                analyze_info['name'] = stock_list[sid]['name']
+                analyze_info['code'] = stock_list[sid]['code']
 
                 print format_log("analyze_stock_info", analyze_info)

@@ -14,7 +14,7 @@
 import sys, re, json, random
 import datetime
 sys.path.append('../../../../server')  
-from pyutil.util import safestr
+from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 from stock_analyzer import StockAnalyzer
 
@@ -29,6 +29,9 @@ class StockBuyAnalyzer(StockAnalyzer):
         
         # 获取最近60天内的交易数据
         history_data = self.get_histdata_range(self.sid, start_day, cur_day)
+        if len(history_data) <= 20:
+            return None
+
         today_data = history_data[0]
         print today_data
          
@@ -56,15 +59,15 @@ class StockBuyAnalyzer(StockAnalyzer):
         # TODO: 评估股票的综合得分
         score = 1
 
-        pool_info = {'low_price': judge_info[0], 'high_price': judge_info[1]}
-        pool_info.extend(trend_info)
+        pool_info = trend_info.copy()
+        pool_info.update({'low_price': judge_info[0], 'high_price': judge_info[1]})
         pool_info['current_price'] = today_data['close_price']
-        pool_info['sid'] = sid
+        pool_info['sid'] = self.sid
         pool_info['day'] = cur_day
         pool_info['score'] = score
 
         # 把股票加入股票池中
-        add = self.add_stock_pool(self.sid, day, pool_info)
+        #add = self.add_stock_pool(self.sid, day, pool_info)
 
         return pool_info
 
