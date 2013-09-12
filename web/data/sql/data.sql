@@ -11,10 +11,10 @@ insert into t_policy_var(`code`, `name`, `type`, `status`) values('YEAR_LOW', '�
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY60_HIGH', '60日内最高价格', '1', 'Y');
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY60_LOW', '60日内最低价格', '1', 'Y');
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY30_HIGH', '30日内最高价格', '1', 'Y');
-insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY30_HIGH', '30日内最低价格', '1', 'Y');
+insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY30_LOW', '30日内最低价格', '1', 'Y');
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('DAY_EXCHANGE_PORTION', '当日换手率', '4', 'Y');
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('PE', '市盈率', '1', 'Y');
-insert into t_policy_var(`code`, `name`, `type`, `status`) values('EPS', '动态市盈率', '1' 'Y');
+insert into t_policy_var(`code`, `name`, `type`, `status`) values('EPS', '动态市盈率', '1', 'Y');
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('PBV', '市净率', '1', 'Y');
 
 insert into t_policy_var(`code`, `name`, `type`, `status`) values('TAG_LOCATION', '所属地域', '2', 'Y');
