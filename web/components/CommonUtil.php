@@ -2,7 +2,7 @@
 
 Yii::import('application.models.Tag');
 class CommonUtil
-{
+{	
 	// 标签分类: 1 行业 2 地域  3 概念
 	const TAG_CATEGORY_INDUSTRY = 1;
 	const TAG_CATEGORY_LOCATION = 2;
@@ -13,6 +13,11 @@ class CommonUtil
 	const RANK_CARE_RECOMMEND = 2;
 	const RANK_RECOMMEND = 3;
 	const RANK_STRONG_RECOMMEND = 4;
+	
+	// 趋势/波段方向: 0 震荡 1 上涨  -1 下跌
+	const DIRECTTION_UP = 1;
+	const DIRECTTION_DOWN = -1;
+	const DIRECTTION_SHAVE = 0;
 	
 	const CACHE_KEY_COMMON_CONFIG = "config:all";
 	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
@@ -77,6 +82,18 @@ class CommonUtil
 		}
 		
 		return empty($key)? $configInfo : $configInfo[$key];
+	}
+	
+	/**
+	 * @desc 获取指定配置对象的值
+	 *
+	 * @param string $key
+	 * @return array
+	 */
+	public static function getConfigObject($key)
+	{
+		$cacheInfo = self::getConfig($key);
+		return empty($cacheInfo)? array() : json_decode($cacheInfo, true);	
 	}
 	
 	/**

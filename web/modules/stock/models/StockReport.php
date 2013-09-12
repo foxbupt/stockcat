@@ -63,6 +63,7 @@ class StockReport extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
+            'stock' => array(self::BELONGS_TO, 'Stock', 'sid'),
 		);
 	}
 
@@ -73,14 +74,14 @@ class StockReport extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => 'Sid',
-			'name' => 'Name',
-			'title' => 'Title',
-			'content' => 'Content',
-			'day' => 'Day',
-			'rank' => 'Rank',
-			'goal_price' => 'Goal Price',
-			'agency' => 'Agency',
+			'sid' => '股票Id',
+			'name' => '名称',
+			'title' => '标题',
+			'content' => '内容',
+			'day' => '日期',
+			'rank' => '评级',
+			'goal_price' => '目标价格(元)',
+			'agency' => '研报机构',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);

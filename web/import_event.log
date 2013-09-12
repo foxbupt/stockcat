@@ -1,0 +1,63 @@
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130819/event_20130819.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130826/event_20130826.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130902/event_20130902.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130909/event_20130909.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130916/event_20130916.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130923/event_20130923.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20130930/event_20130930.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20131007/event_20131007.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20131014/event_20131014.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()

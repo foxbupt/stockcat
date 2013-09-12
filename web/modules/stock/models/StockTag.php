@@ -54,6 +54,8 @@ class StockTag extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
+            'stock' => array(self::BELONGS_TO, 'Stock', 'sid'),
+            'tag' => array(self::BELONGS_TO, 'Tag', 'tid'),
 		);
 	}
 
@@ -64,9 +66,9 @@ class StockTag extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => 'Sid',
-			'tid' => 'Tid',
-			'display_order' => 'Display Order',
+			'sid' => '股票Id',
+			'tid' => '标签名称',
+			'display_order' => '显示顺序',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);

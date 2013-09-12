@@ -58,6 +58,7 @@ class StockEvent extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
+            'stock' => array(self::BELONGS_TO, 'Stock', 'sid'),
 		);
 	}
 
@@ -68,11 +69,11 @@ class StockEvent extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => 'Sid',
-			'event_date' => 'Event Date',
-			'title' => 'Title',
-			'content' => 'Content',
-			'trend' => 'Trend',
+			'sid' => '股票Id',
+			'event_date' => '公告日期',
+			'title' => '公告标题',
+			'content' => '公告详情',
+			'trend' => '公告影响',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS `t_config`
 	`id` 			int(11) unsigned NOT NULL AUTO_INCREMENT,
 	`name`          varchar(255) NOT NULL default '' COMMENT '配置项名称',
 	`key` 		    varchar(32) NOT NULL default '' COMMENT '配置项编码',
-	`value`         text NOT NULL default '' COMMENT '' COMMENT '配置项取值',
+    `value`         varchar(4096) NOT NULL default '' COMMENT '配置项取值',
     `status`	  	enum('Y', 'U', 'N') default 'Y',
 	
 	PRIMARY KEY(`id`),
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `t_stock`
     `business`  varchar(2048) NOT NULL default '' COMMENT '主营业务',
     `capital`   decimal(6, 2) NOT NULL default 0 COMMENT '总股本, 单位为亿股',
     `out_capital` decimal(6, 2) NOT NULL default 0 COMMENT '流通股本, 单位为亿股',
-    `profit`    decimal(6, 2) NOT NULL default 0 COMMENT '每股净收益', 
+    `profit`    decimal(6, 3) NOT NULL default 0 COMMENT '每股净收益', 
     `assets`    decimal(6, 2) NOT NULL default 0 COMMENT '每股净资产',
     `hist_high` decimal(6,2) NOT NULL default 0.00 COMMENT '历史最高',
     `hist_low`  decimal(6,2) NOT NULL default 0.00 COMMENT '历史最低',
@@ -204,15 +204,23 @@ CREATE TABLE IF NOT EXISTS `t_policy_var`
 CREATE TABLE IF NOT EXISTS `t_policy_item`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+	`name`  varchar(64) NOT NULL default '' COMMENT '条件项名称, 可用于对父节点命名',
     `vid`   int(11) NOT NULL default 0 COMMENT '变量id',
     `optor`    tinyint(1) NOT NULL default 0 COMMENT '操作符, 取值: 1 ==, 2 >=, 3 >, 4 <=, 5 <, 6 <>, 7 like, 8 not like, 9 contains, 10 not contains', 
-    `param`    varchar(255) NOT NULL default '' COMMENT '条件项变量设定范围取值', 
+    `param`    varchar(255) NOT NULL default '' COMMENT '条件项变量参数取值', 
     `value`    varchar(255) NOT NULL default '' COMMENT '条件项设定值',
+    `pid`       int(11) NOT NULL default 0 COMMENT '所属分析器id',
+    `parent_id` int(11) NOT NULL default 0 COMMENT '父节点id, 0 表示为根节点',
+    `node_type` tinyint(1) NOT NULL default 0 COMMENT '1 父节点, 2 叶子节点',
+    `logic`     tinyint(1) NOT NULL default 0 COMMENT '表达式的逻辑运算符, 决定下一级条件项之间的逻辑关系, 的取值: 1 and, 2 or',
+    `update_time` int(11) NOT NULL default 0 COMMENT '修改时间',
     `create_time` int(11) NOT NULL default 0 COMMENT '添加时间',
     `status`	  enum('Y', 'N') default 'Y',
 	
 	PRIMARY KEY(`id`),
-	INDEX `idx_vid` (`vid`)
+	INDEX `idx_vid` (`vid`),
+	INDEX `idx_pid` (`pid`, `level`),
+	INDEX `idx_parent` (`pid`, `parent_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
 
 /**
@@ -223,13 +231,13 @@ CREATE TABLE IF NOT EXISTS `t_policy_item`
 CREATE TABLE IF NOT EXISTS `t_policy`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `type`  tinyint(1) NOT NULL default 0 COMMENT '分析器类型: 1 离线买入分析 2 离线卖出 3 实时买入 4 实时卖出',
+    `type`  tinyint(1) NOT NULL default 0 COMMENT '分析器类型: 1 离线买入分析 2 实时买入 3 离线卖出 4 实时卖出',
     `name`  varchar(128) NOT NULL default '' COMMENT '分析器名称',
     `remark`  varchar(1024) NOT NULL default '' COMMENT '分析器描述信息',
-    `expression` varchar(2048) NOT NULL default '' COMMENT '分析器详情, 用json存储',
     `uid`   int(11) NOT NULL default 0 COMMENT '用户id',
+    `root_item`   int(11) NOT NULL default 0 COMMENT '根节点id',  
     `update_time` int(11) NOT NULL default 0 COMMENT '上次修改时间',  
-	`create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
+    `create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
     `status`	  enum('Y', 'N') default 'Y',
     	
     PRIMARY KEY(`id`),

@@ -81,9 +81,10 @@ class StockUtil
 			if ($record)
 			{
 				$stockInfo = $record->getAttributes();
+				unset($stockInfo['create_time'], $stockInfo['status']);
 			}
 			
-			Yii::app()->redis->set($cacheKey, json_encode($stockInfo), 86400);
+			Yii::app()->redis->set($cacheKey, json_encode($stockInfo));
 			return $stockInfo;
 		}
 		

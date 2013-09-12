@@ -103,8 +103,13 @@ class StockBuyAnalyzer(StockAnalyzer):
             return -5
         
         # 市盈率>=100倍, 表明股价太高
-        pe = int(close_price / float(stock_info['profit']))
-        if pe >= 100:
+        profit = float(stock_info['profit'])
+        if profit == 0.0:
+           profit = 0.01 
+
+        # profit可能<0
+        pe = int(close_price / profit)
+        if pe < 0 or pe >= 100:
             return -6
 
         return 0
@@ -180,11 +185,11 @@ class StockBuyAnalyzer(StockAnalyzer):
         wave = trend_info['wave']
 
         # 连续上涨, 目前处于上涨波段, 且价格比30日低点超出幅度小于3%
-        if trend == 1 and wave = 3 and day_low_portion <= 3:
+        if trend == 1 and wave == 3 and day_low_portion <= 3:
             if day30_high_portion <= 10:
                 score -= 1
         # 30日最低点 或 60日最低点
-        elif today_close_price == day30_low || today_close_price == day60_low:
+        elif today_close_price == day30_low or today_close_price == day60_low:
             score -= 1
         # 30日最高点或60日最高点
         elif today_close_price == day30_high:

@@ -5,19 +5,71 @@
  */
 class Controller extends CController
 {
+	public $layout = "//layouts/main";
+	
+	public $pageTitle = "";
+	public $keywords = "贝瓦网,儿歌,儿歌视频大全,贝瓦儿歌,大头贴,淘奇包,儿童";
+	public $description = '贝瓦网通过贝瓦儿歌、儿歌视频大全、儿歌大头贴、儿童故事、早教淘奇包、儿童小游戏、儿童舞蹈等优质产品为中国儿童提供全方位的教育资源，助力儿童成长，成就美好未来。';
+
 	/**
-	 * @var string the default layout for the controller view. Defaults to '//layouts/column1',
-	 * meaning using a single column layout. See 'protected/views/layouts/column1.php'.
+	 * @desc 获取Model的错误信息显示第一个, 没有则显示默认错误信息
+	 *
+	 * @param CFormModel $model
+	 * @param string $default
+	 * @param bool $ignoreField 缺省不返回field
+	 * @return string
 	 */
-	public $layout='//layouts/column1';
+	public function getModelError($model, $default = "", $ignoreField = true)
+	{
+		$field = "";
+		$msg = $default;
+		
+		$errors = $model->getErrors();
+		foreach ($errors as $key => $error)
+		{
+			$field = $key;
+			$msg = $error[0];
+			break;
+		}
+		
+		return $ignoreField? $msg : array('field' => $field, 'msg' => $msg);
+	}
+	
 	/**
-	 * @var array context menu items. This property will be assigned to {@link CMenu::items}.
+	 * @desc 显示Model的所有错误信息
+	 *
+	 * @param CFormModel $model
+	 * @param string $default
+	 * @return array
 	 */
-	public $menu=array();
+	public function getModelAllErrors($model, $default = "")
+	{
+		$msgs = array();
+		
+		$errors = $model->getErrors();
+		foreach ($errors as $error)
+		{
+			$msgs[] = $error[0];
+			break;
+		}
+		
+		return empty($msgs)? array($default) : $msgs;
+	}
+	
 	/**
-	 * @var array the breadcrumbs of the current page. The value of this property will
-	 * be assigned to {@link CBreadcrumbs::links}. Please refer to {@link CBreadcrumbs::links}
-	 * for more details on how to specify this property.
+	 * @desc 为下拉选择框数据自动添加请选择
+	 *
+	 * @param array $list
+	 * @param mixed $value
+	 * @param string $text
+	 * @return array
 	 */
-	public $breadcrumbs=array();
+	public function encodeDropdownList($list, $value = 0, $text = "请选择")
+	{
+		$result = $list;
+		$result[$value] = $text;
+		
+		ksort($result, is_string($value)? SORT_STRING : SORT_NUMERIC);
+		return $result;
+	}
 }

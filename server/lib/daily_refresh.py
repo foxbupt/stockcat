@@ -128,13 +128,19 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf> [day]"
+        print "Usage: " + sys.argv[0] + " <conf> [day] [refresh]"
         sys.exit(1)
 
     if len(sys.argv) >= 3:
         day = int(sys.argv[2])
     else:
         day = int("{0:%Y%m%d}".format(datetime.date.today()))
+
+    need_refresh = True
+    if len(sys.argv) >= 4:
+        refresh = int(sys.argv[3])
+        if refresh <= 0:
+            need_refresh = False
 
     config_info = Util.load_config(sys.argv[1])        
     db_config = config_info['DB']
@@ -149,7 +155,7 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
-        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, False)
+        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, need_refresh)
 
         #print len(vary_stock_list)
         analyze_stock_set = set()

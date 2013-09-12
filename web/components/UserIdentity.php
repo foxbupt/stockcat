@@ -22,7 +22,7 @@ class UserIdentity extends CUserIdentity
 	 */
 	public function authenticate()
 	{
-		$record = Account::getRecord($this->username);
+		$record = Account::getRecordByEmail($this->username);
 		if (empty($record))
 		{
 			$this->errorCode = AccountUtil::ERROR_ACCONT_RECORD_NONEXIST;
@@ -35,7 +35,8 @@ class UserIdentity extends CUserIdentity
 		}
 		
 		$enpwd = md5(md5($this->password) . $record->salt);
-		if ($enpwd != $record->password)	// 密码校验错误
+		// var_dump($this->password, $record->salt, $enpwd, $record->password);
+		if ($enpwd !== $record->password)	// 密码校验错误
 		{
 			$this->errorCode = UserIdentity::ERROR_PASSWORD_INVALID;
 			return false;
