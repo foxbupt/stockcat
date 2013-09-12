@@ -95,7 +95,7 @@ class AccountController extends Controller
 	 */
 	public function actionLogout()
 	{
-		if (!Yii::app()->user->isGuest())
+		if (!Yii::app()->user->isGuest)
 		{
 			Yii::app()->user->logout();
 			$this->redirect(empty($_GET['returnUrl'])? "/" : $_GET['returnUrl']);
@@ -129,10 +129,12 @@ class AccountController extends Controller
 		if (isset($_POST['RegisterForm']))
 		{
 			$model->attributes = $_POST['RegisterForm'];
+            $clientIP = BevaUtil::getRemoteIP();
 			
-			if ($model->validate() && $model->register())
+			if ($model->validate() && $model->register($clientIP))
 			{
 				$this->render('sendmail', array(
+                                'msg' => '',
 								'email' => $model->username,
 								'emailLink' => self::getEmailLink($model->username)
 							));				
