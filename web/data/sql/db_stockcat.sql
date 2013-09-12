@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `t_policy_item`
  *  logic取值: 1 and 2 or   
  *  {'logic': 1/2, 'conditions': [item_id, ..., {'logic': 1/2, 'conditions': }]}   
  */
-CREATE TABLE IF NOT EXISTS `t_user_policy`
+CREATE TABLE IF NOT EXISTS `t_policy`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
     `type`  tinyint(1) NOT NULL default 0 COMMENT '分析器类型: 1 离线买入分析 2 离线卖出 3 实时买入 4 实时卖出',
@@ -235,5 +235,25 @@ CREATE TABLE IF NOT EXISTS `t_user_policy`
     PRIMARY KEY(`id`),
     INDEX `idx_uid` (`uid`),
     INDEX `idx_type` (`type`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8;
+ 
+/**
+ * 满足策略分析器的股票记录
+ */
+CREATE TABLE IF NOT EXISTS `t_policy_stock`
+(
+	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `uid`   int(11) NOT NULL default 0 COMMENT '用户id',
+    `pid`   int(11) NOT NULL default 0 COMMENT '分析器id',
+    `sid`   int(11) NOT NULL default 0 COMMENT '满足分析器的股票id',
+    `day`   int(11) NOT NULL default 0 COMMENT '加入日期',
+    `score` tinyint(1) NOT NULL default 0 COMMENT '评级',
+    `update_time` int(11) NOT NULL default 0 COMMENT '上次修改时间',  
+	`create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
+    `status`	  enum('Y', 'N') default 'Y',
+    	
+    PRIMARY KEY(`id`),
+    INDEX `idx_uid` (`uid`),
+    INDEX `idx_policy` (`day`, `pid`, `score`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
  
