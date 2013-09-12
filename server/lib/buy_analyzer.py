@@ -57,7 +57,7 @@ class StockBuyAnalyzer(StockAnalyzer):
             return None
 
         # TODO: 评估股票的综合得分
-        score = 1
+        score = self.rank(trend_info, stock_info, history_data, policy)
 
         pool_info = dict()
         pool_info['trend'] = trend_info['trend']
@@ -87,7 +87,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         if float(stock_info['assets']) <= close_price/5:
             return -2
 
-        # 流通市值低于10亿
+        # 流通市值低于10亿, 表明容易被游资炒作
         out_capital_amount = float(stock_info['out_capital']) * close_price
         if out_capital_amount < 10.0:
             return -3
@@ -102,6 +102,11 @@ class StockBuyAnalyzer(StockAnalyzer):
         if max(exchange_rate_list) < 1.0 or min(exchange_rate_list) < 0.5:
             return -5
         
+        # 市盈率>=100倍, 表明股价太高
+        pe = int(close_price / float(stock_info['profit']))
+        if pe >= 100:
+            return -6
+
         return 0
 
     # 判断股票当前是否值得买入
@@ -132,13 +137,13 @@ class StockBuyAnalyzer(StockAnalyzer):
         # 处于上升趋势
         if trend == 3:
             #TODO: 需要细化wave代表的波段类型, 如一直上涨/冲高回落
-            # 上涨比例不超过15%, 当天为30天最高价
-            if today_close_price == day30_high and rise_portion <= 15:
+            # 当天为30天最高价
+            if today_close_price == day30_high:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price * (1 + 0.02)
             
-            # 当前上涨比例低于10% 且 当前价格离最高价在6%以上
-            elif rise_portion <= 10 and high_portion - rise_portion >= 6:
+            # 当前上涨比例低于15% 且 当前价格离最高价在6%以上
+            elif rise_portion <= 15:
                 low_buy_price = today_close_price * (1 - 0.02)
                 high_buy_price = today_close_price 
             else:
@@ -157,8 +162,36 @@ class StockBuyAnalyzer(StockAnalyzer):
     def rank(self, trend_info, stock_info, day60_data, policy):
         today_data = day60_data[0]
         today_open_price = float(today_data['open_price'])
+        today_close_price = float(today_data['close_price'])
+
+        day30_high = float(stock_info['month3_high'])
+        day30_low = float(stock_info['month3_low'])
+        day30_high_portion = (day30_high - today_close_price) / today_close_price * 100
+        day30_low_portion = (today_close_price - day30_low) / day30_low * 100
+
+        day60_high = float(stock_info['month6_high'])
+        day60_low = float(stock_info['month6_low'])
+        day60_low_portion = (today_close_price - day60_low) / day60_low * 100
 
         # 默认为10分, 判断某项条件符合进行扣分
         score = 10
+
+        trend = trend_info['trend']
+        wave = trend_info['wave']
+
+        # 连续上涨, 目前处于上涨波段, 且价格比30日低点超出幅度小于3%
+        if trend == 1 and wave = 3 and day_low_portion <= 3:
+            if day30_high_portion <= 10:
+                score -= 1
+        # 30日最低点 或 60日最低点
+        elif today_close_price == day30_low || today_close_price == day60_low:
+            score -= 1
+        # 30日最高点或60日最高点
+        elif today_close_price == day30_high:
+            score -= 2
+            if today_close_price == day60_high:
+                score -= 1
+            if day30_low_portion >= 15:
+                score -= 1
 
         return score
