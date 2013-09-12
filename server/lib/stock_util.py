@@ -65,3 +65,49 @@ def get_cont_stock(db_config, current_day, day_count, sum_portion, rise = True):
 
     return [item['sid'] for item in record_list]
 
+# 获取所有股票列表, 包含指数
+def get_stock_list(db_config, type = 0):
+    sql = "select id, code, name, pinyin, ecode, alias, company, business, hist_high, hist_low, year_high, year_low, month6_high, \
+            month6_low, month3_high, month3_low from t_stock where status = 'Y' "
+    if type > 0:
+        sql = sql + " and type = " + str(type)
+
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+
+    stock_list = dict()
+    for stock_info in record_list:
+        stock_list[stock_info['id']] = stock_info
+
+    return stock_list
+
+'''
+  @desc: 获取指定日期股票的总览数据
+  @param db_config dict DB配置
+  @param day int
+  @param sid int 股票id, 缺省0表示获取所有股票
+  @return dict()
+'''
+def get_stock_data(db_config, day, sid=0):
+    if sid == 0:
+        sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
+            vary_price, vary_portion from t_stock_data where day = {day} and status = 'Y'".format(day=day)
+    else:
+        sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
+            vary_price, vary_portion from t_stock_data where day = {day} and sid = {sid} and status = 'Y'".format(day=day, sid=sid)
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+
+    data = dict()
+    for stock_data in record_list:
+        data[int(stock_data['sid'])] = stock_data
+
+    return data if 0 == sid else data[sid]
