@@ -59,7 +59,9 @@ class StockBuyAnalyzer(StockAnalyzer):
         # TODO: 评估股票的综合得分
         score = 1
 
-        pool_info = trend_info.copy()
+        pool_info = dict()
+        pool_info['trend'] = trend_info['trend']
+        pool_info['wave'] = trend_info['wave']
         pool_info.update({'low_price': judge_info[0], 'high_price': judge_info[1]})
         pool_info['current_price'] = today_data['close_price']
         pool_info['sid'] = self.sid
@@ -67,7 +69,8 @@ class StockBuyAnalyzer(StockAnalyzer):
         pool_info['score'] = score
 
         # 把股票加入股票池中
-        #add = self.add_stock_pool(self.sid, day, pool_info)
+        add = self.add_stock_pool(self.sid, day, pool_info)
+        print "op=add_pool_record, add=" + str(add)
 
         return pool_info
 
