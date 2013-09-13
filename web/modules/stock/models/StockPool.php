@@ -45,12 +45,11 @@ class StockPool extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('sid, day, trend, wave, score, create_time', 'numerical', 'integerOnly'=>true),
-			array('name', 'length', 'max'=>32),
 			array('current_price, low_price, high_price', 'length', 'max'=>6),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, name, day, trend, wave, current_price, low_price, high_price, score, create_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, day, trend, wave, current_price, low_price, high_price, score, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -73,7 +72,6 @@ class StockPool extends CActiveRecord
 		return array(
 			'id' => 'Id',
 			'sid' => '代码',
-			'name' => '名称',
 			'day' => '日期',
 			'trend' => '趋势',
 			'wave' => '波段',
@@ -100,8 +98,6 @@ class StockPool extends CActiveRecord
 		$criteria->compare('id',$this->id,true);
 
 		$criteria->compare('sid',$this->sid);
-
-		$criteria->compare('name',$this->name,true);
 
 		$criteria->compare('day',$this->day);
 
