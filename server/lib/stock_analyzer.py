@@ -175,6 +175,7 @@ class StockAnalyzer:
         try:
             record_list = self.db_conn.query_sql(sql)
         except Exception as e:
+            print e
             return False
         
         if len(record_list) >= 1:
@@ -184,9 +185,11 @@ class StockAnalyzer:
         info['status'] = 'Y'
 
         sql = SqlUtil.create_insert_sql("t_stock_pool", info)
+        print sql
         try:
-            record_list = self.db_conn.query_sql(sql)
+            self.db_conn.query_sql(sql, True)
         except Exception as e:
+            print e
             return False
 
         return True
