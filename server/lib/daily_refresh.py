@@ -146,11 +146,11 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
-        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
+        #vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list)
 
         #print len(vary_stock_list)
-        for sid, vary_info in vary_stock_list.items():
-        #for sid in stock_list.keys():
+        #for sid, vary_info in vary_stock_list.items():
+        for sid in stock_list.keys():
             #sid = int(sid)
             #print sid, vary_info
            
@@ -162,8 +162,8 @@ if __name__ == "__main__":
                 print "not suitable, sid=" + str(sid)
                 continue
             else:
-                analyze_info['high_index'] = vary_info['high_index']
-                analyze_info['low_index'] = vary_info['low_index']
+                #analyze_info['high_index'] = vary_info['high_index']
+                #analyze_info['low_index'] = vary_info['low_index']
                 analyze_info['name'] = stock_list[sid]['name']
                 analyze_info['code'] = stock_list[sid]['code']
 
