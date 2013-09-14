@@ -5,8 +5,8 @@
 #date: 2013-08-01
 
 import sys, re, json
-#sys.path.append('../../../server')  
-#from pyutil.util import safestr
+sys.path.append('../../../../server')  
+from pyutil.util import safestr
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
@@ -49,9 +49,11 @@ class IFengSpider(BaseSpider):
                 text = ""
                 if td_node.select('.//span'):
                     text = td_node.select('.//span/text()').extract()[0]
-                else:
-                    text = td_node.select('.//text()').extract()[0]
+                else: # 存在a标签时, 列表会有2项, 第2项为日期
+                    #print td_node.select('.//text()').extract()
+                    text = td_node.select('.//text()').extract()[-1]
 
+                #print safestr(text)
                 # 第1列为日期
                 value = text
                 if 0 == index:
@@ -61,8 +63,8 @@ class IFengSpider(BaseSpider):
                     if match_text:
                         value = match_text.group(0)
                 value_list.append(value)
+                #print value_list
 
-            #print value_list
             item['day'] = int(value_list[0])
             item['open_price'] = float(value_list[1])
             item['high_price'] = float(value_list[2])
