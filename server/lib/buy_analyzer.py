@@ -38,7 +38,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         check_result = self.check(stock_info, history_data, today_data)
         if check_result < 0:
             print format_log("check_failed", {'sid': self.sid, 'name': stock_info['name'], 
-                'day': day, 'result': 'check_result', 'close_price': today_data['close_price']})
+                'day': day, 'result': check_result, 'close_price': today_data['close_price']})
             return None
 
         today_open_price = float(today_data['open_price'])
