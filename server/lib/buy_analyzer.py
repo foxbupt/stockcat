@@ -130,7 +130,7 @@ class StockBuyAnalyzer(StockAnalyzer):
         wave = trend_info['wave']
 
         # 处于上升趋势
-        if trend == 1:
+        if trend == 3:
             #TODO: 需要细化wave代表的波段类型, 如一直上涨/冲高回落
             # 上涨比例不超过15%, 当天为30天最高价
             if today_close_price == day30_high and rise_portion <= 15:
