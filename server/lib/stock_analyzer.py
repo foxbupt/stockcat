@@ -109,7 +109,7 @@ class StockAnalyzer:
         @param: data_list list
         @param: vary_threshold float 设定涨幅比例
         @return: dict('trend', 'wave', 'vary_portion') trend 趋势, wave 波段, vary_portion 涨跌幅
-                trend/wave: 0 震荡, 1 上升, -1 下降
+                trend/wave: 2 震荡, 3 上升, 1 下降
     '''
     def get_trend(self, data_list, vary_threshold):
         first_close_price = float(data_list[0]['close_price']) 
@@ -136,27 +136,27 @@ class StockAnalyzer:
         
         # 涨幅超过最大比例
         if vary_portion >= vary_threshold:
-            trend_info['trend'] = 1
+            trend_info['trend'] = 3
             if max_index > 0 and min_index > max_index: 
-                trend_info['wave'] = -1
-            else:
                 trend_info['wave'] = 1
+            else:
+                trend_info['wave'] = 3
 
         # 跌幅超过最大比例         
         elif vary_portion <= -1 * vary_threshold:
-            trend_info['trend'] = -1
+            trend_info['trend'] = 1
             if min_index > 0 and max_index > min_index:
-                trend_info['wave'] = 1
+                trend_info['wave'] = 3
             else:
-                trend_info['wave'] = -1
+                trend_info['wave'] = 1
 
         # 涨幅位于(-threshold, threashold) 比例
         else:
-            trend_info['trend'] = 0
+            trend_info['trend'] = 2
             if max_index == 0 or (min_index > 0 and max_index > min_index):
-                trend_info['wave'] = 1
+                trend_info['wave'] = 3
             elif min_index == 0 or (max_index > 0 and min_index > max_index):
-                trend_info['wave'] = -1
+                trend_info['wave'] = 1
 
         return trend_info
 
