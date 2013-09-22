@@ -12,7 +12,7 @@ PHP_BIN=/usr/bin/php
 SCRAPY_BIN=/usr/bin/scrapy
 
 # 公共假期
-HOLIDAYS=(20130919, 20130920, 20130921, 20131001, 20131002, 20131003, 20131004, 20131005, 20131006, 20131007)
+HOLIDAYS=(20130919 20130920 20130921 20131001 20131002 20131003 20131004 20131005 20131006 20131007)
 
 # 判断当天是否开市
 is_market_open()
@@ -26,7 +26,7 @@ is_market_open()
     else 
         for loop_day in ${HOLIDAYS[@]}
         do
-            if [ "$loop_day" == "$day" ] 
+            if [ $loop_day == $day ] 
             then
                 echo "0"
                 return
