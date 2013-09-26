@@ -1,5 +1,7 @@
 <?php
 
+Yii::import('member.models.Account');
+
 /**
  * UserIdentity represents the data needed to identity a user.
  * It contains the authentication method that checks if the provided
@@ -7,6 +9,9 @@
  */
 class UserIdentity extends CUserIdentity
 {
+	public $uid;
+	// public $nickname;
+	
 	/**
 	 * Authenticates a user.
 	 * The example implementation makes sure if the username and password
@@ -17,17 +22,34 @@ class UserIdentity extends CUserIdentity
 	 */
 	public function authenticate()
 	{
-		$users=array(
-			// username => password
-			'demo'=>'demo',
-			'admin'=>'admin',
-		);
-		if(!isset($users[$this->username]))
-			$this->errorCode=self::ERROR_USERNAME_INVALID;
-		elseif($users[$this->username]!==$this->password)
-			$this->errorCode=self::ERROR_PASSWORD_INVALID;
-		else
-			$this->errorCode=self::ERROR_NONE;
-		return !$this->errorCode;
+		$record = Account::getRecord($this->username);
+		if (empty($record))
+		{
+			$this->errorCode = AccountUtil::ERROR_ACCONT_RECORD_NONEXIST;
+			return false;
+		}
+		else if ($record->status == "U")	// 账号未激活
+		{
+			$this->errorCode = AccountUtil::ERROR_ACCOUNT_INACTIVATE;
+			return false;
+		}
+		
+		$enpwd = md5(md5($this->password) . $record->salt);
+		if ($enpwd != $record->password)	// 密码校验错误
+		{
+			$this->errorCode = UserIdentity::ERROR_PASSWORD_INVALID;
+			return false;
+		}
+		
+		$this->uid = $record->id;
+		$this->username = $record->nickname;
+		
+		$this->errorCode = AccountUtil::ERROR_ACCOUNT_OK;
+		return true;
+	}
+	
+	public function getId()
+	{
+		return $this->uid;
 	}
 }
