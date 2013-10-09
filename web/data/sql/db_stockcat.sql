@@ -183,13 +183,13 @@ CREATE TABLE IF NOT EXISTS `t_stock_pool`
 /*
  * 系统预定义变量
  */
-CREATE TABLE IF NOT EXISTS `t_cond_var`
+CREATE TABLE IF NOT EXISTS `t_policy_var`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
-	`code` 	varchar(32) NOT NULL default '' COMMENT '变量唯一编码',
-	`name`  varchar(64) NOT NULL default '' COMMENT '变量名称',
-	`type`  tinyint(1) NOT NULL default 0 COMMENT '变量分类: 1 基本信息, 2 标签, 3 近期股价',
-	`expression` varchar(64) NOT NULL default '' COMMENT '计算值的表达式',
+	`code` 	varchar(64) NOT NULL default '' COMMENT '变量唯一编码',
+	`name`  varchar(255) NOT NULL default '' COMMENT '变量名称',
+	`type`  tinyint(1) NOT NULL default 0 COMMENT '变量分类: 1 基本字段, 2 标签, 3 历史数据, 4 表达式, 5 自定义计算',
+	`expression` varchar(255) NOT NULL default '' COMMENT '计算值的表达式',
 	`add_time` int(11) NOT NULL default 0 COMMENT '添加时间',
     `status`	  enum('Y', 'N') default 'Y',
 	
@@ -199,47 +199,34 @@ CREATE TABLE IF NOT EXISTS `t_cond_var`
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
 
 /*
- * 单个策略条件项, 条件表达式为: var_name optor value
+ * 单个策略条件项, 条件表达式为: vid optor value
  */
-CREATE TABLE IF NOT EXISTS `t_cond_item`
+CREATE TABLE IF NOT EXISTS `t_policy_item`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
     `vid`   int(11) NOT NULL default 0 COMMENT '变量id',
-    `optor`    tinyint(1) NOT NULL default 0 COMMENT '操作符, 取值: 1 ==, 2 >=, 3 >, 4 <=, 5 ==, 6 !=, 7 字符串包含',  
-    `value`    decimal(6,2) NOT NULL default 0 COMMENT '条件项设定值',
-	`create_time` int(11) NOT NULL default 0 COMMENT '添加时间',
+    `optor`    tinyint(1) NOT NULL default 0 COMMENT '操作符, 取值: 1 ==, 2 >=, 3 >, 4 <=, 5 <, 6 <>, 7 like, 8 not like, 9 contains, 10 not contains', 
+    `param`    varchar(255) NOT NULL default '' COMMENT '条件项变量设定范围取值', 
+    `value`    varchar(255) NOT NULL default '' COMMENT '条件项设定值',
+    `create_time` int(11) NOT NULL default 0 COMMENT '添加时间',
     `status`	  enum('Y', 'N') default 'Y',
 	
 	PRIMARY KEY(`id`),
 	INDEX `idx_vid` (`vid`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
 
-/*
- * 策略分析器
- */
-CREATE TABLE IF NOT EXISTS `t_policy`
-(
-	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
-	`category`  tinyint(1) NOT NULL default 0 COMMENT '分析器类别', 
-    `formula` varchar(2048) NOT NULL default '' COMMENT '策略公式', 
-    `update_time` int(11) NOT NULL default 0 COMMENT '上次修改时间', 
-    `create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
-    `status`	  enum('Y', 'N') default 'Y',
-    	
-    PRIMARY KEY(`id`),
-    INDEX `category` (`category`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8;
-
 /**
- * 用户分析器, 每个分析器可能包含对应多个t_policy的记录
+ * 策略分析器, expression字段以树状形式组织存储内部条件项, 形如:
+ *  logic取值: 1 and 2 or   
+ *  {'logic': 1/2, 'conditions': [item_id, ..., {'logic': 1/2, 'conditions': }]}   
  */
 CREATE TABLE IF NOT EXISTS `t_user_policy`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `name`  varchar(64) NOT NULL default '' COMMENT '分析器名称',
     `type`  tinyint(1) NOT NULL default 0 COMMENT '分析器类型: 1 离线买入分析 2 离线卖出 3 实时买入 4 实时卖出',
-    `remark`  text NOT NULL default '' COMMENT '分析器描述信息',
-    `policy_info` varchar(256) NOT NULL default '' COMMENT '分析器详情, 仅存储内部子分析器的id',
+    `name`  varchar(128) NOT NULL default '' COMMENT '分析器名称',
+    `remark`  varchar(1024) NOT NULL default '' COMMENT '分析器描述信息',
+    `expression` varchar(2048) NOT NULL default '' COMMENT '分析器详情, 用json存储',
     `uid`   int(11) NOT NULL default 0 COMMENT '用户id',
     `update_time` int(11) NOT NULL default 0 COMMENT '上次修改时间',  
 	`create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
@@ -250,24 +237,3 @@ CREATE TABLE IF NOT EXISTS `t_user_policy`
     INDEX `idx_type` (`type`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
  
-/*
- * 策略条件列表: 
- * 采用树状结构存储, 同一个括号内的条件项可以归为一个子策略
- * 一个策略中按照条件项顺序依次计算, 最后一个条件项的逻辑符号忽略.
- */
-/*
-CREATE TABLE IF NOT EXISTS `t_policy_item`
-(
-    `id`   int(11) NOT NULL default 0,
-    `policy_id`  int(11) NOT NULL default 0 COMMENT '' COMMENT '策略id',
-    `child_type`  tinyint(1) NOT NULL default 0 COMMENT '子节点类型: 0 条件项, 1 子策略',  
-    `child_id`     int(11) NOT NULL default 0 COMMENT '根据子节点类型取值, 决定是策略id还是条件项id',
-    `logic`       tinyint(1) NOT NULL default 0 COMMENT '逻辑操作符, 取值: 1 and, 2 or',
-    `sequence`    tinyint(1) NOT NULL default 0 COMMENT '条件项在分析器中的顺序',
-	`create_time` int(11) NOT NULL default 0 COMMENT '创建时间',
-    `status`	  enum('Y', 'N') default 'Y',
-    	
-    PRIMARY KEY(`id`),
-    INDEX `idx_policy` (`policy_id`, `sequence`)
-)ENGINE=Innodb DEFAULT CHARSET=utf8;
-*/
