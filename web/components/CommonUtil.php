@@ -73,7 +73,7 @@ class CommonUtil
 				$configInfo[$record->key] = $record->value;
 			}
 			
-			Yii::app()->redis->getInstance()->hSetAll($cacheKey, $configInfo);
+			Yii::app()->redis->getInstance()->hMSet($cacheKey, $configInfo);
 		}
 		
 		return empty($key)? $configInfo : $configInfo[$key];
