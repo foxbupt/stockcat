@@ -41,6 +41,17 @@ class RegisterForm extends CFormModel
 		);
 	}
 	
+	public function attributeLabels()
+	{
+		return array(
+			'username' => '邮箱',
+			'password' => '密码',
+			'confirmPassword' => '确认密码',
+			'nickname' => '昵称',
+			'verifyCode' => '验证码',
+		);
+	}
+	
 	/*
 	 * @desc 检查email是否已经被注册过
 	 */
@@ -67,10 +78,10 @@ class RegisterForm extends CFormModel
 		}*/
 	}	
 	
-	public function register()
+	public function register($clientIp)
 	{
 		$uid = 0;		
-		$fields = array('gender' => 'M');
+		$fields = array('gender' => 'M', 'register_ip' => ip2long($clientIp));
 		
 		$retcode = AccountUtil::register($this->username, $this->password, $this->nickname, $fields, $uid);
 		$this->uid = $uid;
@@ -81,8 +92,12 @@ class RegisterForm extends CFormModel
 			return false;
 		}
 	
-		// TODO: 添加统计日志
-		
+		StatLogUtil::log("register_succ", array(
+						'username' => $this->username,
+						'nickname' => $this->nickname,
+						'uid' => $uid			
+					));
+					
 		return true;
 	}
 }

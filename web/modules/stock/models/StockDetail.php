@@ -69,13 +69,13 @@ class StockDetail extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => 'Sid',
-			'day' => 'Day',
-			'time' => 'Time',
-			'price' => 'Price',
-			'avg_price' => 'Avg Price',
-			'volume' => 'Volume',
-			'swing' => 'Swing',
+			'sid' => '股票名称',
+			'day' => '交易日期',
+			'time' => '交易时刻(分)',
+			'price' => '交易价格(元)',
+			'avg_price' => '均价(元)',
+			'volume' => '成交量(股)',
+			'swing' => '振幅(比例)',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);

@@ -24,7 +24,7 @@ class PolicyUtil
 	const EOP_CONTAIN = 9;
 	const EOP_NOT_CONTAIN = 10;
 	
-	public $eopMap = array(
+	public static $eopMap = array(
 			self::EOP_EQ => "=",
 			self::EOP_GE => ">=",
 			self::EOP_GT => ">",
@@ -41,15 +41,15 @@ class PolicyUtil
 	const LOP_AND = 1;
 	const LOP_OR = 2;
 	
-	public $lopMap = array(
+	public static $lopMap = array(
 			self::LOP_AND => "and",
 			self::LOP_OR => "or",
 		);
 
-	// 策略分析器json中字段名称	
-	const POLICY_FIELD_LOGIC = "logic";
-	const POLICY_FIELD_CONDITION = "condition";
-		
+	// 节点类型: 1  父节点 2 叶子节点
+	const NODE_TYPE_PARENT = 1;
+	const NODE_TYPE_LEAF = 2;
+	
 	const CACHE_KEY_VAR_LIST = "policy:var";
 
 	/**
@@ -81,46 +81,95 @@ class PolicyUtil
 	/**
 	 * @desc 加载分析器详细信息
 	 *
-	 * @param int $policyId
+	 * @param int $pid 分析器id
 	 * @return array
 	 */
-	public static function loadPolicy($policyId)
+	public static function loadPolicy($pid)
 	{
-		$policyInfo = PolicyInfo::model()->findByPk($policyId, "status = 'Y'");
-		if (empty($policyInfo))
+		$record = PolicyInfo::model()->findByPk($pid, "status = 'Y'");
+		if (empty($record))
 		{
 			return array();
 		}
 		
-		$policyInfo['expression'] = json_decode($policyInfo['expression'], true);
-		$policyInfo['items'] = self::expandPolicyItem($policyInfo['expression']);
-		
+		$policyInfo = $record->getAttributes();
+		$policyInfo['expression'] = ($policyInfo['root_item'] > 0)? self::getPolicyItemList($pid, $policyInfo['root_item']) : array();		
 		return $policyInfo;
 	}
 	
 	/**
-	 * @desc 把策略表达式中的条件项展开
+	 * @desc 获取策略分析器的所有条件项
 	 *
-	 * @param array $policyExpressionInfo
+	 * @param int $pid
+	 * @param int $rootId
 	 * @return array
 	 */
-	public static function expandPolicyItem($policyExpressionInfo)
-	{
-		$expandInfo = array('logic' => $policyExpressionInfo['logic'], 'items' => array());
+	public static function getPolicyItemList($pid, $rootId)
+	{	
+		$nodes = array();
+		$itemList = array();
 		
-		foreach ($policyExpressionInfo['conditions'] as $condItem)
+		$recordList = PolicyItem::model()->findAll(array(
+									'condition' => "pid = $pid and status = 'Y'",
+									'order' => "id asc",
+							));
+		if (empty($recordList))
 		{
-			if (is_array($condItem)) // 嵌套的子表达式
-			{
-				$expandInfo['items'][] = self::expandPolicyItem($condItem);
+			return array();	
+		}
+		
+		// 遍历节点列表获取父子节点关系					
+		foreach ($recordList as $record)
+		{
+			$itemList[$record->id] = $record->getAttributes();
+			if ($record->parent_id == 0)
+			{				
+				continue;
 			}
-			else // item_id
+			else 
 			{
-				$expandInfo['items'][] = self::loadPolicyItem($condItem);
+				if (!isset($nodes[$record->parent_id]))
+				{
+					$nodes[$record->parent_id] = array();
+				}
+				
+				$nodes[$record->parent_id][] = $record->id;
 			}
 		}
 		
-		return $expandInfo;
+		return self::expandItemNode($rootId, $nodes, $itemList);
+	}
+	
+	/**
+	 * @desc 递归展开某个节点下所有的条件项
+	 *
+	 * @param int $nodeId
+	 * @param array $nodes
+	 * @param array $itemList
+	 * @return array
+	 */
+	public static function expandItemNode($nodeId, $nodes, $itemList)
+	{
+		$data = $itemList[$nodeId];
+		$data['children'] = array();
+
+		if ($nodes[$nodeId])
+		{
+			foreach ($nodes[$nodeId] as $childNodeId)
+			{
+				$childNodeInfo = $itemList[$childNodeId];
+				if (self::NODE_TYPE_LEAF == $childNodeInfo['node_type'])
+				{
+					$data['children'][] = $childNodeInfo;
+				}
+				else 
+				{
+					$data['children'][] = self::expandItemNode($childNodeId, $nodes, $itemList);
+				}
+			}
+		}
+		
+		return $data;
 	}
 	
 	/**
@@ -129,7 +178,7 @@ class PolicyUtil
 	 * @param int $itemId
 	 * @return array
 	 */
-	public static function loadPolicyItem($itemId)
+	public static function loadItem($itemId)
 	{
 		$record = PolicyItem::model()->findByPk($itemId, "status = 'Y'");
 		if (empty($record))
@@ -138,10 +187,44 @@ class PolicyUtil
 		}
 		
 		$itemInfo = $record->getAttributes();
-		unset($itemInfo['create_time'], $itemInfo['status']);
+		unset($itemInfo['update_time'], $itemInfo['create_time'], $itemInfo['status']);
 		
 		return $itemInfo;
 	}
 	
+	/**
+	 * @desc 格式化条件项显示名称
+	 *
+	 * @param array $itemInfo
+	 * @return string
+	 */
+	public static function formatItemLabel($itemInfo)
+	{
+		if ($itemInfo['node_type'] == PolicyUtil::NODE_TYPE_PARENT)
+		{
+			$logicName = self::$lopMap[$itemInfo['logic']];
+			return empty($itemInfo['name'])? $logicName : $itemInfo['name'] . "(" . $logicName . ")";
+		}
+		else
+		{
+			$labelFields = array();
+			
+			$varInfo = PolicyUtil::getVarInfo($itemInfo['vid']);
+			$varName = $varInfo['name'];
+			$eopName = PolicyUtil::$eopMap[$itemInfo['optor']];			
+			if (!empty($itemInfo['param']))
+			{
+				$labelFields[] = $varName . "(" . $itemInfo['param'] . ")";
+			}
+			else 
+			{
+				$labelFields[] = $varName;
+			}
+			$labelFields[] = $eopName;
+			$labelFields[] = $itemInfo['value'];
+			
+			return implode(" ", $labelFields);
+		}
+	}
 }
 ?>

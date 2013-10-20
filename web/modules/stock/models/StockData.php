@@ -62,6 +62,7 @@ class StockData extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
+            'stock' => array(self::BELONGS_TO, 'Stock', 'sid'),
 		);
 	}
 
@@ -72,16 +73,16 @@ class StockData extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => 'Sid',
-			'day' => 'Day',
-			'open_price' => 'Open Price',
-			'high_price' => 'High Price',
-			'low_price' => 'Low Price',
-			'close_price' => 'Close Price',
-			'volume' => 'Volume',
-			'amount' => 'Amount',
-			'vary_price' => 'Vary Price',
-			'vary_portion' => 'Vary Portion',
+			'sid' => '股票名称',
+			'day' => '日期',
+			'open_price' => '开盘价(元)',
+			'high_price' => '最高价(元)',
+			'low_price' => '最低价(元)',
+			'close_price' => '收盘价(元)',
+			'volume' => '成交量(手)',
+			'amount' => '成交金额(万元)',
+			'vary_price' => '涨跌额(元)',
+			'vary_portion' => '涨跌比例',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);

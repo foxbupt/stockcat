@@ -21,11 +21,11 @@ main()
     echo "sid = $sid, type = $type"
 
     sql="select sid, max(close_price), min(close_price) from t_stock_data where status = 'Y'"
+    #sql="select sid, max(high_price), min(low_price) from t_stock_data where status = 'Y'"
     if [ "year" == "$type" ]
     then
         year_date=`date "+%Y0101"`
         sql="$sql and day >= $year_date"
-    field_high=""
     elif [ "month6" == "$type" ]
     then
         start_day=`date "+%Y%m%d" -d "60 day ago"`
@@ -56,6 +56,8 @@ main()
 
         echo "update t_stock set $field_high = $high_value, $field_low = $low_value where id = $sid;" >> $type.sql
     done
+
+    mysql -uwork -pslanissue -Ddb_stockcat < $type.sql
 }
 
 cd ${0%/*}

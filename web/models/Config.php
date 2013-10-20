@@ -65,9 +65,9 @@ class Config extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'name' => 'Name',
-			'key' => 'Key',
-			'value' => 'Value',
+			'name' => '配置项名称',
+			'key' => '键值对标识',
+			'value' => '键值对取值',
 			'status' => 'Status',
 		);
 	}

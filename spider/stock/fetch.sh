@@ -3,16 +3,17 @@
 #author: fox
 #date: 2013-08-01
 
-STOCK_LIST=/home/fox/svnroot/codes/stockcat/web/data/stock_list.txt
+#STOCK_LIST=/home/fox/svnroot/codes/stockcat/web/data/stock_list.txt
 
-if [ $# -lt 2 ]
+if [ $# -lt 3 ]
 then
-    echo "Usage: $0 <start_year> <end_year>"
+    echo "Usage: $0 <filename> <start_year> <end_year>"
     exit
 fi
 
-start_year=$1
-end_year=$2
+filename=$1
+start_year=$2
+end_year=$3
 
 while read line
 do
@@ -24,14 +25,14 @@ do
     while [ $year -le $end_year ]
     do
         start_date="$year-1-1"
-        end_date="$year-8-9"
+        end_date="$year-8-11"
 
-        /usr/local/python/bin/scrapy crawl "ifeng" -a id=$id -a code=$code -a start_date=$start_date -a end_date=$end_date -o data/$filename
+        /usr/bin/scrapy crawl "ifeng" -a id=$id -a code=$code -a start_date=$start_date -a end_date=$end_date -o data/$filename
         echo "op=fetch_history_data id=$id code=$code year=$year start_date=$start_date end_date=$end_date"
         year=`expr $year + 1`
     done
 
     sleep 2
-done < $STOCK_LIST
+done < $filename
 
 echo "finish"

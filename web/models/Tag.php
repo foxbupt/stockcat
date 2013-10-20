@@ -66,10 +66,10 @@ class Tag extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'name' => 'Name',
-			'slug' => 'Slug',
-			'category' => 'Category',
-			'pid' => 'Pid',
+			'name' => '标签名称',
+			'slug' => '标签简写',
+			'category' => '标签分类',
+			'pid' => '父类标签',
 			'status' => 'Status',
 		);
 	}

@@ -1,3 +1,6 @@
 assets/
 protected/runtime/
 themes/classic/views/
+web/config/
+web/runtime/
+spider/stock/data
