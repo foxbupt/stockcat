@@ -1,0 +1,48 @@
+/* 列表页展示标题的样式  */
+h3.title {
+	max-width: 80%;
+	font-size: 18px;	
+}
+
+/* 摘要部分显示更多的a样式  */
+a.show_more {
+	margin-left: 20px;
+}
+
+/* 列表页meta信息所属div样式  */
+li.topic .info_block {
+	margin: 2px 0;
+	line-height: 20px;	
+}
+
+/* 内页meta所属的div样式 */
+.meta-block {
+	height: 25px;
+	text-align: left;
+	border-bottom: #ccc 1px solid;
+	padding-bottom: 5px;
+}
+
+/* 展示meta信息的span样式 */
+span.meta {
+	padding-right: 16px;
+	margin-right: 6px;
+	font-size: 12px;
+}
+
+/* 文章内容div样式 */
+.content {
+	margin-top: 10px;
+	text-indent: 2em;
+}
+
+/* 顶部div h3的样式 */
+.hd h3 {
+	border-bottom: 2px solid #ccc;
+	padding: 0 0 4px;
+}
+
+/* 主体内容div的样式 */
+.bd {
+	padding: 40px 0 0;
+}
