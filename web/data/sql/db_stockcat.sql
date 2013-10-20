@@ -219,7 +219,7 @@ CREATE TABLE IF NOT EXISTS `t_policy_item`
 	
 	PRIMARY KEY(`id`),
 	INDEX `idx_vid` (`vid`),
-	INDEX `idx_pid` (`pid`, `level`),
+	INDEX `idx_pid` (`pid`),
 	INDEX `idx_parent` (`pid`, `parent_id`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
 
