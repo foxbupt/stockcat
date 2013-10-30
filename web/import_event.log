@@ -68,3 +68,10 @@ PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20131021/event_20131
 #2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
 #3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
 #4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()
+PHP Error[2]: file(/home/fox/web/stockcat/spider/stock/data/20131028/event_20131028.json): failed to open stream: No such file or directory
+    in file /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php at line 18
+#0 /home/fox/web/stockcat.git/web/commands/ImportEventCommand.php(18): file()
+#1 /home/fox/web/yii-1.1.13/framework/console/CConsoleCommandRunner.php(67): ImportEventCommand->run()
+#2 /home/fox/web/yii-1.1.13/framework/console/CConsoleApplication.php(91): CConsoleCommandRunner->run()
+#3 /home/fox/web/yii-1.1.13/framework/base/CApplication.php(169): CConsoleApplication->processRequest()
+#4 /home/fox/web/stockcat.git/web/console_entry.php(16): CConsoleApplication->run()

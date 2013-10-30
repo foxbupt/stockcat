@@ -6,3 +6,4 @@ web/runtime/
 spider/stock/data
 server/lib/*.pyc
 web/import_*.log
+web/config/main.php
