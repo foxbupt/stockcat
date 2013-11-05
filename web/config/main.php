@@ -13,6 +13,7 @@ return array(
 
 	// preloading 'log' component
 	'preload'=>array('log'),
+	// 'theme' => 'bootstrap',
 
 	// autoloading model and component classes
 	'import'=>array(
@@ -21,34 +22,35 @@ return array(
 	),
 
 	'modules'=>array(
-        'news', 'stock',
+        'news', 'stock', 'member',
 	),
 
 	// application components
 	'components'=>array(
-        'bootstrap' => array(
-            'class' => 'bootstrap.components.Bootstrap',
-        ),
-
+		'bootstrap' => array(
+			'class' => 'bootstrap.components.Bootstrap',
+		),
 		'user'=>array(
 			// enable cookie-based authentication
 			'allowAutoLogin'=>true,
 		),
 		'urlManager'=>array(
 			'urlFormat'=>'path',
+            'showScriptName' => false,
 			'rules'=>array(
-				'<controller:\w+>/<id:\d+>'=>'<controller>/view',
-				'<controller:\w+>/<action:\w+>/<id:\d+>'=>'<controller>/<action>',
+				'<module:\w+>/<controller:\w+>/<action:\w+>'=>'<module>/<controller>/<action>',
 				'<controller:\w+>/<action:\w+>'=>'<controller>/<action>',
 			),
 		),
+
 		'db'=>array(
 			'connectionString' => 'mysql:host=localhost;dbname=db_stockcat',
 			'emulatePrepare' => true,
-			'username' => 'work',
-			'password' => 'slanissue',
+			'username' => 'root',
+			'password' => '',
 			'charset' => 'utf8',
 		),
+
        'redis' => array(
             'class' => 'RedisCache',
             'servers' => array(
@@ -59,6 +61,7 @@ return array(
                ),    
            ),   
        ),
+
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors
 			'errorAction'=>'site/error',

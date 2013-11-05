@@ -10,186 +10,156 @@ sys.path.append('../../../../server')
 from pyutil.util import safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
+from analyze_helper import AnalyzerHelper
+from stock_util import get_stock_data
+from policy_util import PolicyUtil
 
 class StockAnalyzer:
     sid = 0
     config_info = dict()
+    helper = None
 
     def __init__(self, sid, config_info):
         self.sid = sid
         self.config_info = config_info
+        self.helper = AnalyzerHelper(self.config_info)
+
+        self.db_config = config_info['DB']
         self.db_conn = SqlUtil.get_db(config_info['DB'])
-        
+
     '''
         @desc: 分析该股票是否值得买入卖出
         @param: day int 所在日期
-        @param: policy dict() 分析策略
+        @param: policy_info dict() 分析策略
         @return dict() 分析详情
     '''
-    def evaluate(self, day, policy):
-        pass
-
-    '''
-        @desc: 获取股票基本信息
-        @param: sid int 股票唯一id
-        @return None/dict()
-    '''
-    def get_stock_info(self, sid):
-        #conn = redis.StrictRedis(self.config_info['REDIS']['host'], self.config_info['REDIS']['port'])
-        #stock_key = "stock:info-" + str(sid)
-
-        #cache_info = conn.get(stock_key)
-        #if cache_info is None:
-
-        sql = "select id, type, code, name, pinyin, ecode, alias, company, business, capital, out_capital, profit, assets, \
-                hist_high, hist_low, year_high, year_low, month6_high, \
-                month6_low, month3_high, month3_low from t_stock where id = " + str(sid)
-        try:
-            record_list = self.db_conn.query_sql(sql)
-        except Exception as e:
-            print e
+    def evaluate(self, day, policy_info):
+        print day
+        if not self.prepare(day, policy_info):
             return None
 
-        if len(record_list) < 1:
-            return None
-
-        stock_info = record_list[0]
-        #conn.set(stock_key, json.dumps(stock_info))
-        return stock_info
-
-        #stock_info = json.loads(cache_info)
-        ##print stock_info
-        #return stock_info
+        matched = self.check(day, policy_info)
+        return matched
 
     '''
-        @desc: 获取股票指定日期范围[start_day, end_day]的历史数据
-        @param: sid int 
-        @param: start_day int
-        @param: end_day int
-        @return []
+        @desc: 准备分析需要的数据
+        @param: day int
+        @param: policy_info dict
+        @return bool
     '''
-    def get_histdata_range(self, sid, start_day, end_day):
-        sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
-                vary_price, vary_portion from t_stock_data where sid = {sid} and \
-                day >= {start_day} and day <= {end_day} order by day desc".format(sid=sid, start_day=start_day, end_day=end_day)
-        print sql
-        record_list = []
-
-        try:
-            record_list = self.db_conn.query_sql(sql)
-        except Exception as e:
-            return None
-
-        return record_list
-
-    '''
-        @desc: 获取股票从日期往前指定个数交易日的数据
-        @param: sid int 
-        @param: end_day int
-        @param: limit int
-        @return []
-    '''
-    def get_histdata_limit(self, sid, end_day, limit):
-        sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
-                vary_price, vary_portion from t_stock_data where sid = {sid} and \
-                day <= {end_day} order by day limit {limit}".format(sid=sid, end_day=end_day, limit=limit)
-        print sql
-        record_list = []
-
-        try:
-            record_list = self.db_conn.query_sql(sql)
-        except Exception as e:
-            return None
-
-        return record_list
-
-    '''
-        @desc: 根据指定日期区间内的历史数据列表来判断股票价格近期趋势
-               默认为10个交易日, 5%为设定比例, >= 5% 为上涨, <= -%5% 为下降, (-5%, 5%)为震荡
-        @param: data_list list
-        @param: vary_threshold float 设定涨幅比例
-        @return: dict('trend', 'wave', 'vary_portion') trend 趋势, wave 波段, vary_portion 涨跌幅
-                trend/wave: 2 震荡, 3 上升, 1 下降
-    '''
-    def get_trend(self, data_list, vary_threshold):
-        first_close_price = float(data_list[0]['close_price']) 
-        last_close_price = float(data_list[-1]['close_price']) 
-        close_price_list = [ float(day_info['close_price']) for day_info in data_list ] 
-
-        # 日期区间内涨幅
-        vary_portion = (first_close_price - last_close_price) / last_close_price * 100
-        min_close_price = min(close_price_list)
-        max_close_price = max(close_price_list)
-
-        # 日期区间内最低价/最高价出现的日期, 多个最高/最低价时, 选择离当前日期最近的一个
-        min_index = -1
-        max_index = - 1
-        for index, day_info in enumerate(data_list):
-            if float(day_info['close_price']) == min_close_price and min_index < 0:
-                min_index = index
-
-            if float(day_info['close_price']) == max_close_price and max_index < 0:
-                max_index = index
-
-        #vary_portion_list = [ float(data_info['vary_portion']) for day_info in data_list ]
-        trend_info = {'vary_portion': vary_portion}
-        
-        # 涨幅超过最大比例
-        if vary_portion >= vary_threshold:
-            trend_info['trend'] = 3
-            if max_index > 0 and min_index > max_index: 
-                trend_info['wave'] = 1
-            else:
-                trend_info['wave'] = 3
-
-        # 跌幅超过最大比例         
-        elif vary_portion <= -1 * vary_threshold:
-            trend_info['trend'] = 1
-            if min_index > 0 and max_index > min_index:
-                trend_info['wave'] = 3
-            else:
-                trend_info['wave'] = 1
-
-        # 涨幅位于(-threshold, threashold) 比例
-        else:
-            trend_info['trend'] = 2
-            if max_index == 0 or (min_index > 0 and max_index > min_index):
-                trend_info['wave'] = 3
-            elif min_index == 0 or (max_index > 0 and min_index > max_index):
-                trend_info['wave'] = 1
-
-        return trend_info
-
-    # 添加股票到股票池中, day为当前添加的日期, 一周内同一支股票仅添加一次
-    def add_stock_pool(self, sid, day, info):
-        cur_day = str(day)
-        current_time = datetime.datetime(int(cur_day[0:4]), int(cur_day[4:6]), int(cur_day[6:8]))
-        # 本周一
-        start_time = current_time + datetime.timedelta(days = -1 * (current_time.isoweekday() - 1))
-        start_day = '{0:%Y%m%d}'.format(start_time)
-
-        sql = "select id from t_stock_pool where sid={sid} and status = 'Y' and day >= {start_day} and day < {end_day}"\
-                .format(sid=sid, start_day=start_day, end_day=day)
-        print sql
-
-        try:
-            record_list = self.db_conn.query_sql(sql)
-        except Exception as e:
-            print e
+    def prepare(self, day, policy_info):
+        self.stock_info = self.helper.get_stock_info(self.sid)
+        if self.stock_info is None:
             return False
-        
-        if len(record_list) >= 1:
-            return True
 
-        info['add_time'] = time.mktime( datetime.datetime.now().timetuple() )
-        info['status'] = 'Y'
-
-        sql = SqlUtil.create_insert_sql("t_stock_pool", info)
-        print sql
-        try:
-            self.db_conn.query_sql(sql, True)
-        except Exception as e:
-            print e
+        # 获取当天股票的总览数据, 若当天停牌无数据, 则不需要计算
+        self.stock_data = get_stock_data(self.db_config, day, self.sid)
+        if not self.stock_data:
             return False
+
+        # TODO: 获取当天的资金流向
+
+        # 获取股票符合的标签列表
+        self.stock_var = self.helper.get_stock_varlist(self.sid, day)
+
+        # 获取数据字典
+        self.data_map = self.make_datamap()
+
+        print self.stock_info
+        print self.stock_data
+        print self.stock_var
+        print self.data_map
 
         return True
+
+    '''
+        @desc: 检查股票数据是否符合指定分析器条件
+        @param: day int 分析日期
+        @param policy_info dict 分析策略
+        @return bool
+    '''
+    def check(self, day, policy_info):
+        condition = policy_info['condition']
+        items = policy_info['items']
+        self.var_list = PolicyUtil.get_varlist(self.db_config)
+        #print self.var_list
+
+        return self.check_condition(day, condition, items)
+
+    '''
+        @desc: 检查某个条件树节点的逻辑结果
+        @param: day int
+        @param: condition dict
+        @param: items dict
+        @return: bool
+    '''
+    def check_condition(self, day, condition, items):
+        item_id = condition['item_id']
+        logic = int(condition['logic'])
+        item_info = items[item_id]
+        print item_id, logic, item_info['node_type']
+
+        # 父母节点
+        if 1 == int(item_info['node_type']):
+            result = True if 1 == logic else False
+            for child_node in condition['children']:
+                child_iteminfo = items[child_node['item_id']]
+                #print logic, child_node['item_id'], child_iteminfo['node_type']
+                if 1 == int(child_iteminfo['node_type']):
+                    child_result = self.check_condition(day, child_node, items)
+                else:
+                    child_result = PolicyUtil.check_item(day, child_iteminfo, self.var_list, self.data_map, self.stock_var)
+                    print logic, child_node['item_id'], child_result
+
+                if 1 == logic:  # and
+                    result = result and child_result
+                    if result is False:
+                        return result
+                else: # or
+                    result = result or child_result
+                    if result is True:
+                        return result
+            return result
+
+        # 叶子节点
+        else:
+            return PolicyUtil.check_item(day, item_info, self.var_list, self.data_map, self.stock_var)
+
+    '''
+        @desc: 组装变量数据字典
+        @return dict
+    '''
+    def make_datamap(self):
+        datamap = dict()
+
+        base_keys = ['code', 'name', 'capital', 'out_capital', 'pinyin', 'ecode', 'profit', 'assets', 'hist_high', 'hist_low', 'year_high', 'year_low']
+        for key in base_keys:
+            datamap[key] = self.stock_info[key]
+        datamap['day60_high'] = self.stock_info['month6_high']
+        datamap['day60_low'] = self.stock_info['month6_low']
+        datamap['day30_high'] = self.stock_info['month3_high']
+        datamap['day30_low'] = self.stock_info['month3_low']
+
+        day_keys = ['open_price', 'close_price', 'high_price', 'low_price', 'volume', 'amount', 'vary_price', 'vary_portion']
+        for key in day_keys:
+            datamap[key] = self.stock_data[key]
+        datamap["cur_price"] = cur_price = float(self.stock_data["close_price"])
+        # 换手率 = 成交量(手) / 流通股本(亿股) * 100
+        datamap["exchange_portion"] = int(self.stock_data['volume']) / float(self.stock_info['out_capital']) / 10000
+        datamap["capitalisation"] = cur_price * float(self.stock_info['capital'])
+        datamap["out_capitalisation"] = cur_price * float(self.stock_info['out_capital'])
+
+        # 计算市盈率和 市净率, TODO: 后续计算动态市盈率
+        profit = float(self.stock_info['profit'])
+        if profit <= 0:
+            datamap['pe'] = 0
+        else:
+            datamap['pe'] = int(cur_price / profit)
+
+        asset = float(self.stock_info['assets'])
+        if asset <= 0:
+            datamap['pb'] = 0
+        else:
+            datamap['pb'] = float(cur_price / asset)
+
+        return datamap

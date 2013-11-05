@@ -1,6 +1,6 @@
 <?php
 
-Yii::import('common.components.BevaUtil');
+Yii::import('application.components.BevaUtil');
 
 /*
  * @desc 输出统计日志和错误日志, 格式为[op|error]=msg key=value key=value
