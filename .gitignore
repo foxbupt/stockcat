@@ -2,8 +2,9 @@ assets/
 protected/runtime/
 themes/classic/views/
 web/config/
-web/runtime/
+web/runtime/*
 spider/stock/data
 server/lib/*.pyc
 web/import_*.log
-web/config/main.php
+web/config/*.php
+
