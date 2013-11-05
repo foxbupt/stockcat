@@ -1,10 +1,10 @@
-assets/
-protected/runtime/
+assets/*
 themes/classic/views/
 web/config/
 web/runtime/*
-spider/stock/data
+spider/stock/data/*
 server/lib/*.pyc
+server/lib/config.ini
 web/import_*.log
 web/config/*.php
 
