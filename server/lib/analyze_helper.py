@@ -63,7 +63,34 @@ class AnalyzerHelper:
         if isinstance(day, tuple):
             sql = "select id, sid, vid, day, cont, sum from t_stock_var where sid = {sid} and day >= {start} and day < {end} and status = 'Y'".format(sid=sid, start=day[0], end=day[1])
         else:
-            sql = "select id, sid, vid, day, cont, sum from t_stock_var where sid = {sid} and day = {day}".format(sid=sid, day=day)
+            sql = "select id, sid, vid, day, cont, sum from t_stock_var where sid = {sid} and day = {day} and status = 'Y'".format(sid=sid, day=day)
+        print sql
+
+        try:
+            record_list = self.db_conn.query_sql(sql)
+        except Exception as e:
+            return None
+
+        return record_list
+
+    '''
+        @desc: 获取股票近期的波谷波峰
+        @param: sid int
+        @param: range mixed int表示指定日期, tuple表示一段范围(start, end), 其中[start, end]
+        @param: type int 数据类型: 0 全部 1 低点 2 高点
+        @return list
+    '''
+    def get_price_threshold(self, sid, range, type = 0):
+        if isinstance(range, tuple):
+            sql = "select id, sid, day, price, low_type, high_type from t_stock_price_threshold where sid = {sid} and day >= {start} and day < {end} and status = 'Y'".format(sid=sid, start=range[0], end=range[1])
+        else:
+            sql = "select id, sid, day, price, low_type, high_type from t_stock_price_threshold where sid = {sid} and day <= {day} and status = 'Y'".format(sid=sid, day=range)
+
+        if 1 == type:
+            sql = sql + " and low_type > 0"
+        elif 2 == type:
+            sql = sql + " and high_type > 0"
+        sql = sql + " order by day desc"
         print sql
 
         try:

@@ -152,10 +152,11 @@ class PolicyUtil:
         @param: var_list dict
         @param: data_map dict
         @param: stock_var list
+        @param: hist_data list
         @return bool
     '''
     @staticmethod
-    def check_item(day, item_info, var_list, data_map, stock_var):
+    def check_item(day, item_info, var_list, data_map, stock_var, hist_data):
         #print item_info
         vid = int(item_info['vid'])
         optor = int(item_info['optor'])
@@ -166,6 +167,8 @@ class PolicyUtil:
         item_type = int(item_var_info['type'])
 
         result = False
+
+        # 基本字段, 直接通过data_map匹配
         if item_type == 1:
             if vcode in data_map:
                 stock_value = data_map[vcode]
@@ -174,13 +177,28 @@ class PolicyUtil:
             else:
                 print "1111"
 
-        elif 4 == item_type:    # 带参数的变量, 需要通过stock_var来匹配, value对应sum, param对应cont
+        # 阶段连续累计数据, 通过stock_var匹配, value对应sum, param对应cont
+        elif 3 == item_type:    
             for record in stock_var:
                 if int(record['vid']) == vid: # 暂时只考虑param为简单数值的情况
                     result = PolicyUtil.evaluta_expression(record['sum'], optor, item_info['value'])
-                    if result and item_info['param']:
-                        result = PolicyUtil.evaluta_expression(record['cont'], optor, item_info['param'])
+                    if result and param:
+                        result = PolicyUtil.evaluta_expression(record['cont'], optor, param)
                     break
+
+        # 历史范围数据, 通过hist_data获取字段值匹配: param为最近交易日天数, value为匹配值
+        elif 4 == item_type:
+            vcode_parts = vcode.split(":")
+            if vcode_parts[0] == "range":
+                (field_name, function) = vcode_parts[1].split(".")
+                print field_name, function
+
+                # 缺省为最近5个交易日
+                past_interval = int(param) if param else 5
+                past_data = hist_data[0 : past_interval]
+                field_value = PolicyUtil.get_range_value(past_data, field_name, function)
+                result = PolicyUtil.evaluate_expression(field_value, optor, item_info['value'])
+
 
         return result
 
@@ -226,3 +244,26 @@ class PolicyUtil:
             return False
 
         return False
+
+    '''
+        @desc: 对列表范围数据的字段调用函数
+        @param: range_data list
+        @param: field_name string
+        @param: function_name string
+        @return: float
+    '''
+    def get_range_value(range_data, field_name, function_name):
+        data_list = [ float(data_unit[field_name]) for data_unit in range_date ] 
+        if not data_list:
+            return 0.0
+
+        if "min" == function_name:
+            return min(data_list)
+        elif "max" == function_name:
+            return max(data_list)
+        elif "sum" == function_name:
+            return sum(data_list)
+        elif "avg" == function_name:
+            return sum(data_list) / len(data_list)
+
+

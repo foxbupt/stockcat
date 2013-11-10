@@ -115,35 +115,35 @@ if __name__ == "__main__":
         vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, need_refresh)
 
         #print len(vary_stock_list)
-        analyze_stock_set = set()
-        for sid, vary_info in vary_stock_list.items():
-            analyze_stock_set.add(sid)
+        #analyze_stock_set = set()
+        #for sid, vary_info in vary_stock_list.items():
+        #    analyze_stock_set.add(sid)
 
-        # 连续3日上涨且涨幅在5%以内的股票
-        cont_rise_stock = get_cont_stock(db_config, str(day), 3, (2, 5))
-        print cont_rise_stock
-        for sid in cont_rise_stock:
-            analyze_stock_set.add(sid)
+        ## 连续3日上涨且涨幅在5%以内的股票
+        #cont_rise_stock = get_cont_stock(db_config, str(day), 3, (2, 5))
+        #print cont_rise_stock
+        #for sid in cont_rise_stock:
+        #    analyze_stock_set.add(sid)
 
-        # 连续3日下跌且跌幅在10%以内的股票
-        cont_fall_stock = get_cont_stock(db_config, str(day), 3, (-10, -3), False)
-        print cont_fall_stock
-        for sid in cont_fall_stock:
-            analyze_stock_set.add(sid)
+        ## 连续3日下跌且跌幅在10%以内的股票
+        #cont_fall_stock = get_cont_stock(db_config, str(day), 3, (-10, -3), False)
+        #print cont_fall_stock
+        #for sid in cont_fall_stock:
+        #    analyze_stock_set.add(sid)
 
-        print len(analyze_stock_set)
-        for sid in analyze_stock_set:
-            policy = dict()
-            analyzer = StockBuyAnalyzer(sid, config_info)
+        #print len(analyze_stock_set)
+        #for sid in analyze_stock_set:
+        #    policy = dict()
+        #    analyzer = StockBuyAnalyzer(sid, config_info)
 
-            analyze_info = analyzer.evaluate(day, policy)
-            if analyze_info is None:
-                print "not suitable, sid=" + sid
-                continue
-            else:
-                #analyze_info['high_index'] = vary_info['high_index']
-                #analyze_info['low_index'] = vary_info['low_index']
-                analyze_info['name'] = stock_list[sid]['name']
-                analyze_info['code'] = stock_list[sid]['code']
+        #    analyze_info = analyzer.evaluate(day, policy)
+        #    if analyze_info is None:
+        #        print "not suitable, sid=" + sid
+        #        continue
+        #    else:
+        #        #analyze_info['high_index'] = vary_info['high_index']
+        #        #analyze_info['low_index'] = vary_info['low_index']
+        #        analyze_info['name'] = stock_list[sid]['name']
+        #        analyze_info['code'] = stock_list[sid]['code']
 
-                print format_log("analyze_stock_info", analyze_info)
+        #        print format_log("analyze_stock_info", analyze_info)
