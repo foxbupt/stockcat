@@ -8,6 +8,7 @@ import sys, string
 sys.path.append('../../../../server')
 from pyutil.util import safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
+from stock_util import get_past_openday
 
 class PolicyUtil:
     '''
@@ -170,9 +171,14 @@ class PolicyUtil:
 
         # 基本字段, 直接通过data_map匹配
         if item_type == 1:
-            if vcode in data_map:
+            if vcode == "last_low_day" or vcode = "last_high_day":
+                past_interval = int(item_info['value'])
+                past_day = get_past_openday(day, past_interval)
+                result = PolicyUtil.evaluate_expression(past_day, optor, data_map[vcode])
+
+            elif vcode in data_map:
                 stock_value = data_map[vcode]
-                result = PolicyUtil.evaluta_expression(stock_value, optor, item_info['value'])
+                result = PolicyUtil.evaluate_expression(stock_value, optor, item_info['value'])
                 print vid, vcode, param, stock_value, optor, item_info['value'], result
             else:
                 print "1111"
@@ -181,9 +187,9 @@ class PolicyUtil:
         elif 3 == item_type:    
             for record in stock_var:
                 if int(record['vid']) == vid: # 暂时只考虑param为简单数值的情况
-                    result = PolicyUtil.evaluta_expression(record['sum'], optor, item_info['value'])
+                    result = PolicyUtil.evaluate_expression(record['sum'], optor, item_info['value'])
                     if result and param:
-                        result = PolicyUtil.evaluta_expression(record['cont'], optor, param)
+                        result = PolicyUtil.evaluate_expression(record['cont'], optor, param)
                     break
 
         # 历史范围数据, 通过hist_data获取字段值匹配: param为最近交易日天数, value为匹配值
@@ -210,7 +216,7 @@ class PolicyUtil:
         @return bool
     '''
     @staticmethod
-    def evaluta_expression(lval, optor, rval):
+    def evaluate_expression(lval, optor, rval):
         try:
             if 1 == optor: # ==
                 return float(lval) == float(rval)
