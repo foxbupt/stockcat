@@ -73,7 +73,7 @@ class StockFundItem(Item):
     amount = Field()
     vary_portion = Field()
 
-class StockEarningItem(item):
+class StockEarningItem(Item):
     code = Field()
     name = Field()
     type = Field()
