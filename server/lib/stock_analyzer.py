@@ -181,11 +181,11 @@ class StockAnalyzer:
         for key in common_prefix:
             low_prefix = key + "_low"
             datamap[low_prefix + "_vary_price"] = cur_price - float(datamap[low_prefix])
-            datamap[low_prefix + "_vary_portion"] = (cur_price - float(datamap[low_prefix]) / float(datamap[low_prefix]) * 100
+            datamap[low_prefix + "_vary_portion"] = (cur_price - float(datamap[low_prefix])) / float(datamap[low_prefix]) * 100
 
             high_prefix = key + "_high"
             datamap[high_prefix + "_vary_price"] = float(datamap[high_prefix]) - cur_price
-            datamap[high_prefix + "_vary_portion"] = (float(datamap[high_prefix] - cur_price) / cur_price * 100
+            datamap[high_prefix + "_vary_portion"] = (float(datamap[high_prefix]) - cur_price) / cur_price * 100
 
         # 获取股票价格最近的高点/低点
         match_low = False
