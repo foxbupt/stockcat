@@ -25,7 +25,7 @@ class ImportStockCommand extends CConsoleCommand
 		foreach ($lines as $line)
 		{
 			$stockInfo = json_decode(trim($line), true);
-			// print_r($stockInfo);
+			print_r($stockInfo);
 			
 			$result = $this->importStock($stockInfo);
 			echo "op=import_stock code=" . $stockInfo['code'] . " name=" . $stockInfo['name'] . " result=" . ($result? 1 : 0) . "\n";
@@ -40,7 +40,19 @@ class ImportStockCommand extends CConsoleCommand
 		if (empty($stockRecord))
 		{
 			echo "op=stock_record_nonexist code=" . $stockInfo['code'] . "\n";
-			return false;
+
+            $stockRecord = new Stock();
+            $stockRecord->type = 1;
+            $stockRecord->code = $stockInfo['code'];
+            $stockRecord->name = $stockInfo['name'];
+            $stockRecord->company = $stockInfo['company'];
+            $stockRecord->business = $stockInfo['business'];
+            $stockRecord->profit = $stockInfo['profit'];
+            $stockRecord->assets = $stockInfo['assets'];
+            $stockRecord->capital = $stockInfo['captial'];
+            $stockRecord->out_capital = $stockInfo['out_captial'];
+
+            $stockRecord->save();
 		}
 		
 		// 更新股票信息
