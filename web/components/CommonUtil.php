@@ -24,8 +24,11 @@ class CommonUtil
 	
 	// 全年节假日配置
 	static $holidays = array(
-				array('start' => 20130919, 'end' => 20130921),
-				array('start' => 20131001, 'end' => 20131007),
+                20140407,
+                20140602,
+                20140908,
+				array('start' => 20140501, 'end' => 20140502),
+				array('start' => 20141001, 'end' => 20141007),
 			);
 	 
 	/**
@@ -133,7 +136,7 @@ class CommonUtil
 	public static function isMarketOpen($day)
 	{
 		// 判断是否为周六或周日
-		$dateinfo = getdate(strtotime(str($day)));
+		$dateinfo = getdate(strtotime($day));
 		if ((0 == $dateinfo['wday']) || (6 == $dateinfo['wday']))	
 		{
 			return false;
@@ -149,6 +152,38 @@ class CommonUtil
 		
 		return true;
 	}
+
+    /**
+     * @desc: 获取当前日期最近的第几个交易日
+     * @param: int $day
+     * @param: int $offset
+     * @return int
+     */
+    public static function getPastOpenDay($day, $offset)
+    {
+        $step = 1;
+        // 含当天
+        $openCount = 1;
+        $timestamp = strtotime($day);    
+    
+        while (true)
+        {
+            $lastTimestamp = strtotime("-${step} days", $timestamp); 
+            $lastDay = date('Ymd', $lastTimestamp);
+            $step += 1;
+
+            if (self::isMarketOpen($lastDay))
+            {
+                $openCount += 1;
+                if ($openCount == $offset)
+                {
+                    return $lastDay; 
+                }
+            }
+        }
+
+        return 0;
+    }
 }
 	
 ?>

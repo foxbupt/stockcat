@@ -72,11 +72,12 @@ class StockUtil
 	{
 		$cacheKey = StockUtil::CACHE_KEY_STOCK_INFO . strval($sid);
 		$cacheValue = Yii::app()->redis->get($cacheKey);
+        $cacheValue = false;
 
 		if (!$cacheValue)
 		{
 			$stockInfo = array();
-			$record = Stock::model()->findAllByPk($sid, "status = 'Y'");
+			$record = Stock::model()->findByPk($sid, "status = 'Y'");
 			
 			if ($record)
 			{

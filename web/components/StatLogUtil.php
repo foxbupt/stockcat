@@ -1,6 +1,6 @@
 <?php
 
-Yii::import('application.components.BevaUtil');
+Yii::import('common.components.BevaUtil');
 
 /*
  * @desc 输出统计日志和错误日志, 格式为[op|error]=msg key=value key=value
@@ -106,5 +106,44 @@ class StatLogUtil
 		
 		StatLogUtil::log('system_error', $error, 'error');
 	}
+
+    /*
+     * @desc: 把数组转化为日志字符串
+     * @param: info array
+     * @return string
+     */
+    public static function array2log($info)
+    {
+        $list = array();
+        foreach ($info as $key => $value)
+        {
+            $fieldStr = $key . self::PAIR_DELIM;
+            $valueStr = "";
+
+            if (is_array($value))
+            {
+                if ($value == array_values($value))
+                {
+                   $valueStr = "[" . implode(",", $value) . "]"; 
+                }
+                else
+                {
+                    $valueStr = "{" . self::array2log($value) . "}";
+                }
+            }
+            else if (is_float($value))
+            {
+                $valueStr = sprintf("%.3f", $value);
+            }
+            else
+            {
+                $valueStr = strval($value);
+            }
+
+            $list[] = $fieldStr . $valueStr;
+        }
+
+        return implode(self::SPLIT_SEPARATOR, $list); 
+    }
 }
 ?>
