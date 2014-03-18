@@ -9,7 +9,7 @@ sys.path.append('../../../../server')
 from pyutil.sqlutil import SqlUtil, SqlConn
 
 # 假期定义
-holidays = [{'start': 20130919, 'end': 20130921}, {'start':20131001, 'end':20131007}]
+holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141003}, {'start':20141006, 'end':20141007}]
 
 # 判断当天是否开市
 def is_market_open(day):
@@ -81,7 +81,7 @@ def get_stock_list(db_config, type = 0):
 
     stock_list = dict()
     for stock_info in record_list:
-        stock_list[stock_info['id']] = stock_info
+        stock_list[int(stock_info['id'])] = stock_info
 
     return stock_list
 

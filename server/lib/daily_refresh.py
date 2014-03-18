@@ -108,7 +108,7 @@ if __name__ == "__main__":
     print db_config, redis_config
 
     today_data_list = get_stock_data(db_config, day)
-    #print today_data_list
+    print len(today_data_list)
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
