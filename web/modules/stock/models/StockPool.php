@@ -10,11 +10,14 @@
  * @property integer $day
  * @property integer $trend
  * @property integer $wave
+ * @property integer $start_day
+ * @property integer $cont_days
  * @property string $current_price
- * @property string $low_price
- * @property string $high_price
+ * @property string $sum_price_vary_amount
+ * @property string $sum_price_vary_portion
+ * @property string $max_volume_vary_portion
  * @property integer $score
- * @property integer $create_time
+ * @property integer $add_time
  * @property string $status
  */
 class StockPool extends CActiveRecord
@@ -44,12 +47,13 @@ class StockPool extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('sid, day, trend, wave, score, create_time', 'numerical', 'integerOnly'=>true),
-			array('current_price, low_price, high_price', 'length', 'max'=>6),
+			array('sid, day, trend, wave, start_day, cont_days, score, add_time', 'numerical', 'integerOnly'=>true),
+			array('name', 'length', 'max'=>32),
+			array('current_price, sum_price_vary_amount, sum_price_vary_portion, max_volume_vary_portion', 'length', 'max'=>6),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, day, trend, wave, current_price, low_price, high_price, score, create_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, name, day, trend, wave, start_day, cont_days, current_price, sum_price_vary_amount, sum_price_vary_portion, max_volume_vary_portion, score, add_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -73,15 +77,19 @@ class StockPool extends CActiveRecord
 		return array(
 			'id' => 'Id',
 			'sid' => '代码',
+			'name' => '名称',
 			'day' => '日期',
-			'trend' => '趋势',
-			'wave' => '波段',
-			'current_price' => '当前价格',
-			'low_price' => '买入最低价',
-			'high_price' => '买入最高价',
+			'trend' => '整体趋势',
+			'wave' => '当前波段',
+			'start_day' => '起始日期',
+			'cont_days' => '持续天数',
+			'current_price' => '当日收盘价',
+			'sum_price_vary_amount' => '价格累计金额',
+			'sum_price_vary_portion' => '价格累计幅度',
+			'max_volume_vary_portion' => '最大成交量变化',
 			'score' => '评分',
-			'create_time' => '创建时间',
-			'status' => '有效状态',
+			'add_time' => '添加时间',
+			'status' => 'Status',
 		);
 	}
 
@@ -100,21 +108,29 @@ class StockPool extends CActiveRecord
 
 		$criteria->compare('sid',$this->sid);
 
+		$criteria->compare('name',$this->name,true);
+
 		$criteria->compare('day',$this->day);
 
 		$criteria->compare('trend',$this->trend);
 
 		$criteria->compare('wave',$this->wave);
 
+		$criteria->compare('start_day',$this->start_day);
+
+		$criteria->compare('cont_days',$this->cont_days);
+
 		$criteria->compare('current_price',$this->current_price,true);
 
-		$criteria->compare('low_price',$this->low_price,true);
+		$criteria->compare('sum_price_vary_amount',$this->sum_price_vary_amount,true);
 
-		$criteria->compare('high_price',$this->high_price,true);
+		$criteria->compare('sum_price_vary_portion',$this->sum_price_vary_portion,true);
+
+		$criteria->compare('max_volume_vary_portion',$this->max_volume_vary_portion,true);
 
 		$criteria->compare('score',$this->score);
 
-		$criteria->compare('create_time',$this->create_time);
+		$criteria->compare('add_time',$this->add_time);
 
 		$criteria->compare('status',$this->status,true);
 
