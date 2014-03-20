@@ -21,7 +21,6 @@ class AnalyzeCommand extends CConsoleCommand
         var_dump($startDay, $interval, $day);
 
         $stockMap = StockUtil::getStockMap();
-        $matchList = array();
 
         foreach ($stockMap as $scode => $sid)
         {
@@ -35,8 +34,8 @@ class AnalyzeCommand extends CConsoleCommand
             $result = self::filter($sid, $day, $interval, $stockInfo, $stockDataList);
             if ($result)
             {
-                $matchList[] = array('stock' => $stockInfo, 'filter' => $result);
-                echo "op=stock_match_succ sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
+                self::addStockPool($day, $stockInfo, $result);
+                echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
             }
         }
 
@@ -188,5 +187,26 @@ class AnalyzeCommand extends CConsoleCommand
         }
         
         return $parts;
+    }
+
+    // 添加到股票池中
+    public static function addStockPool($day, $stockInfo, $filterInfo)
+    {
+        $record = new StockPool();
+
+        $record->sid = $stockInfo['id'];
+        $record->name = $stockInfo['name'];
+        $record->day = $day;
+        $record->wave = 3;
+        $record->start_day = $filterInfo['start_day'];
+        $record->cont_days = $filterInfo['cont_rise_count'];
+        $record->current_price = $filterInfo['close_price'];
+        $record->sum_price_vary_amount = $filterInfo['cont_vary_price'];
+        $record->sum_price_vary_portion = $filterInfo['cont_vary_portion'];
+        $record->max_volume_vary_portion = $filterInfo['cont_vary_portion'];
+        $record->add_time = time();
+        $record->status = 'Y';
+
+        return $record->save();
     }
 }
