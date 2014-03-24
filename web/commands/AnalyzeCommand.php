@@ -74,11 +74,11 @@ class AnalyzeCommand extends CConsoleCommand
 			return FALSE;
 		}
 		
-        // 流通市值 = 流通股(亿股) * close_price > 10 亿元
+        // 流通市值 = 流通股(亿股) * close_price > 20 亿元
         $close = floatval($stockDataList[$count-1]['close_price']);
         $out_capitalisation = $close * floatval($stockInfo['out_capital']); 
         // var_dump($close, $out_capitalisation);
-        if ($out_capitalisation <= 10)
+        if ($out_capitalisation <= 20)
         {
             $logInfo['reason'] = "low_out_capitalisation";
             $logInfo['out_cap'] = $out_capitalisation;
@@ -150,6 +150,19 @@ class AnalyzeCommand extends CConsoleCommand
         // 成交量放大最大比例
         $volume_scale = max($volume_vary_portion_list);
 		
+        // 价格连续上涨幅度 < 3% 或 成交量放大比例 < 1.5, 直接忽略
+        if ($cont_vary_portion < 3) || ($volume_scale < 1.5))
+        {
+            $logInfo['reason'] = "low_cont_vary_portion_or_volume_scale";
+            $logInfo['cont_rise_count'] = $cont_rise_count;
+            $logInfo['cont_vary_portion'] = $cont_vary_portion;
+            $logInfo['volume_scale'] = $volume_scale;
+            echo StatLogUtil::array2log($logInfo) . "\n";
+
+			return FALSE;
+
+        }
+
 		return array(
 				'start_day' => $stockDataList[$cont_start_index]['day'],
 				'end_day' => $stockDataList[$cont_end_index - 1]['day'],
