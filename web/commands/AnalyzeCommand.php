@@ -36,6 +36,7 @@ class AnalyzeCommand extends CConsoleCommand
             {
                 self::addStockPool($day, $stockInfo, $result);
                 echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
+                return;
             }
         }
 
@@ -216,10 +217,12 @@ class AnalyzeCommand extends CConsoleCommand
         $record->current_price = $filterInfo['close_price'];
         $record->sum_price_vary_amount = $filterInfo['cont_vary_price'];
         $record->sum_price_vary_portion = $filterInfo['cont_vary_portion'];
-        $record->max_volume_vary_portion = $filterInfo['volume_scale'];
+        $record->max_volume_vary_portion = sprintf("%.2f", $filterInfo['volume_scale']);
         $record->add_time = time();
         $record->status = 'Y';
 
-        return $record->save();
+        $result = $record->save();
+        // var_dump($record->getErrors());
+        return $result;
     }
 }
