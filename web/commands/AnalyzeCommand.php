@@ -216,7 +216,7 @@ class AnalyzeCommand extends CConsoleCommand
         $record->current_price = $filterInfo['close_price'];
         $record->sum_price_vary_amount = $filterInfo['cont_vary_price'];
         $record->sum_price_vary_portion = $filterInfo['cont_vary_portion'];
-        $record->max_volume_vary_portion = $filterInfo['cont_vary_portion'];
+        $record->max_volume_vary_portion = $filterInfo['volume_scale'];
         $record->add_time = time();
         $record->status = 'Y';
 
