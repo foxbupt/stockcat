@@ -151,7 +151,7 @@ class AnalyzeCommand extends CConsoleCommand
         $volume_scale = max($volume_vary_portion_list);
 		
         // 价格连续上涨幅度 < 3% 或 成交量放大比例 < 1.5, 直接忽略
-        if ($cont_vary_portion < 3) || ($volume_scale < 1.5))
+        if (($cont_vary_portion < 3) || ($volume_scale < 1.5))
         {
             $logInfo['reason'] = "low_cont_vary_portion_or_volume_scale";
             $logInfo['cont_rise_count'] = $cont_rise_count;
