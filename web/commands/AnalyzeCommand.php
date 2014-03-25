@@ -36,7 +36,6 @@ class AnalyzeCommand extends CConsoleCommand
             {
                 self::addStockPool($day, $stockInfo, $result);
                 echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
-                return;
             }
         }
 
