@@ -138,6 +138,16 @@ class AnalyzeCommand extends CConsoleCommand
             echo StatLogUtil::array2log($logInfo) . "\n";
 			return FALSE;
 		}	
+
+        // 连续上涨结束日期 < 当前指定日期, 表明这条记录已插入
+        if ($stockDataList[$cont_end_index - 1]['day'] < $day) 
+        {
+            $logInfo['reason'] = "cont_rise_end";
+            $logInfo['cont_rise_count'] = $cont_rise_count;
+            $logInfo['rise_end_day'] = $stockDataList[$cont_end_index - 1]['day'];
+            echo StatLogUtil::array2log($logInfo) . "\n";
+			return FALSE;
+        }
 		
 		// 价格连续上涨累计幅度和累计比例
 		$cont_vary_price = $cont_vary_portion = 0.0;
@@ -150,8 +160,8 @@ class AnalyzeCommand extends CConsoleCommand
         // 成交量放大最大比例
         $volume_scale = max($volume_vary_portion_list);
 		
-        // 价格连续上涨幅度 < 3% 或 成交量放大比例 < 1.5, 直接忽略
-        if (($cont_vary_portion < 3) || ($volume_scale < 1.5))
+        // 价格连续上涨幅度 < 4% 或 成交量放大比例 < 1.5, 直接忽略
+        if (($cont_vary_portion < 4) || ($volume_scale < 1.5))
         {
             $logInfo['reason'] = "low_cont_vary_portion_or_volume_scale";
             $logInfo['cont_rise_count'] = $cont_rise_count;
@@ -160,7 +170,6 @@ class AnalyzeCommand extends CConsoleCommand
             echo StatLogUtil::array2log($logInfo) . "\n";
 
 			return FALSE;
-
         }
 
 		return array(
