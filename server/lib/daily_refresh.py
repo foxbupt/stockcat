@@ -16,7 +16,7 @@ from stock_util import *
 
 
 # 刷新股票的历史最高/最低价
-def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, refresh = True):
+def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, refresh = True):
     db_conn = SqlUtil.get_db(db_config)
     high_field_list = ["hist_high", "year_high", "month6_high", "month3_high"]
     low_field_list = ["hist_low", "year_low", "month6_low", "month3_low"]
@@ -49,13 +49,18 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
             vary_stock_list[sid] = {'high_index': high_index, 'low_index': low_index}
             sql = "update t_stock set "
             field_list = []
+            high_type = low_type = 0
 
             if high_index < 4:
+                high_type = high_index + 1
+                add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
                 for field_name in high_field_list[high_index:]:
                     stock_info[field_name] = close_price
                     field_list.append(field_name + "=" + str(stock_info[field_name]))
 
             if low_index < 4:
+                low_type = low_index + 1
+                add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
                 for field_name in low_field_list[low_index:]:
                     stock_info[field_name] = close_price
                     field_list.append(field_name + "=" + str(stock_info[field_name]))
@@ -112,7 +117,7 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config)
-        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, need_refresh)
+        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, need_refresh)
 
         #print len(vary_stock_list)
         #analyze_stock_set = set()

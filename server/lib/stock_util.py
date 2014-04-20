@@ -4,12 +4,13 @@
 #desc: 公共接口
 #date: 2013-09-16
 
-import datetime, sys
-sys.path.append('../../../../server')  
+import datetime, sys, time
+sys.path.append('../../../server')  
+#sys.path.append('../../../../server')  
 from pyutil.sqlutil import SqlUtil, SqlConn
 
 # 假期定义
-holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141003}, {'start':20141006, 'end':20141007}]
+holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141007}]
 
 # 判断当天是否开市
 def is_market_open(day):
@@ -111,3 +112,31 @@ def get_stock_data(db_config, day, sid=0):
         data[int(stock_data['sid'])] = stock_data
 
     return data if 0 == sid else data[sid]
+
+'''
+  @desc: 添加股票阶段高点/低点记录
+        TODO: 暂时没有判断股票突破某个高点(低点)持续上涨(下跌), 导致每天连续有记录, 此时只需要记录第1天, 后面如果高/低点类型不同再记录
+  @param db_config dict DB配置
+  @param sid int
+  @param day int 
+  @param price float
+  @param high_type 高点类型
+  @param low_type 低点类型
+  @return bool
+'''
+def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
+    info = {'sid': sid, 'day': day, 'price': price, 'status': 'Y'}
+    info['create_time'] = time.mktime( datetime.datetime.now().timetuple() )
+    info['high_type'] = high_type
+    info['low_type'] = low_type
+    
+    sql = SqlUtil.create_insert_sql("t_stock_price_threshold", info)
+    print sql
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        db_conn.query_sql(sql, True)
+    except Exception as e:
+        print e
+        return False
+
+    return True
