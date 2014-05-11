@@ -87,7 +87,7 @@ class AnalyzeCommand extends CConsoleCommand
         }
 
 		// 成交量/价格变化数组
-		$volume_vary_portion = $price_vary_portion = array();
+		$volumes = $volume_vary_portion = $price_vary_portion = array();
 		$rise_count = $fall_count = 0;		
 				
 		foreach ($stockDataList as $index => $stockData)
@@ -96,9 +96,11 @@ class AnalyzeCommand extends CConsoleCommand
 			$price_vary_portion[] = $vary_portion;
 			($vary_portion >= 0.0)? $rise_count++ : $fall_count++;
 			
+            $curVolume = floatval($stockData['volume']);
+            $volumes[] = $curVolume;
+
 			if ($index > 0)
 			{
-				$curVolume = floatval($stockData['volume']);
 				$lastVolume = floatval($stockDataList[$index - 1]['volume']);
 				$volume_vary_portion[] = $curVolume / $lastVolume;
 			}
@@ -157,8 +159,8 @@ class AnalyzeCommand extends CConsoleCommand
 			$cont_vary_portion += $stockData['vary_portion']; 
 		}
         $volume_vary_portion_list = array_slice($volume_vary_portion, $cont_start_index, $cont_rise_count);
-        // 成交量放大最大比例
-        $volume_scale = max($volume_vary_portion_list);
+        // 成交量放大的最大比例
+        $volume_scale = round(max($volumes) / min($volumes), 1);
 		
         // 价格连续上涨幅度 < 4% 或 成交量放大比例 < 1.5, 直接忽略
         if (($cont_vary_portion < 4) || ($volume_scale < 1.5))
