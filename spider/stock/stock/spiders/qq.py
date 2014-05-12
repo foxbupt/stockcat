@@ -5,6 +5,7 @@
 #date: 2013-08-01
 
 import sys, re, json, random
+import redis
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
@@ -15,10 +16,12 @@ class QqSpider(BaseSpider):
     name = "qq"
     allowed_domains = ["qq.com", "gtimg.cn"]
 
-    def __init__(self, id, code, start):
+    def __init__(self, id, code, start, redis_host, redis_port):
         self.id = id
         self.code = code
         self.start = int(start)
+        self.redis_host = redis_host
+        self.redis_port = int(redis_port)
 
         url = "http://data.gtimg.cn/flashdata/hushen/minute/" + self.code + ".js?maxage=10&" + str(random.random())
         self.start_urls = [url]
@@ -31,17 +34,20 @@ class QqSpider(BaseSpider):
         text = match_content.group(1).strip(" \n").replace("\\n\\", "")
         #print text
         lines = text.split("\n")
-        print lines
+        #print lines
 
         date_info = lines[1].split(":")
         day = int("20" + date_info[1])
+
+        key = "daily-" + str(self.id) + "-" + str(day)
+        hq_dict = dict() 
 
         for line in lines[2:]:
             fields = line.split(" ")
             # 直接用小时+分组成的时间, 格式为HHMM
             time = int(fields[0])
 
-            if self.start > 0 or time < self.start:
+            if self.start > 0 and time < self.start:
                 continue
 
             item = StockDetailItem()
@@ -52,4 +58,12 @@ class QqSpider(BaseSpider):
             item['price'] = float(fields[1])
             item['volume'] = int(fields[2])
 
+            hq_dict[time] = {'price': item['price'], 'volume': item['volume']}
             yield item
+
+        print hq_dict
+        if len(self.redis_host) > 0:
+            conn = redis.StrictRedis(self.redis_host, self.redis_port)
+            conn.set(key, json.dumps(hq_dict), 86400)
+
+        return
