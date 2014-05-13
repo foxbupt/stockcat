@@ -32,6 +32,7 @@ main()
 
     # 用scrapy抓取总览信息
     count=0
+    /usr/local/bin/redis-cli -h 127.0.0.1 get "poollist-$day" | sed 's/"//g' | sed "s/{//g" | sed "s/}//g" | sed "s/,/\n/g" | sed "s/:/\t/g" |
     while read line
     do
         sid=`echo $line | awk '{print $1}'`
@@ -45,7 +46,7 @@ main()
         then
             sleep 10
         fi
-    done < $result_path/$filename
+    done #< $result_path/$filename
 
     echo "finish"
 }
