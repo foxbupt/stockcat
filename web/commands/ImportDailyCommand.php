@@ -45,6 +45,8 @@ class ImportDailyCommand extends CConsoleCommand
 		
         $data['vary_price'] = sprintf("%.2f", (float)$data['vary_price']);
         $data['vary_portion'] = sprintf("%.2f", (float)$data['vary_portion']);
+        $data['exchange_portion'] = sprintf("%.2f", (float)$data['exchange_portion']);
+        $data['swing'] = sprintf("%.2f", (float)$data['swing']);
 
 		foreach ($data as $key => $value)
 		{
