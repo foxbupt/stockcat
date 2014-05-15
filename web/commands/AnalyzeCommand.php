@@ -74,11 +74,11 @@ class AnalyzeCommand extends CConsoleCommand
 			return FALSE;
 		}
 		
-        // 流通市值 = 流通股(亿股) * close_price > 20 亿元
+        // 流通市值 = 流通股(亿股) * close_price > 10 亿元
         $close = floatval($stockDataList[$count-1]['close_price']);
         $out_capitalisation = $close * floatval($stockInfo['out_capital']); 
         // var_dump($close, $out_capitalisation);
-        if ($out_capitalisation <= 20)
+        if ($out_capitalisation <= 10)
         {
             $logInfo['reason'] = "low_out_capitalisation";
             $logInfo['out_cap'] = $out_capitalisation;
@@ -132,10 +132,10 @@ class AnalyzeCommand extends CConsoleCommand
 			}	
 		}
 		
-		// 连续上涨天数小于3天 
-		if ($cont_rise_count < 3)
+		// 连续上涨天数小于2天 
+		if ($cont_rise_count < 2)
 		{
-            $logInfo['reason'] = "cont_rise_count_lt_3";
+            $logInfo['reason'] = "cont_rise_count_lt_2";
             $logInfo['cont_rise_count'] = $cont_rise_count;
             echo StatLogUtil::array2log($logInfo) . "\n";
 			return FALSE;
