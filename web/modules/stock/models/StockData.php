@@ -46,11 +46,11 @@ class StockData extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('sid, day, volume, amount, create_time', 'numerical', 'integerOnly'=>true),
-			array('open_price, high_price, low_price, close_price, vary_price, vary_portion', 'length', 'max'=>10),
+			array('open_price, high_price, low_price, close_price, last_close_price, vary_price, vary_portion, exchange_portion, swing', 'length', 'max'=>10),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, day, open_price, high_price, low_price, close_price, volume, amount, vary_price, vary_portion, create_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, day, open_price, high_price, low_price, close_price, last_close_price, volume, amount, vary_price, vary_portion, exchange_portion, swing, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -79,10 +79,13 @@ class StockData extends CActiveRecord
 			'high_price' => '最高价(元)',
 			'low_price' => '最低价(元)',
 			'close_price' => '收盘价(元)',
+			'last_close_price' => '昨日收盘价(元)',
 			'volume' => '成交量(手)',
 			'amount' => '成交金额(万元)',
 			'vary_price' => '涨跌额(元)',
 			'vary_portion' => '涨跌比例',
+			'exchange_portion' => '换手率(%)',
+			'swing' => '振幅(%)',
 			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);
