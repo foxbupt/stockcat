@@ -22,7 +22,7 @@ class PoolController extends Controller
         $sidList = array();
 
         $contMap = array();
-        $contList = StockPool::model()->findAll(array(
+        $contList = StockCont::model()->findAll(array(
                                 'condition' => "day = ${lastDay} and status = 'Y'",
                                 'order' => 'sum_price_vary_portion desc, day asc',
                              ));
