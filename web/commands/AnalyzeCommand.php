@@ -16,7 +16,7 @@ class AnalyzeCommand extends CConsoleCommand
         }
 
         $day = intval($args[0]);
-        $interval = (count($args) >= 2)? intval($args[1]) : 5;
+        $interval = (count($args) >= 2)? intval($args[1]) : 10;
         $startDay = CommonUtil::getPastOpenDay($day, $interval);
         var_dump($startDay, $interval, $day);
 
@@ -34,7 +34,7 @@ class AnalyzeCommand extends CConsoleCommand
             $result = self::filter($sid, $day, $interval, $stockInfo, $stockDataList);
             if ($result)
             {
-                self::addStockPool($day, $stockInfo, $result);
+                self::addStockCont($day, $stockInfo, $result);
                 echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
             }
         }
@@ -214,9 +214,9 @@ class AnalyzeCommand extends CConsoleCommand
     }
 
     // 添加到股票池中
-    public static function addStockPool($day, $stockInfo, $filterInfo)
+    public static function addStockCont($day, $stockInfo, $filterInfo)
     {
-        $record = new StockPool();
+        $record = new StockCont();
 
         $record->sid = $stockInfo['id'];
         $record->name = $stockInfo['name'];
