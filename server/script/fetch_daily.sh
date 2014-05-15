@@ -8,11 +8,11 @@ main()
     stype="stock"
     day=`date "+%Y%m%d"`
 
-    if [ $# -eq 1 ]
+    if [ $# -ge 1 ]
     then
         stype=$1
     fi
-    if [ $# -eq 2 ]
+    if [ $# -ge 2 ]
     then
         day=$2
     fi
@@ -33,9 +33,11 @@ main()
     # 用scrapy抓取总览信息
     if [ "stock" == $stype ]
     then
-        $SCRAPY_BIN crawl daily -a filename=$STOCK_LIST -a request_count=10 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
+        $SCRAPY_BIN crawl qqdaily -a filename=$STOCK_LIST -a request_count=10 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
+        #$SCRAPY_BIN crawl daily -a filename=$STOCK_LIST -a request_count=10 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
     else
-        $SCRAPY_BIN crawl daily -a filename=$INDEX_LIST -a request_count=9 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
+        $SCRAPY_BIN crawl qqdaily -a filename=$INDEX_LIST -a request_count=9 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
+        #$SCRAPY_BIN crawl daily -a filename=$INDEX_LIST -a request_count=9 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_daily.log >> $result_path/$log
     fi
 
     # 导入数据
