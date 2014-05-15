@@ -26,6 +26,7 @@ class StockDataItem(Item):
     sid = Field()
     code = Field()
     day = Field()
+    last_close_price = Field()
     open_price = Field()
     high_price = Field()
     low_price = Field()
@@ -34,6 +35,8 @@ class StockDataItem(Item):
     amount = Field()
     vary_price = Field()
     vary_portion = Field()
+    exchange_portion = Field()
+    swing = Field()
 
 class StockDetailItem(Item):
     sid = Field()
