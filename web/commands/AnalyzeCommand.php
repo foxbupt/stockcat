@@ -159,6 +159,7 @@ class AnalyzeCommand extends CConsoleCommand
 			$cont_vary_portion += $stockData['vary_portion']; 
 		}
         $volume_vary_portion_list = array_slice($volume_vary_portion, $cont_start_index, $cont_rise_count);
+        $volumes =  array_slice($volumes, $cont_start_index, $cont_rise_count);
         // 成交量放大的最大比例
         $volume_scale = round(max($volumes) / min($volumes), 1);
 		
