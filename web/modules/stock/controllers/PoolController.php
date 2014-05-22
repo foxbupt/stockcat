@@ -24,7 +24,7 @@ class PoolController extends Controller
         $contMap = array();
         $contList = StockCont::model()->findAll(array(
                                 'condition' => "day = ${lastDay} and status = 'Y'",
-                                'order' => 'sum_price_vary_portion desc, day asc',
+                                'order' => 'max_volume_vary_portion desc, sum_price_vary_portion desc, day asc',
                              ));
         foreach ($contList as $record)
         {
@@ -65,28 +65,29 @@ class PoolController extends Controller
         }
 
         $hqDataMap = array();
-        $curTime = 0;
         foreach ($sidList as $sid)
         {
-            $hqDataMap[$sid] = self::getPoolHQData($sid, $day, $lastDay);
-            $curTime = $hqDataMap[$sid]['cur_time'];
+            $hqDataMap[] = self::getPoolHQData($sid, $day, $lastDay);
         }
-
+		uasort($hqDataMap, array($this, "cmpHQFunc"));
+        
         $this->render('index', array(
-                    'sidList' => $sidList,
+                    // 'sidList' => $sidList,
                     'contMap' => $contMap,
                     'priceMap' => $priceMap,
                     'hqMap' => $hqDataMap,
                     'day' => $day,
                     'lastDay' => $lastDay,
-                    'curTime' => $curTime,
+                    'curTime' => $hqDataMap[0]['cur_time'],
+        			'trendMap' => CommonUtil::getConfigObject("stock.direction"),
+        			'opMap' => CommonUtil::getConfigObject("stock.op"),
                 ));
     }
 
     // 获取关注股票池中股票的行情数据
     public static function getPoolHQData($sid, $day, $lastDay)
     {
-        $hqData = array('detail' => array());
+        $hqData = array('sid' => $sid, 'detail' => array());
 
         $stockInfo = StockUtil::getStockInfo($sid);
         $hqData['stock'] = $stockInfo;
@@ -105,12 +106,15 @@ class PoolController extends Controller
             $curTime = $dailyData['time'][count($dailyData['time']) - 1];
 
             $priceList = $dailyData['price'];
-            $hqData['open_price'] = (float)$priceList[0];
-            $hqData['cur_price'] = (float)$priceList[count($priceList) - 1];
+            $openPrice = $hqData['open_price'] = (float)$priceList[0];
+            $hqData['open_vary_portion'] = round(($openPrice - $closePrice) / $closePrice * 100, 2);
+            
+            $curPrice = $hqData['cur_price'] = (float)$priceList[count($priceList) - 1];
+            $hqData['vary_portion'] = ($openPrice > 0.0)? round(($curPrice - $openPrice) / $openPrice * 100, 2) : 0.00;
             
             if (count($priceList) > 2)
             {
-                $hqData['trend'] = self::getTrend($hqData['open_price'], $priceList);
+                $hqData['trend'] = TrendHelper::analyzeRealtimeTrend($openPrice, $curPrice, $priceList);
             }
             // var_dump($hqData);
         }
@@ -118,62 +122,26 @@ class PoolController extends Controller
         $hqData['cur_time'] = sprintf("%02d:%02d", $curTime/100, $curTime%100);
         return $hqData;
     }
-
-    public static function getTrend($openPrice, $priceList)
+    
+    /**
+     * @desc 对行情数据排序
+     *
+     * @param array $hqData1
+     * @param array $hqData2
+     * @return int
+     */
+    public function cmpHQFunc($hqData1, $hqData2)
     {
-        $trendInfo = array();
-
-        $maxPrice = max($priceList);
-        $maxIndex = array_search($maxPrice, $priceList);
-        $minPrice = min($priceList);
-        $minIndex = array_search($minPrice, $priceList);
-        $curPrice = $priceList[count($priceList) - 1]; 
-        $maxVary = $maxPrice - $curPrice;
-        $minVary = $curPrice - $minPrice;
-
-        if ($curPrice > $openPrice) // 上涨
-        {
-            if ($curPrice == $maxPrice) 
-            {
-                $trendInfo['trend'] = "上涨";
-            }    
-            else 
-            {
-                $varyPortion = ($curPrice - $openPrice) / $openPrice;
-                if ($varyPortion < 0.01)
-                {
-                    $trendInfo['trend'] = "震荡";
-                }
-                else 
-                {
-                    $trendInfo['trend'] = ($maxVary >= $minVary)? "下跌" : "上涨";
-                }
-            }
-        }
-        else if ($curPrice == $openPrice)
-        {
-            $trendInfo['trend'] = "震荡";
-        }
-        else // 下跌
-        {
-            $varyPortion = abs(($openPrice - $curPrice) / $openPrice);
-            $trendInfo['trend'] = ($varyPortion >= 0.01)? "下跌": "震荡下跌";
-        }
-
-        if (strstr($trendInfo['trend'], "震荡") !== FALSE)
-        {
-            $trendInfo['op'] = "待定";
-        }
-        else if ($trendInfo['trend'] == "上涨")
-        {
-            $trendInfo['op'] = "买入";
-        }
-        else
-        {
-            $trendInfo['op'] = "卖出";
-        }
-
-        return $trendInfo;
+    	// 9:30后采用当天涨幅排序
+		$fieldName = (intval(date('Hi')) >= 930)? "vary_portion" : "opern_vary_portion";
+		
+		if ($hqData1[$fieldName] == $hqData2[$fieldName])
+		{
+			return 0;
+		}
+		
+        // 按照涨幅的大小逆序排列
+		return ($hqData1[$fieldName] < $hqData2[$fieldName])? 1 : -1;
     }
 }
 ?>
