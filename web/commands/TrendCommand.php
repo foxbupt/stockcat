@@ -80,8 +80,8 @@ class TrendCommand extends CConsoleCommand
             		
             foreach ($trendList as $trendItem)
             {
-            	$result = TrendHelper::addTrendRecord($sid, $type, $trendItem, ($newStartDay == $trendItem['start_day'])? $latestTrendId : 0);
-            	echo "op=add_trend result=$result sid=$sid type=$type " . StatLogUtil::array2log($trendItem) . "\n";
+            	$result = TrendHelper::addTrendRecord($sid, $type, $trendItem, ($newStartDay == $trendItem['start']['day'])? $latestTrendId : 0);
+            	echo "op=add_trend result=$result sid=$sid type=$type latest_trend_id=$latestTrendId " . StatLogUtil::array2log($trendItem) . "\n";
             }
         }
     }
