@@ -48,9 +48,10 @@ td {
                     <?php $stockData = $hqData['data']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
                     <?php $qqhqUrl = "http://stockhtm.finance.qq.com/sstock/ggcx/" . $stockInfo['code'] . ".shtml"; ?>
+                    <?php $trendUrl = $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => CommonUtil::TREND_FIELD_PRICE, 'start_day' => 20140101)); ?>
 
 					<tr class="pull-center">
-                        <td><?php echo $sid; ?></td>
+                        <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
                         <?php if (isset($contMap[$sid])): ?>
