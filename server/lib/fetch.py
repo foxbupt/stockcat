@@ -4,7 +4,7 @@
 #desc: 获取股票当前总体数据
 #date: 2014-05-28
 
-import os, sys, random
+import os, sys, random, json
 import datetime, urllib2
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')  
@@ -91,7 +91,7 @@ def get_stock_realtime(stock_info):
         response = urllib2.urlopen(url, timeout=1)
         content = response.read()
     except Exception as e:
-        print "err=get_stock_overview sid=" + sid
+        print "err=get_stock_realtime sid=" + sid + " exception=" + e
         return None
 
     content = content.strip(' ;"\n').replace("\\n\\", "")
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     #print stock_list, stock_map
 
-    count = max(int(len(stock_list) / 100), 1)
+    count = max(int(round(len(stock_list) / 100)), 1)
     if count > 1:
         pool = ThreadPool(count)
         if type == "daily":
