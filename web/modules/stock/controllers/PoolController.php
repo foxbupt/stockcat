@@ -84,6 +84,35 @@ class PoolController extends Controller
                 ));
     }
 
+    /**
+     * @desc 实时展现股票的上涨因子
+     * @param $_GET['day'] 可选
+     */
+    public function actionRealtime()
+    {
+        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("risefactor-" . $day, 0, -1, true);
+        // var_dump($riseFactorList);
+
+        $datamap = array();
+        foreach ($riseFactorList as $sid => $riseFactor)
+        {
+            $itemdata = array();
+
+            $dailyValue = Yii::app()->redis->get("daily-" . $sid . "-" . $day);
+            $itemdata['daily'] = json_decode($dailyValue, true);
+            $itemdata['stock'] = StockUtil::getStockInfo($sid);
+
+            $datamap[$sid] = $itemdata;
+        }
+
+        // var_dump($datamap);
+        $this->render('realtime', array(
+                    'riseFactorList' => $riseFactorList,
+                    'datamap' => $datamap,
+                ));
+    }
+
     // 获取关注股票池中股票的行情数据
     public static function getPoolHQData($sid, $day, $lastDay)
     {
@@ -94,7 +123,7 @@ class PoolController extends Controller
         $hqData['data'] = $stockData = StockData::model()->findByAttributes(array('sid' => $sid, 'day' => $lastDay, 'status' => 'Y'));
         $closePrice = (float)$stockData['close_price'];
 
-        $dailyKey = "daily-" . $sid . "-" . $day;
+        $dailyKey = "realtime-" . $sid . "-" . $day;
         $cacheValue = Yii::app()->redis->get($dailyKey);
         $curTime = intval(date('Hi'));
 
