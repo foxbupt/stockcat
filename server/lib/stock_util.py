@@ -32,7 +32,7 @@ def get_past_openday(current_day, offset):
     current_time = datetime.datetime(int(current_day[0:4]), int(current_day[4:6]), int(current_day[6:8]))  
     step = 1
     # 含当天
-    open_count = 1
+    open_count = 0
 
     while True:
         last_day = '{0:%Y%m%d}'.format(current_time + datetime.timedelta(days = -1 * step))
@@ -140,3 +140,25 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
         return False
 
     return True
+
+'''
+  @desc: 预估当天的成交量
+  @param cur_volume 当天的成交量
+  @param cur_time 当天的时刻
+  @return int
+'''
+def get_predict_volume(cur_volume, cur_time):
+    hour = int(cur_time[0:2])
+    min = int(cur_time[2:4])
+    print hour, min
+
+    daily_min = min
+    if hour >= 15:
+        return cur_volume
+
+    if hour >= 9 and hour <= 11:
+        daily_min += (hour - 9) * 60 - 30
+    elif hour >= 13 and hour < 15:
+        daily_min += 120 + (hour - 13) * 60
+
+    return round(cur_volume * daily_min / 240)
