@@ -74,8 +74,13 @@ def refresh_rise_factor(redis_config, cur_day, past_datamap, riseset_key):
     for sid in rise_set:
         past_data_value = past_datamap[sid]
         past_data = json.loads(past_data_value)
+
         daily_data_value = redis_conn.get("daily-" + str(sid) + "-" + str(cur_day))
-        stock_daily_data = json.loads(daily_data_value, encoding='UTF-8')
+        #print daily_data_value
+        if daily_data_value is None:
+            continue
+
+        stock_daily_data = json.loads(daily_data_value)
 
         vary_portion = (stock_daily_data['close_price'] - stock_daily_data['open_price']) / stock_daily_data['open_price'] * 100
         volume_ratio = stock_daily_data['predict_volume'] / past_data['avg_volume']
@@ -88,11 +93,12 @@ def refresh_rise_factor(redis_config, cur_day, past_datamap, riseset_key):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf>"
+        print "Usage: " + sys.argv[0] + " <conf> [day]"
         sys.exit(1)
 
     day = "{0:%Y%m%d}".format(datetime.date.today())
-    #day = "20140606"
+    if len(sys.argv) >= 3:
+        day = sys.argv[2]
 
     config_info = Util.load_config(sys.argv[1])        
     db_config = config_info['DB']
