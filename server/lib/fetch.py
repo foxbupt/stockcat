@@ -90,7 +90,8 @@ def get_stock_daily(stock_info):
             if conn:
                 key = "daily-" + item['sid'] + "-" + str(day)
                 conn.set(key, json.dumps(item), 86400)
-                if item['vary_price'] > 0.0 or item['close_price'] > item['open_price']:
+                # 当日开盘上涨 且 当前价格高于昨日收盘价格
+                if item['vary_price'] > 0.0 and  item['close_price'] > item['open_price']:
                     conn.sadd("daily-riseset-" + str(day), item['sid'])
 
             print format_log("fetch_daily", item)

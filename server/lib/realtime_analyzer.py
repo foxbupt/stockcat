@@ -79,7 +79,7 @@ def refresh_rise_factor(redis_config, cur_day, past_datamap, riseset_key):
 
         vary_portion = (stock_daily_data['close_price'] - stock_daily_data['open_price']) / stock_daily_data['open_price'] * 100
         volume_ratio = stock_daily_data['predict_volume'] / past_data['avg_volume']
-        high_portion = stock_daily_data['close_price'] / stock_daily_data['high_price'];
+        high_portion = (stock_daily_data['close_price'] - stock_daily_data['open_price']) / (stock_daily_data['high_price'] - stock_daily_data['open_price']);
         rise_factor = round(vary_portion * volume_ratio * high_portion, 1)
 
         print format_log("refresh_rise_factor", {'sid': sid, 'vary_portion': vary_portion, 'volume_ratio': volume_ratio, 'high_portion': high_portion, 'rise_factor': rise_factor})
