@@ -96,6 +96,9 @@ class PoolController extends Controller
 
         $datamap = array();
         $curTime = date('H:i:s');
+        $pastdata = Yii::app()->redis->getInstance()->hmGet("pastdata-" . $day, array_keys($riseFactorList));
+        // var_dump($pastdata);
+
         foreach ($riseFactorList as $sid => $riseFactor)
         {
             $itemdata = array();
@@ -104,8 +107,11 @@ class PoolController extends Controller
             $itemdata['daily'] = json_decode($dailyValue, true);
             if (!empty($itemdata['daily']))
             {
-                $curTime = substr($itemdata['daily']['time'], 6);
+                $curTime = substr($itemdata['daily']['time'], 8);
             }
+
+            $stockPastData = json_decode($pastdata[$sid], true);
+            $itemdata['volume_ratio'] = round($itemdata['daily']['predict_volume'] / $stockPastData['avg_volume'], 1);
             $itemdata['stock'] = StockUtil::getStockInfo($sid);
 
             $datamap[$sid] = $itemdata;
