@@ -10,12 +10,13 @@ from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')  
 sys.path.append('../../../../server')  
 from pyutil.util import Util, safestr, format_log
+from stock_util import get_predict_volume
 import redis
 
 stock_map = {}
 config_info = {}
-items = []
-#day = int("{0:%Y%m%d}".format(datetime.date.today()))
+#items = []
+day = int("{0:%Y%m%d}".format(datetime.date.today()))
 
 # 解析单个股票行情数据
 def parse_stock_daily(line):
@@ -36,16 +37,19 @@ def parse_stock_daily(line):
     item = dict()
 
     item['code'] = stock_code = fields[2]
-    item['sid'] = stock_map[stock_code]
-    item['last_close_price'] = fields[4]
+    item['sid'] = int(stock_map[stock_code])
+    item['last_close_price'] = float(fields[4])
     item['open_price'] = open_price
-    item['high_price'] = fields[33]
-    item['low_price'] = fields[34]
+    item['high_price'] = float(fields[33])
+    item['low_price'] = float(fields[34])
     item['close_price'] = close_price
-    item['vary_price'] = fields[31]
-    item['vary_portion'] = fields[32]
+    # 当前时刻, 格式为YYYYmmddHHMMSS
+    item['time'] = fields[30]
+    item['vary_price'] = float(fields[31])
+    item['vary_portion'] = float(fields[32])
     # 成交量转化为手
     item['volume'] = int(fields[36])
+    item['predict_volume'] = get_predict_volume(item['volume'], item['time'][8:])
     # 成交额转化为万元
     item['amount'] = int(fields[37])
     item['exchange_portion'] = fields[38]
@@ -55,7 +59,8 @@ def parse_stock_daily(line):
 
 # 获取股票当前价格及成交量等信息
 def get_stock_daily(stock_info):
-    scode = stock_info[1]
+    #scode = stock_info[1]
+    scode = stock_info
     url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode
     #print scode, url
 
@@ -63,11 +68,16 @@ def get_stock_daily(stock_info):
         response = urllib2.urlopen(url, timeout=1)
         content = response.read()
     except Exception as e:
-        print "err=get_stock_daily sid=" + sid
+        print "err=get_stock_daily scode=" + scode
         return 
 
     if content:
         lines = content.strip("\n").split(";")
+        conn = None
+
+        if 'REDIS' in config_info :
+            conn = redis.StrictRedis(config_info['REDIS']['host'], int(config_info['REDIS']['port']))
+
         for line in lines:
             if 0 == len(line):
                 continue
@@ -76,9 +86,15 @@ def get_stock_daily(stock_info):
             if item is None:
                 continue
 
-            # TODO: 存到缓存中
+            # 存到缓存中
+            if conn:
+                key = "daily-" + item['sid'] + "-" + str(day)
+                conn.set(key, json.dumps(item), 86400)
+                if item['vary_price'] > 0.0 or item['close_price'] > item['open_price']:
+                    conn.sadd("daily-riseset-" + str(day), item['sid'])
+
             print format_log("fetch_daily", item)
-            items.append(item)
+            #items.append(item)
 
 # 获取股票盘中实时交易价格和成交量
 def get_stock_realtime(stock_info):
@@ -133,7 +149,7 @@ def get_stock_realtime(stock_info):
     #print hq_dict
 
     if 'REDIS' in config_info :
-        key = "daily-" + str(sid) + "-" + str(day)
+        key = "realtime-" + str(sid) + "-" + str(day)
         conn = redis.StrictRedis(config_info['REDIS']['host'], int(config_info['REDIS']['port']))
         conn.set(key, json.dumps(hq_dict), 86400)
 
@@ -152,17 +168,29 @@ if __name__ == "__main__":
     stock_list = []
     for stock_str in sys.argv[3:]:
         (sid, scode) = stock_str.split(":")
-
-        stock_list.append((sid, scode))
+        sid = int(sid)
         stock_map[scode[2:]] = sid
+
+        if type == "daily":
+            stock_list.append(scode)
+        else:
+            stock_list.append((sid, scode))
 
     #print stock_list, stock_map
 
+    stock_count = len(stock_list)
     count = max(int(round(len(stock_list) / 100)), 1)
     if count > 1:
         pool = ThreadPool(count)
         if type == "daily":
-            pool.map(get_stock_daily, stock_list)
+            scode_list = []
+            offset = 0
+            percount = 10
+            while offset < stock_count:
+                scode_list.append(stock_list[offset : min(offset + percount, stock_count)])
+                offset += percount
+
+            pool.map(get_stock_daily, scode_list)
         else:
             pool.map(get_stock_realtime, stock_list)    
 
