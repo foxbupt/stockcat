@@ -17,6 +17,7 @@ stock_map = {}
 config_info = {}
 #items = []
 day = int("{0:%Y%m%d}".format(datetime.date.today()))
+#day = 20140606
 
 # 解析单个股票行情数据
 def parse_stock_daily(line):
@@ -88,7 +89,7 @@ def get_stock_daily(stock_info):
 
             # 存到缓存中
             if conn:
-                key = "daily-" + item['sid'] + "-" + str(day)
+                key = "daily-" + str(item['sid']) + "-" + str(day)
                 conn.set(key, json.dumps(item), 86400)
                 # 当日开盘上涨 且 当前价格高于昨日收盘价格
                 if item['vary_price'] > 0.0 and  item['close_price'] > item['open_price']:
