@@ -26,6 +26,8 @@
 							<a class="brand" href="#">笨财猫</a>
 							<ul class="nav">
 								<li><a href="#">首页</a></li>
+								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/index'); ?>">股票池</a></li>
+								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/realtime'); ?>">实时上涨列表</a></li>
 								<li><a href="/news">资讯</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/report/list'); ?>">研报</a></li>
 								<li><a href="/faq">使用帮助</a></li>
