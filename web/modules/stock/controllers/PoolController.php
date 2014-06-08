@@ -95,12 +95,17 @@ class PoolController extends Controller
         // var_dump($riseFactorList);
 
         $datamap = array();
+        $curTime = date('H:i:s');
         foreach ($riseFactorList as $sid => $riseFactor)
         {
             $itemdata = array();
 
             $dailyValue = Yii::app()->redis->get("daily-" . $sid . "-" . $day);
             $itemdata['daily'] = json_decode($dailyValue, true);
+            if (!empty($itemdata['daily']))
+            {
+                $curTime = substr($itemdata['daily']['time'], 6);
+            }
             $itemdata['stock'] = StockUtil::getStockInfo($sid);
 
             $datamap[$sid] = $itemdata;
@@ -110,6 +115,7 @@ class PoolController extends Controller
         $this->render('realtime', array(
                     'riseFactorList' => $riseFactorList,
                     'datamap' => $datamap,
+                    'curTime' => $curTime
                 ));
     }
 
