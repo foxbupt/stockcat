@@ -22,7 +22,7 @@ main()
     slist=`sed "s/\t/:/g" $STOCK_LIST`
     #echo "$slist"
     /usr/bin/python $SERVER_PATH/lib/fetch.py $SERVER_PATH/lib/config.ini "daily" $slist
-    /usr/bin/python $SERVER_PATH/lib/realtime_analyzer.py $SERVER_PATH/lib/config.ini "daily" $slist
+    /usr/bin/python $SERVER_PATH/lib/realtime_analyzer.py $SERVER_PATH/lib/config.ini
 
     echo "finish"
 }
