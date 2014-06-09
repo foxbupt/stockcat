@@ -189,9 +189,10 @@ if __name__ == "__main__":
             offset = 0
             percount = 10
             while offset < stock_count:
-                scode_list.append(stock_list[offset : min(offset + percount, stock_count)])
+                scode_list.append(",".join(stock_list[offset : min(offset + percount, stock_count)]))
                 offset += percount
 
+            #print scode_list
             pool.map(get_stock_daily, scode_list)
         else:
             pool.map(get_stock_realtime, stock_list)    

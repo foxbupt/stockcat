@@ -72,6 +72,9 @@ def refresh_rise_factor(redis_config, cur_day, past_datamap, riseset_key):
     rf_zset_key = "risefactor-" + str(cur_day)
 
     for sid in rise_set:
+        if sid not in past_datamap:
+            continue
+
         past_data_value = past_datamap[sid]
         past_data = json.loads(past_data_value)
 
@@ -99,6 +102,7 @@ if __name__ == "__main__":
     day = "{0:%Y%m%d}".format(datetime.date.today())
     if len(sys.argv) >= 3:
         day = sys.argv[2]
+    print day
 
     config_info = Util.load_config(sys.argv[1])        
     db_config = config_info['DB']

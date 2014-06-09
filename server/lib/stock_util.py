@@ -161,4 +161,4 @@ def get_predict_volume(cur_volume, cur_time):
     elif hour >= 13 and hour < 15:
         daily_min += 120 + (hour - 13) * 60
 
-    return round(cur_volume * daily_min / 240)
+    return round(cur_volume * 240 / daily_min)
