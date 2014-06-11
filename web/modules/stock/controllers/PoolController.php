@@ -24,7 +24,7 @@ class PoolController extends Controller
         $contMap = array();
         $contList = StockCont::model()->findAll(array(
                                 'condition' => "day = ${lastDay} and status = 'Y'",
-                                'order' => 'max_volume_vary_portion desc, sum_price_vary_portion desc, day asc',
+                                'order' => 'sum_price_vary_portion desc, max_volume_vary_portion desc, day asc',
                              ));
         foreach ($contList as $record)
         {
@@ -69,8 +69,15 @@ class PoolController extends Controller
         {
             $hqDataMap[] = self::getPoolHQData($sid, $day, $lastDay);
         }
-		uasort($hqDataMap, array($this, "cmpHQFunc"));
-        
+
+        $curTime = $hqDataMap[0]['cur_time'];
+        $curHour = intval(substr($curTime, 0, 2));
+        $curMin = intval(substr($curTime, 3, 2));
+        if (($curHour == 9 && $curMin >= 25) || ($curHour > 9 && $curHour < 15) || ($curHour == 15 && $curMin == 0))
+        {
+		    uasort($hqDataMap, array($this, "cmpHQFunc"));
+        }
+
         $this->render('index', array(
                     // 'sidList' => $sidList,
                     'contMap' => $contMap,
@@ -78,7 +85,7 @@ class PoolController extends Controller
                     'hqMap' => $hqDataMap,
                     'day' => $day,
                     'lastDay' => $lastDay,
-                    'curTime' => $hqDataMap[0]['cur_time'],
+                    'curTime' => $curTime,
         			'trendMap' => CommonUtil::getConfigObject("stock.direction"),
         			'opMap' => CommonUtil::getConfigObject("stock.op"),
                 ));
@@ -174,7 +181,7 @@ class PoolController extends Controller
     public function cmpHQFunc($hqData1, $hqData2)
     {
     	// 9:30后采用当天涨幅排序
-		$fieldName = (intval(date('Hi')) >= 930)? "vary_portion" : "opern_vary_portion";
+		$fieldName = (intval(date('Hi')) >= 930)? "vary_portion" : "open_vary_portion";
 		
 		if ($hqData1[$fieldName] == $hqData2[$fieldName])
 		{
