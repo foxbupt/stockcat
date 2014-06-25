@@ -293,4 +293,4 @@ class ParrelTransaction(ParrelFunc):
             last_time = transaction_list[-1]['time']
             self.pos_map[sid] = (pno, last_time)
 
-            self.conn.rpush("detail-queue", json.dumps({'sid': sid, 'day': self.day, 'items': transaction_list}))
+            self.conn.rpush("ts-queue", json.dumps({'sid': sid, 'day': self.day, 'items': transaction_list}))
