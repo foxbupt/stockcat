@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from fetch_worker import FetchWorker
-from stock_util import get_stock_list, get_past_openday
+from stock_util import get_stock_list, get_past_openday, time_diff
 
 class Scheduler(object):
     worker_list = []
@@ -41,13 +41,13 @@ class Scheduler(object):
                 print "scheduler timenumber=" + str(cur_timenumber)
                 
                 if cur_timenumber < hushen_config['am_open']:
-                    time.sleep(min(hushen_config['am_open'] - cur_timenumber, self.interval))
+                    time.sleep(min(time_diff(hushen_config['am_open'] - cur_timenumber), self.interval))
                     continue
 
                 if cur_timenumber > hushen_config['am_close'] + int(hushen_config['close_delay']/60) * 100 + hushen_config['close_delay']%60 and cur_timenumber < hushen_config['pm_open']:
                     if self.state == 1:
                         self.pause()
-                    time.sleep( min(hushen_config['pm_open'] - cur_timenumber, self.interval) )
+                    time.sleep( min(time_diff(hushen_config['pm_open'] - cur_timenumber), self.interval) )
                     continue
 
                 # 下午收盘后需要把抓取数据的线程结束掉
@@ -99,18 +99,11 @@ class Scheduler(object):
 
         for worker in self.worker_list:
             worker.control(self.state)
+            time.sleep(1)
             if worker.isAlive():
                 worker.join()
 
         del self.worker_list[0:-1]
-
-    # 计算HHMMSS格式时间数值之间的差异, 返回差额的秒
-    def time_diff(self, t1, t2):
-        hour_diff = int(t1/10000) - int(t2/10000)
-        min_diff = int(t1%10000/100) - int(t2%10000/100)
-        second_diff = int(t1%100) - int(t2%100)
-
-        return hour_diff * 3600 + min_diff * 60 + second_diff
 
     # 准备公共数据集
     def prepare_data(self):

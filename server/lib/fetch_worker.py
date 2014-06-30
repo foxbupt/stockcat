@@ -38,7 +38,7 @@ class FetchWorker(threading.Thread):
 
         while True:
             try:
-                print "worker state=" + str(self.state)
+                #print "worker state=" + str(self.state)
                 if 0 == self.state:
                     # 已经运行结束时需要保存中间状态
                     if run_count > 0:
@@ -56,10 +56,13 @@ class FetchWorker(threading.Thread):
                     parrel_object = object_creator(day, self.config_info, self.datamap, self.worker_config['item_per_thread'])
                     parrel_object.load()
 
+                cost_time = 0
                 if parrel_object:
+                    before_timestamp = time.time()
                     parrel_object.run()
+                    cost_time = round(time.time() - before_timestamp, 1)
 
-                print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count})
+                print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count, 'cost_time': cost_time})
                 time.sleep(self.interval)
             except (KeyboardInterrupt, SystemExit):
                 print "op=user_exit"

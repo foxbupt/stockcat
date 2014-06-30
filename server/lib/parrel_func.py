@@ -106,7 +106,7 @@ class ParrelDaily(ParrelFunc):
     def parse_stock_daily(self, line):
         parts = line.split("=")
         #print line, parts
-        content = parts[1].strip('"')
+        content = parts[1].decode('gbk').strip('"')
         #print content
 
         fields = content.split("~")
@@ -120,6 +120,7 @@ class ParrelDaily(ParrelFunc):
 
         item = dict()
 
+        item['name'] = safestr(fields[1])
         item['code'] = stock_code = fields[2]
         item['sid'] = int(self.datamap['code2id'][stock_code])
         item['day'] = self.day
@@ -128,13 +129,13 @@ class ParrelDaily(ParrelFunc):
         item['high_price'] = float(fields[33])
         item['low_price'] = float(fields[34])
         item['close_price'] = close_price
-        # 当前时刻, 格式为YYYYmmddHHMMSS
-        item['time'] = fields[30]
+        # 当前时刻, 格式为HHMMSS
+        item['time'] = fields[30][8:]
         item['vary_price'] = float(fields[31])
         item['vary_portion'] = float(fields[32])
         # 成交量转化为手
         item['volume'] = int(fields[36])
-        item['predict_volume'] = get_predict_volume(item['volume'], item['time'][8:])
+        item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
         # 成交额转化为万元
         item['amount'] = int(fields[37])
         item['exchange_portion'] = fields[38]
@@ -201,6 +202,7 @@ class ParrelRealtime(ParrelFunc):
 
  # 并行抓取股票盘成交明细
 class ParrelTransaction(ParrelFunc):
+    # 存储股票上次拉取成交明细的位置(sid, seq)
     pos_map = dict()
     ignore_set = set()
 
@@ -233,9 +235,9 @@ class ParrelTransaction(ParrelFunc):
             return
 
         if sid in self.pos_map:
-            (pno, last_time) = self.pos_map[sid]
+            (pno, last_id) = self.pos_map[sid]
         else:
-            pno = last_time = 0
+            pno = last_id = 0
 
         url = "http://stock.gtimg.cn/data/index.php?appn=detail&action=data&c=" + scode + "&p=" + str(pno)
         #print scode, url
@@ -259,6 +261,7 @@ class ParrelTransaction(ParrelFunc):
         #print lines
 
         elements = lines[1].split("|")
+        new_id = last_id
         transaction_list = []
 
         for element in elements:
@@ -266,11 +269,11 @@ class ParrelTransaction(ParrelFunc):
             #print field_list
             transaction = dict()
 
-            data_time = int(field_list[1].replace(":", ""))
-            if data_time <= last_time:
+            id = int(field_list[0])
+            if id <= last_id :
                 continue
 
-            transaction['time'] = data_time
+            transaction['time'] = int(field_list[1].replace(":", ""))
             transaction['price'] = float(field_list[2])
             transaction['vary_price'] = float(field_list[3])
             transaction['volume'] = int(field_list[4])
@@ -278,19 +281,19 @@ class ParrelTransaction(ParrelFunc):
             # 类型为B/S/M, 分别代表买盘/卖盘/中性盘
             transaction['type'] = field_list[6]
 
+            new_id = max(id, new_id)
             transaction_list.append(transaction)
 
         transaction_count = len(transaction_list)
         #print transaction_list, transaction_count
-        print format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_time': last_time, 'detail_count': transaction_count})
+        print format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_id': last_id, 'new_id': new_id, 'detail_count': transaction_count})
 
         if transaction_count > 0:
             # 每个时间段达到70笔成交记录时, p需要加1
             if transaction_count == 70:
                 pno += 1
 
-            #更新pno和last_time的值
-            last_time = transaction_list[-1]['time']
-            self.pos_map[sid] = (pno, last_time)
+            #更新pno和last_id的值
+            self.pos_map[sid] = (pno, new_id)
 
             self.conn.rpush("ts-queue", json.dumps({'sid': sid, 'day': self.day, 'items': transaction_list}))

@@ -5,9 +5,10 @@
 #date: 2013-09-16
 
 import datetime, sys, time
-sys.path.append('../../../server')  
-#sys.path.append('../../../../server')  
+#sys.path.append('../../../server')  
+sys.path.append('../../../../server')  
 from pyutil.sqlutil import SqlUtil, SqlConn
+import redis
 
 # 假期定义
 holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141007}]
@@ -16,9 +17,10 @@ holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, 
 def is_market_open(day):
     current_time = datetime.datetime(int(day[0:4]), int(day[4:6]), int(day[6:8]))  
     weekday = current_time.weekday()
+    #print day, weekday
 
     # 周六或周日休市
-    if weekday == 0 or weekday == 6:
+    if weekday == 5 or weekday == 6:
         return False
 
     intday = int(day)
@@ -27,7 +29,12 @@ def is_market_open(day):
             return False
     return True
 
-# 获取当前日期最近的第几个交易日
+'''
+    @desc: 获取当前日期最近的第几个交易日
+    @param current_day string
+    @param offset int
+    @return in
+'''
 def get_past_openday(current_day, offset):
     current_time = datetime.datetime(int(current_day[0:4]), int(current_day[4:6]), int(current_day[6:8]))  
     step = 1
@@ -150,7 +157,7 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
 def get_predict_volume(cur_volume, cur_time):
     hour = int(cur_time[0:2])
     min = int(cur_time[2:4])
-    print hour, min
+    #print hour, min
 
     daily_min = min
     if hour >= 15:
@@ -162,3 +169,79 @@ def get_predict_volume(cur_volume, cur_time):
         daily_min += 120 + (hour - 13) * 60
 
     return round(cur_volume * 240 / daily_min)
+
+'''
+    @desc: 获取过去几天的总览数据, 目前暂定过去5天, 先从缓存加载, 数据字段包括:
+            平均成交量(avg_volume)/累计涨幅(sum_vary_portion)/累计涨跌额(sum_vary_price)/平均价格(avg_price)/最高价(high_price)/最低价(low_price)
+    @param: db_config dict
+    @param: cur_day int 当前日期
+    @param: count int 过去的天数
+    @return dict
+'''
+def get_past_data(db_config, redis_config, cur_day, count):
+    key = "pastdata-" + str(cur_day)
+    stock_datamap = dict()
+    redis_conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
+
+    datamap = redis_conn.hgetall(key)
+    if datamap:
+        return datamap
+
+    db_conn = SqlUtil.get_db(db_config)
+    start_day = get_past_openday(str(cur_day), count)
+
+    try:
+        sql = "select sid, avg(volume) as avg_volume, sum(vary_price) as sum_vary_price, sum(vary_portion) as sum_vary_portion, \
+        avg(close_price) as avg_close_price, max(high_price) as high_price, min(low_price) as low_price from t_stock_data \
+        where day >= " + start_day + " and day < " + cur_day + " group by sid"
+        print sql
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+    
+    for record in record_list:
+        item = dict()
+        sid = record['sid']
+
+        item['sid'] = int(sid)
+        item['avg_volume'] = round(float(record['avg_volume']))
+        item['sum_vary_price'] = float(record['sum_vary_price'])
+        item['sum_vary_portion'] = float(record['sum_vary_portion'])
+        item['avg_close_price'] = float(record['avg_close_price'])
+        item['high_price'] = float(record['high_price'])
+        item['low_price'] = float(record['low_price'])
+
+        stock_datamap[sid] = json.dumps(item)
+    #print stock_datamap
+
+    redis_conn.hmset(key, stock_datamap)
+    redis_conn.expire(key, 86400)
+    return stock_datamap
+
+'''
+    @desc: 计算HHMMSS格式时间数值之间的差异, 返回差额的秒
+    @param: t1 int
+    @param: t2 int
+    @return interval
+'''
+def time_diff(t1, t2):
+    hour_diff = int(t1/10000) - int(t2/10000)
+    min_diff = int(t1%10000/100) - int(t2%10000/100)
+    second_diff = int(t1%100) - int(t2%100)
+
+    return hour_diff * 3600 + min_diff * 60 + second_diff
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "Usage: " + sys.argv[0] + " <day>"
+        sys.exit(1)
+
+    day = sys.argv[1]
+    print get_past_openday(day, 1)
+    print get_past_openday(day, 2)
+
+    print time_diff(94310, 92500)
+    print time_diff(142500, 93530)
+
+    print time.time()
