@@ -63,6 +63,9 @@ class TSPolicy(BasePolicy):
 
     # 分析快速拉升
     def rapid_rise(self, item):
+        print self.vary_map
+        print self.time_map
+
         sid = item['sid']
         start_time = int(item['items'][0]['time'] / 100)
         last_time = self.time_map[sid]
@@ -72,47 +75,59 @@ class TSPolicy(BasePolicy):
             print self.vary_map
             return
 
-        # 取出的key列表应该是按照时间大小排列的
-        time_list = price_pair_map.keys().sort()
+        # 取出的key列表后按照时间大小排列
+        time_list = price_pair_map.keys()
+        time_list.sort()
         print start_time, time_list
-        key = "ts-rr-" + str(item['day'])
+
+        rise_map = dict()
         rise_info = None
 
+        key = "ts-rr-" + str(item['day'])
         cache_value = self.redis_conn.hget(key, sid)
+
         # 已经存在则判断[start_time, last_time]对应的最高价 >= high, 是则更新其时间
-        # TODO: 连续拉升结束后, 下落后再次拉升如何处理
+        # 连续拉升结束后, 超过5min后的再次拉升作为一个新的拉升波段, 根据起始时间存储多个拉升波段
         if cache_value:
-            rise_info = json.loads(cache_value)
-            now_time = rise_info['now_time']
-            diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
-            # 超过5min不再认为是连续拉升
-            if diff_sec > 60 * 5:
-                return
+            rise_map = json.loads(cache_value)
 
-            rise_info = self.refresh_rapid(sid, rise_info, start_time, True)
-            self.redis_conn.hmset(key, {'sid': json.dumps(rise_info)})
+            for rise_start_time, rise_info in rise_map.items():
+                now_time = rise_info['now_time']
+                diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
 
-        else:
-            index = time_list.index(start_time)
-            while index >= 2 and index < len(time_list):
-                now_time = time_list[index]
-                past_time = time_list[index-2]
-                index += 1
+                # 5min 以内作为一个新的波段持续
+                if diff_sec <= 60 * 5:
+                    rise_info = self.refresh_rapid(sid, rise_info, start_time, True)
+                    rise_map[rise_start_time] = rise_info
+                    self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
+                    return
 
-                # 对当前时间的最高价 减去 2分钟前的最低价，若涨幅比例超过1.6%，则认为存在快速拉升的可能
-                cur_high_price = price_pair_map[now_time][0]
-                past_low_price = price_pair_map[past_time][1]
-                vary_portion = round((cur_high_price - past_low_price) / past_low_price * 100, 1)
+        index = max(time_list.index(start_time), 2)
+        while index >= 2 and index < len(time_list):
+            now_time = time_list[index]
+            past_time = time_list[index-2]
+            index += 1
 
-                if (past_low_price >= 3.0 and vary_portion >= 1.6) or (past_low_price < 3.0 and vary_portion >= 2.5):
-                    rise_info = {'start_time': past_time, 'now_time': now_time, 'low': past_low_price, 'high': cur_high_price, 'vary_portion': vary_portion}
-                    break
+            # 对当前时间的最高价 减去 2分钟前的最低价，若涨幅比例超过1.6%，则认为存在快速拉升的可能
+            cur_high_price = price_pair_map[now_time][0]
+            past_low_price = price_pair_map[past_time][1]
+            vary_portion = round((cur_high_price - past_low_price) / past_low_price * 100, 2)
 
-            if rise_info and now_time < last_time:
+            if (past_low_price >= 3.0 and vary_portion >= 1.6) or (past_low_price < 3.0 and vary_portion >= 2.5):
+                rise_info = {'start_time': past_time, 'now_time': now_time, 'low': past_low_price, 'high': cur_high_price, 'vary_portion': vary_portion}
+                break
+
+        #print rise_info, now_time
+        if rise_info:
+            if now_time < last_time:
                 rise_info = self.refresh_rapid(sid, rise_info, time_list[index+1], True)
-            if rise_info:
-                self.redis_conn.hmset(key, {'sid': json.dumps(rise_info)})
-                print format_log("ts_rapid_rise", {'sid': sid, 'day': item['day']}.update(rise_info))
+
+            rise_map[rise_info['start_time']] = rise_info
+            self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
+
+            rise_info['sid'] = sid
+            rise_info['day'] = item['day']
+            print format_log("ts_rapid_rise", rise_info)
 
     # 分析快速下降
     def rapid_fall(self, item):
@@ -125,9 +140,10 @@ class TSPolicy(BasePolicy):
         start_time = int(item['items'][0]['time'] / 100)
         last_time = self.time_map[sid]
 
-        # 取出的key列表应该是按照时间大小排列的
         print price_pair_map
-        time_list = price_pair_map.keys().sort()
+        time_list = price_pair_map.keys()
+        time_list.sort()
+
         key = "ts-rf-" + str(item['day'])
         fall_info = None
 
@@ -142,7 +158,7 @@ class TSPolicy(BasePolicy):
                 return
 
             fall_info = self.refresh_rapid(sid, fall_info, start_time, False)
-            self.redis_conn.hmset(key, {'sid': json.dumps(fall_info)})
+            self.redis_conn.hmset(key, {sid: json.dumps(fall_info)})
             print format_log("ts_rapid_fall", {'sid': sid, 'day': item['day']}.update(fall_info))
 
         else:
@@ -163,26 +179,43 @@ class TSPolicy(BasePolicy):
 
             if fall_info and now_time < last_time:
                 fall_info = self.refresh_rapid(sid, fall_info, time_list[index+1], False)
+
             if fall_info:
-                self.redis_conn.hmset(key, {'sid': json.dumps(fall_info)})
-                print format_log("ts_rapid_fall", {'sid': sid, 'day': item['day']}.update(fall_info))
+                self.redis_conn.hmset(key, {sid: json.dumps(fall_info)})
+                fall_info['sid'] = sid
+                fall_info['day'] = item['day']
+                print format_log("ts_rapid_fall", fall_info)
 
 
+    '''
+       @desc 刷新持续拉升/下跌的波段
+       @param sid int
+       @param rapid_info dict
+       @param start_time int 起始时间
+       @param rise_or_fall bool
+       @return dict
+    '''
     def refresh_rapid(self, sid, rapid_info, start_time, rise_or_fall):
         price_pair_map = self.vary_map[sid]
-        time_list = price_pair_map.keys().sort()
+        time_list = price_pair_map.keys()
+        time_list.sort()
 
         index = time_list.index(start_time)
         while index < len(time_list):
             now_time = time_list[index]
             price_pair = price_pair_map[now_time]
+            index += 1
+
+            # 上涨过程需要最高价持续突破
             if rise_or_fall and price_pair[0] > rapid_info['high']:
                 rapid_info['now_time'] = now_time
                 rapid_info['high'] = price_pair[0]
-                rapid_info['vary_portion'] = round((rapid_info['high'] - rapid_info['low']) / rapid_info['low'], 1)
+                rapid_info['vary_portion'] = round((rapid_info['high'] - rapid_info['low']) / rapid_info['low'] * 100, 2)
+
             elif not rise_or_fall and price_pair[1] < rapid_info['low']:
                 rapid_info['now_time'] = now_time
                 rapid_info['low'] = price_pair[1]
-                rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 1)
+                rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 2)
 
+        rapid_info['duration'] = time_diff(rapid_info['now_time'], rapid_info['start_time'])
         return rapid_info
