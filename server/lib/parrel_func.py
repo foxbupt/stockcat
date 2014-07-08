@@ -28,7 +28,7 @@ class ParrelFunc(object):
     def run(self):
         self.item_list = self.get_data()
         count = max(int(round(len(self.item_list) / self.item_per_thread)), 1)
-        print len(self.item_list), count
+        #print len(self.item_list), count
 
         if count > 1:
             pool = ThreadPool(count)
@@ -145,8 +145,19 @@ class ParrelDaily(ParrelFunc):
 
 # 并行抓取股票盘中每分钟的实时价格和成交量
 class ParrelRealtime(ParrelFunc):
-    def run(self):
-        super(ParrelRealtime, self).run()
+    # 存储股票上次拉取分时成交量的时间 sid -> time
+    time_map = {}
+
+    def load(self):
+        key = "rt-overview-" + str(self.day)
+        value = self.conn.get(key)
+        if value: 
+            self.time_map = json.loads(value)
+
+    def save(self):
+        if len(self.time_map) > 0:
+            key = "rt-overview-" + str(self.day)
+            self.conn.set(key, json.dumps(self.time_map), 86400)
 
     def get_data(self):
         item_list = []
@@ -177,11 +188,19 @@ class ParrelRealtime(ParrelFunc):
         date_info = lines[1].split(":")
         data_day = int("20" + date_info[1])
         hq_item = list()
+        last_time = 0
 
+        if sid in self.time_map:
+            last_time = self.time_map[sid]
+
+        new_time = last_time
         for line in lines[2:]:
             fields = line.split(" ")
             # 直接用小时+分组成的时间, 格式为HHMM
             time = int(fields[0])
+
+            if time <= last_time:
+                continue
 
             data_item = dict()
             data_item['time'] = time
@@ -192,10 +211,14 @@ class ParrelRealtime(ParrelFunc):
                 continue
 
             hq_item.append(data_item)
+            new_time = max(time, new_time)
 
         # 表示当天所有的成交量都为0, 当天停牌
         if len(hq_item) == 0:
             return
+
+        # 更新last_time
+        self.time_map[sid] = new_time
 
         self.conn.rpush("realtime-queue", json.dumps({'sid': sid, 'day': data_day, 'items': hq_item}))
         print format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']})
@@ -205,9 +228,6 @@ class ParrelTransaction(ParrelFunc):
     # 存储股票上次拉取成交明细的位置(sid, seq)
     pos_map = dict()
     ignore_set = set()
-
-    def run(self):
-        super(ParrelTransaction, self).run()
 
     def load(self):
         key = "ts-overview-" + str(self.day)
@@ -222,10 +242,18 @@ class ParrelTransaction(ParrelFunc):
 
     def get_data(self):
         item_list = []
+        sid_list = []
 
         #print self.datamap['pool_list']
-        for sid in self.datamap['pool_list']:
+        rf_list = self.conn.zrevrange("rf-" + str(self.day), 0, -1)
+        if rf_list:
+            sid_list = [int(sid) for sid in rf_list]
+        else:
+            sid_list = self.datamap['pool_list']
+
+        for sid in sid_list:
             item_list.append((sid, self.datamap['id2scode'][sid]))
+
         return item_list
 
     def core(self, item):
@@ -273,7 +301,7 @@ class ParrelTransaction(ParrelFunc):
             if id <= last_id :
                 continue
 
-            transaction['time'] = int(field_list[1].replace(":", ""))
+            transaction['time'] = field_list[1].replace(":", "")
             transaction['price'] = float(field_list[2])
             transaction['vary_price'] = float(field_list[3])
             transaction['volume'] = int(field_list[4])
@@ -285,7 +313,6 @@ class ParrelTransaction(ParrelFunc):
             transaction_list.append(transaction)
 
         transaction_count = len(transaction_list)
-        #print transaction_list, transaction_count
         print format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_id': last_id, 'new_id': new_id, 'detail_count': transaction_count})
 
         if transaction_count > 0:
