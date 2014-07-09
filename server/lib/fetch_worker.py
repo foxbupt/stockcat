@@ -5,7 +5,7 @@
 #date: 20134/06/23
 
 import sys, re, json, random, os
-import datetime, time, threading
+import datetime, time, threading, weakref
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 
@@ -36,6 +36,9 @@ class FetchWorker(threading.Thread):
         run_count = 0
         day =  int("{0:%Y%m%d}".format(datetime.date.today()))
 
+        if not hasattr(threading.current_thread(), "_children"):
+            threading.current_thread()._children = weakref.WeakKeyDictionary()
+
         while True:
             try:
                 #print "worker state=" + str(self.state)
@@ -53,7 +56,7 @@ class FetchWorker(threading.Thread):
 
                 run_count += 1
                 if run_count == 1:
-                    parrel_object = object_creator(day, self.config_info, self.datamap, self.worker_config['item_per_thread'])
+                    parrel_object = object_creator(day, self.config_info, self.datamap, self.worker_config)
                     parrel_object.load()
 
                 cost_time = 0
