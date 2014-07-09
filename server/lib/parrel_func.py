@@ -17,11 +17,13 @@ import redis
 class ParrelFunc(object):
     item_list = []
 
-    def __init__(self, day, config_info, datamap, item_per_thread = 30):
+    def __init__(self, day, config_info, datamap, worker_config):
         self.day = day
         self.config_info = config_info
         self.datamap = datamap
-        self.item_per_thread = item_per_thread
+        self.worker_config = worker_config
+
+        self.item_per_thread = worker_config['item_per_thread']
         # 连接REDIS
         self.conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
 
@@ -65,11 +67,15 @@ class ParrelDaily(ParrelFunc):
         scode_list = self.datamap['id2scode'].values()
         stock_count = len(scode_list)
 
-        offset = 0
-        percount = 20
-        while offset < stock_count:
-            item_list.append(",".join(scode_list[offset : min(offset + percount, stock_count)]))
-            offset += percount
+        if "dataset" in self.worker_config:
+            scode_dataset = [self.datamap['id2scode'][sid] for sid in self.worker_config["dataset"]]
+            item_list.append(",".join(scode_dataset))
+        else:
+            offset = 0
+            percount = 20
+            while offset < stock_count:
+                item_list.append(",".join(scode_list[offset : min(offset + percount, stock_count)]))
+                offset += percount
 
         return item_list
 
@@ -77,13 +83,13 @@ class ParrelDaily(ParrelFunc):
     def core(self, item):
         scode = item
         url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode
-        print scode, url
+        #print scode, url
 
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
-        except Exception as e:
-            print "err=get_stock_daily scode=" + scode
+        except urllib2.URLError as e:
+            print "err=get_stock_daily scode=" + scode + " reason=" + str(e.reason)
             return
 
         if content:
@@ -161,8 +167,11 @@ class ParrelRealtime(ParrelFunc):
 
     def get_data(self):
         item_list = []
+        sid_list = self.datamap['pool_list']
 
-        for sid in self.datamap['pool_list']:
+        if "dataset" in self.worker_config:
+            sid_list = self.worker_config['dataset']
+        for sid in sid_list:
             item_list.append((sid, self.datamap['id2scode'][sid]))
         #for sid, scode in self.datamap['id2scode'].items():
         #    item_list.append((sid, scode))
@@ -177,8 +186,8 @@ class ParrelRealtime(ParrelFunc):
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
-        except Exception as e:
-            print "err=get_stock_realtime sid=" + str(sid) + " exception=" + e
+        except urllib2.URLError as e:
+            print "err=get_stock_realtime sid=" + str(sid) + " reason=" + str(e.reason)
             return None
 
         content = content.strip(' ;"\n').replace("\\n\\", "")
@@ -245,11 +254,14 @@ class ParrelTransaction(ParrelFunc):
         sid_list = []
 
         #print self.datamap['pool_list']
-        rf_list = self.conn.zrevrange("rf-" + str(self.day), 0, -1)
-        if rf_list:
-            sid_list = [int(sid) for sid in rf_list]
+        if "dataset" in self.worker_config:
+            sid_list = self.worker_config['dataset']
         else:
-            sid_list = self.datamap['pool_list']
+            rf_list = self.conn.zrevrange("rf-" + str(self.day), 0, -1)
+            if rf_list:
+                sid_list = [int(sid) for sid in rf_list]
+            else:
+                sid_list = self.datamap['pool_list']
 
         for sid in sid_list:
             item_list.append((sid, self.datamap['id2scode'][sid]))
@@ -273,7 +285,7 @@ class ParrelTransaction(ParrelFunc):
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
-        except Exception as e:
+        except urllib2.URLError as e:
             print "err=get_stock_transaction sid=" + str(sid) + " pno=" + str(pno) + " exception=" + str(e.reason)
             return None
 
