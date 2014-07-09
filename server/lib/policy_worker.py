@@ -38,27 +38,27 @@ class PolicyWorker(threading.Thread):
         policy_object = object_creator(self.config_info, self.datamap)
 
         while True:
-            #try:
-            #    item = self.queue.get(False, 2)
-            #except Queue.Empty:
-            #    print "1111"
-            #    if self.loop:
-            #        continue
-            #    else:
-            #        break
-
-            item = self.queue.get()
-            if item is None:
-                continue
-
-            #print item
-            for func_name in self.worker_config['processor_list']:
-                try:
-                    getattr(policy_object, func_name)(item)
-                except Exception as e:
-                    print traceback.format_exc()
+            try:
+                item = self.queue.get(False, 2)
+            except Queue.Empty:
+                if self.loop:
+                    continue
                 else:
-                    print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
+                    #print "being exit"
+                    break
+            else:
+                #item = self.queue.get()
+                if item is None:
+                    continue
+
+                #print item
+                for func_name in self.worker_config['processor_list']:
+                    try:
+                        getattr(policy_object, func_name)(item)
+                    except Exception as e:
+                        print traceback.format_exc()
+                    else:
+                        print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
 
             #self.queue.task_done()
         print format_log("worker_exit", {'name':self.name, 'index': self.index})

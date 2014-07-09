@@ -208,22 +208,26 @@ class TSPolicy(BasePolicy):
         time_list = price_pair_map.keys()
         time_list.sort()
 
-        index = time_list.index(start_time)
-        while index < len(time_list):
-            now_time = time_list[index]
-            price_pair = price_pair_map[now_time]
-            index += 1
+        try:
+            index = time_list.index(start_time)
+        except ValueError:
+            print "err=time_not_exist sid=" + str(sid) + " start_time=" + str(start_time)
+        else:
+            while index < len(time_list):
+                now_time = time_list[index]
+                price_pair = price_pair_map[now_time]
+                index += 1
 
-            # 上涨过程需要最高价持续突破
-            if rise_or_fall and price_pair[0] > rapid_info['high']:
-                rapid_info['now_time'] = now_time
-                rapid_info['high'] = price_pair[0]
-                rapid_info['vary_portion'] = round((rapid_info['high'] - rapid_info['low']) / rapid_info['low'] * 100, 2)
+                # 上涨过程需要最高价持续突破
+                if rise_or_fall and price_pair[0] > rapid_info['high']:
+                    rapid_info['now_time'] = now_time
+                    rapid_info['high'] = price_pair[0]
+                    rapid_info['vary_portion'] = round((rapid_info['high'] - rapid_info['low']) / rapid_info['low'] * 100, 2)
 
-            elif not rise_or_fall and price_pair[1] < rapid_info['low']:
-                rapid_info['now_time'] = now_time
-                rapid_info['low'] = price_pair[1]
-                rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 2)
+                elif not rise_or_fall and price_pair[1] < rapid_info['low']:
+                    rapid_info['now_time'] = now_time
+                    rapid_info['low'] = price_pair[1]
+                    rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 2)
 
         rapid_info['duration'] = time_diff(rapid_info['now_time'], rapid_info['start_time'])
         return rapid_info

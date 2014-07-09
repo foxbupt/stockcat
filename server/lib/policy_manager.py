@@ -50,7 +50,15 @@ class PolicyManager(object):
             try:
                 data = conn.blpop(queue_list, 1)
                 if data is None:
-                    continue
+                    cur_time = datetime.datetime.now().time()
+                    cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
+                    print "policy timenumber=" + str(cur_timenumber)
+
+                    if cur_timenumber >= int(self.config_info['POLICY']['close_time']):
+                        print "market close"
+                        break
+                    else:
+                        continue
 
                 key = data[0]
                 if key not in queue_policy_map:
@@ -68,8 +76,9 @@ class PolicyManager(object):
                 print "op=dispatch_item key=" + str(key) + " name=" + name + " sid=" + str(sid) + " index=" + str(index)
             except (KeyboardInterrupt, SystemExit): 
                 print "catch keybord interrupt"
-                self.terminate()
                 break
+
+        self.terminate()
 
     def terminate(self):
         for policy_name, instance_list in self.instance_map.items():
