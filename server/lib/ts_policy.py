@@ -5,7 +5,7 @@
 #date: 2014/06/28
 
 import sys, re, json, os
-import datetime, time
+import datetime, time, logging
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
@@ -57,34 +57,28 @@ class TSPolicy(BasePolicy):
 
          # 更新last_time和每分钟的成交差异
         self.time_map[sid] = last_time
-        for ts_time, price_pair in ts_map.items():
-            if ts_time >= old_last_time:
-                self.vary_map[sid][ts_time] = price_pair
+        self.logger.debug("desc=refresh_ts sid=%d last_time=%d vary_map=%s", sid, last_time, "|".join([ safestr(k) + "-" + safestr(v) for k,v in ts_map.items()]))
 
     # 分析快速拉升
     def rapid_rise(self, item):
-        #print self.vary_map
-        #print self.time_map
-
         sid = item['sid']
         start_time = int(item['items'][0]['time'] / 100)
+
         last_time = self.time_map[sid]
         price_pair_map = self.vary_map[sid]
         if price_pair_map is None or len(price_pair_map) <= 3:
-            print "nonexist_pairmap sid=" + str(sid)
-            print self.vary_map
+            self.logger.warning("desc=non_exist_pairmap sid=%d", sid)
             return
 
         # 取出的key列表后按照时间大小排列
         time_list = price_pair_map.keys()
         time_list.sort()
-        #print start_time, time_list
 
         rise_map = dict()
         rise_info = None
-
         key = "ts-rr-" + str(item['day'])
         cache_value = self.redis_conn.hget(key, sid)
+        refresh = False
 
         # 已经存在则判断[start_time, last_time]对应的最高价 >= high, 是则更新其时间
         # 连续拉升结束后, 超过5min后的再次拉升作为一个新的拉升波段, 根据起始时间存储多个拉升波段
@@ -96,11 +90,13 @@ class TSPolicy(BasePolicy):
                 diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
 
                 # 5min 以内作为一个新的波段持续
-                if diff_sec <= 60 * 5:
-                    rise_info = self.refresh_rapid(sid, rise_info, start_time, True)
-                    rise_map[rise_start_time] = rise_info
-                    self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
-                    return
+                if diff_sec >= 0 and diff_sec <= 60 * 5:
+                    (rise_info, refresh) = self.refresh_rapid(sid, rise_info, start_time, True)
+                    if refresh:
+                        self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
+                        self.logger.info(format_log("ts_refresh_rapid_rise", rise_info))
+                        break
+            return
 
         index = max(time_list.index(start_time), 2)
         while index >= 2 and index < len(time_list):
@@ -121,21 +117,21 @@ class TSPolicy(BasePolicy):
         #print rise_info, now_time
         if rise_info:
             if now_time < last_time:
-                rise_info = self.refresh_rapid(sid, rise_info, time_list[index+1], True)
+                (rise_info, refresh) = self.refresh_rapid(sid, rise_info, time_list[index+1], True)
 
             rise_map[rise_info['start_time']] = rise_info
             self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
 
             rise_info['sid'] = sid
             rise_info['day'] = item['day']
-            print format_log("ts_refresh_rapid_rise", rise_info)
+            self.logger.info(format_log("ts_new_rapid_rise", rise_info))
 
     # 分析快速下降
     def rapid_fall(self, item):
         sid = item['sid']
         price_pair_map = self.vary_map[sid]
         if price_pair_map is None or len(price_pair_map) <= 2:
-            print self.vary_map
+            self.logger.warning("desc=non_exist_pairmap sid=%d", sid)
             return
 
         start_time = int(item['items'][0]['time'] / 100)
@@ -148,6 +144,7 @@ class TSPolicy(BasePolicy):
         key = "ts-rf-" + str(item['day'])
         fall_info = None
         fall_map = dict()
+        refresh = False
 
         cache_value = self.redis_conn.hget(key, sid)
         # 已经存在则判断[start_time, last_time]对应的最低价 <= low, 是则更新其时间
@@ -159,13 +156,13 @@ class TSPolicy(BasePolicy):
                 diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
 
                 # 超过5min不再认为是连续下跌
-                if diff_sec <= 60 * 5:
-                    fall_info = self.refresh_rapid(sid, fall_info, start_time, False)
-                    fall_map[fall_start_time] = fall_info
-                    self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
-                    print format_log("ts_refresh_rapid_fall", fall_info)
-
-                    return
+                if diff_sec >= 0 and diff_sec <= 60 * 5:
+                    (fall_info, refresh) = self.refresh_rapid(sid, fall_info, start_time, False)
+                    if refresh:
+                        self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
+                        self.logger.info(format_log("ts_refresh_rapid_fall", fall_info))
+                        break
+            return
 
         index = time_list.index(start_time)
         while index >= 2 and index < len(time_list):
@@ -185,14 +182,14 @@ class TSPolicy(BasePolicy):
 
         if fall_info:
             if now_time < last_time:
-                fall_info = self.refresh_rapid(sid, fall_info, time_list[index+1], False)
+                (fall_info, refresh) = self.refresh_rapid(sid, fall_info, time_list[index+1], False)
 
             fall_map[fall_info['start_time']] = fall_info
             self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
 
             fall_info['sid'] = sid
             fall_info['day'] = item['day']
-            print format_log("ts_rapid_fall", fall_info)
+            self.logger.info(format_log("ts_new_rapid_fall", fall_info))
 
 
     '''
@@ -201,17 +198,18 @@ class TSPolicy(BasePolicy):
        @param rapid_info dict
        @param start_time int 起始时间
        @param rise_or_fall bool
-       @return dict
+       @return (dict, bool)
     '''
     def refresh_rapid(self, sid, rapid_info, start_time, rise_or_fall):
         price_pair_map = self.vary_map[sid]
         time_list = price_pair_map.keys()
         time_list.sort()
+        refresh = False
 
         try:
             index = time_list.index(start_time)
         except ValueError:
-            print "err=time_not_exist sid=" + str(sid) + " start_time=" + str(start_time)
+            self.logger.warning("err=time_not_exist sid=%d now_time=%d start_time=%d", sid, rapid_info['now_time'], start_time)
         else:
             while index < len(time_list):
                 now_time = time_list[index]
@@ -223,11 +221,13 @@ class TSPolicy(BasePolicy):
                     rapid_info['now_time'] = now_time
                     rapid_info['high'] = price_pair[0]
                     rapid_info['vary_portion'] = round((rapid_info['high'] - rapid_info['low']) / rapid_info['low'] * 100, 2)
+                    refresh = True
 
                 elif not rise_or_fall and price_pair[1] < rapid_info['low']:
                     rapid_info['now_time'] = now_time
                     rapid_info['low'] = price_pair[1]
                     rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 2)
+                    refresh = True
 
         rapid_info['duration'] = time_diff(rapid_info['now_time'], rapid_info['start_time'])
-        return rapid_info
+        return (rapid_info, refresh)

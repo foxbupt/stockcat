@@ -4,7 +4,7 @@
 #desc: 运行策略分析器分析的工作线程
 #date: 2014/06/27
 
-import sys, re, json, os,traceback
+import sys, re, json, os, traceback, logging
 import datetime, time, threading, Queue
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
@@ -56,11 +56,11 @@ class PolicyWorker(threading.Thread):
                     try:
                         getattr(policy_object, func_name)(item)
                     except Exception as e:
-                        print traceback.format_exc()
+                        logging.getLogger("policy").exception("err=policy_call name=%s processor=%s", self.name, func_name)
                     else:
-                        print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
+                        #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
+                        logging.getLogger("policy").debug("desc=policy_processor name=%s processor=%s sid=%d day=%d", self.name, func_name, item['sid'], item['day'])
 
             #self.queue.task_done()
-        print format_log("worker_exit", {'name':self.name, 'index': self.index})
-
+        logging.getLogger("policy").critical("op=policy_worker_exit name=%s index=%d", self.name, self.index)
 

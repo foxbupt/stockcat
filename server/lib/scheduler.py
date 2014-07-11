@@ -5,7 +5,7 @@
 #date: 20134/06/23
 
 import sys, re, json, random, os
-import datetime, time
+import datetime, time, logging, logging.config
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
@@ -38,16 +38,16 @@ class Scheduler(object):
             try:
                 cur_time = datetime.datetime.now().time()
                 cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
-                print "scheduler timenumber=" + str(cur_timenumber)
+                #print "scheduler timenumber=" + str(cur_timenumber)
                 
                 if cur_timenumber < hushen_config['am_open']:
-                    time.sleep(min(time_diff(hushen_config['am_open'] - cur_timenumber), self.interval))
+                    time.sleep(min(time_diff(hushen_config['am_open'], cur_timenumber), self.interval))
                     continue
 
                 if cur_timenumber > hushen_config['am_close'] + int(hushen_config['close_delay']/60) * 100 + hushen_config['close_delay']%60 and cur_timenumber < hushen_config['pm_open']:
                     if self.state == 1:
                         self.pause()
-                    time.sleep( min(time_diff(hushen_config['pm_open'] - cur_timenumber), self.interval) )
+                    time.sleep( min(time_diff(hushen_config['pm_open'], cur_timenumber), self.interval) )
                     continue
 
                 # 下午收盘后需要把抓取数据的线程结束掉
@@ -80,18 +80,21 @@ class Scheduler(object):
             self.worker_list.append(worker)
 
         self.state = 1
+        logging.getLogger("fetch").critical("op=scheduler_start time=%d day=%d", cur_timenumber, self.day)
 
     # 午间盘中休息
     def pause(self):
         self.state = 2
         for worker in self.worker_list:
             worker.control(self.state)
+        logging.getLogger("fetch").critical("op=scheduler_pause day=%d", self.day)
 
     # 下午开盘恢复
     def resume(self):
-         self.state = 1
-         for worker in self.worker_list:
-             worker.control(self.state)
+        self.state = 1
+        for worker in self.worker_list:
+            worker.control(self.state)
+        logging.getLogger("fetch").critical("op=scheduler_resume day=%d", self.day)
 
     # 闭市时的清理工作
     def terminate(self):
@@ -104,6 +107,7 @@ class Scheduler(object):
                 worker.join()
 
         del self.worker_list[0:-1]
+        logging.getLogger("fetch").critical("op=scheduler_terminate day=%d", self.day)
 
     # 准备公共数据集
     def prepare_data(self):
@@ -166,6 +170,8 @@ if __name__ == "__main__":
     config_info['DB']['port'] = int(config_info['DB']['port'])
     config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
 
+    # 初始化日志
+    logging.config.fileConfig(config_info["LOG"]["conf"])
     scheduler = Scheduler(config_info)
     scheduler.core()
     

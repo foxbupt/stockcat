@@ -17,5 +17,5 @@ class RTPolicy(BasePolicy):
     def serialize(self, item):
         key = "rt-" + str(item['sid']) + "-" + str(item['day'])
         for minute_item in item['items']:
-            print minute_item
+            #print minute_item
             self.redis_conn.rpush(key, json.dumps(minute_item))

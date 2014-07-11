@@ -4,10 +4,10 @@
 #desc: 抓取数据的工作线程
 #date: 20134/06/23
 
-import sys, re, json, random, os
+import sys, re, json, random, os, logging
 import datetime, time, threading, weakref
 sys.path.append('../../../../server')
-from pyutil.util import safestr, format_log
+from pyutil.util import Util, safestr, format_log
 
 class FetchWorker(threading.Thread):
     def __init__(self, worker_config, config_info, datamap):
@@ -65,12 +65,14 @@ class FetchWorker(threading.Thread):
                     parrel_object.run()
                     cost_time = round(time.time() - before_timestamp, 1)
 
-                print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count, 'cost_time': cost_time})
+                #print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count, 'cost_time': cost_time})
+                logging.getLogger("fetch").debug("desc=fetch_worker_call name=%s object=%s interval=%d day=%d run_count=%d cost_time=%.1f", self.name, self.object_name, self.interval, day, run_count, cost_time)
                 time.sleep(self.interval)
             except (KeyboardInterrupt, SystemExit):
-                print "op=user_exit"
+                logging.getLogger("fetch").critical("op=user_system_exit")
                 return
 
-        print format_log("worker_run_done", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count})
+        logging.getLogger("fetch").critical("op=worker_run_done name=%s object=%s interval=%d day=%d run_count=%d", self.name, self.object_name, self.interval, day, run_count)
+        #print format_log("worker_run_done", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count})
 
 

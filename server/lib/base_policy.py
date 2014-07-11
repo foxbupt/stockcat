@@ -5,7 +5,7 @@
 #date: 2014/06/27
 
 import sys, re, json, os
-import datetime, time
+import datetime, time, logging
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
@@ -19,4 +19,5 @@ class BasePolicy(object):
 
         self.redis_conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
         self.db_conn = SqlUtil.get_db(self.config_info["DB"])
+        self.logger = logging.getLogger("policy")
 

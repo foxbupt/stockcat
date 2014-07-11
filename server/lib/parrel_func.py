@@ -4,7 +4,7 @@
 #desc: 抓取数据的实际逻辑
 #date: 2014-06-24
 
-import os, sys, random, json
+import os, sys, random, json, logging
 import datetime, urllib2
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
@@ -26,11 +26,12 @@ class ParrelFunc(object):
         self.item_per_thread = worker_config['item_per_thread']
         # 连接REDIS
         self.conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
+        self.logger = logging.getLogger("fetch")
 
     def run(self):
         self.item_list = self.get_data()
         count = max(int(round(len(self.item_list) / self.item_per_thread)), 1)
-        #print len(self.item_list), count
+        self.logger.debug("desc=parrel_itemlist count=%d item_list=%s", count, '|'.join([str(v) for v in self.item_list]))
 
         if count > 1:
             pool = ThreadPool(count)
@@ -89,7 +90,7 @@ class ParrelDaily(ParrelFunc):
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
         except urllib2.URLError as e:
-            print "err=get_stock_daily scode=" + scode + " reason=" + str(e.reason)
+            self.logger.warning("err=get_stock_daily scode=%s reason=%s", scode, str(e.reason))
             return
 
         if content:
@@ -106,7 +107,8 @@ class ParrelDaily(ParrelFunc):
                 # 追加到redis队列中
                 if self.conn:
                     self.conn.rpush("daily-queue", json.dumps(daily_item))
-                print format_log("fetch_daily", daily_item)
+                self.logger.info(format_log("fetch_daily", daily_item))
+                #print format_log("fetch_daily", daily_item)
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
@@ -187,7 +189,7 @@ class ParrelRealtime(ParrelFunc):
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
         except urllib2.URLError as e:
-            print "err=get_stock_realtime sid=" + str(sid) + " reason=" + str(e.reason)
+            self.logger.warning("err=get_stock_realtime sid=%d scode=%s reason=%s", sid, scode, str(e.reason))
             return None
 
         content = content.strip(' ;"\n').replace("\\n\\", "")
@@ -230,7 +232,8 @@ class ParrelRealtime(ParrelFunc):
         self.time_map[sid] = new_time
 
         self.conn.rpush("realtime-queue", json.dumps({'sid': sid, 'day': data_day, 'items': hq_item}))
-        print format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']})
+        #print format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']})
+        self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
 
  # 并行抓取股票盘成交明细
 class ParrelTransaction(ParrelFunc):
@@ -257,15 +260,16 @@ class ParrelTransaction(ParrelFunc):
         if "dataset" in self.worker_config:
             sid_list = self.worker_config['dataset']
         else:
-            rf_list = self.conn.zrevrange("rf-" + str(self.day), 0, -1)
-            if rf_list:
-                sid_list = [int(sid) for sid in rf_list]
+            ts_set = self.conn.smembers("tsset-" + str(self.day))
+            if ts_set:
+                sid_list = [ int(sid) for sid in list(ts_set)]
             else:
                 sid_list = self.datamap['pool_list']
 
         for sid in sid_list:
             item_list.append((sid, self.datamap['id2scode'][sid]))
 
+        #print item_list
         return item_list
 
     def core(self, item):
@@ -286,7 +290,7 @@ class ParrelTransaction(ParrelFunc):
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
         except urllib2.URLError as e:
-            print "err=get_stock_transaction sid=" + str(sid) + " pno=" + str(pno) + " exception=" + str(e.reason)
+            self.logger.warning("err=get_stock_transaction sid=%d scode=%s pno=%d reason=%s", sid, scode, pno, str(e.reason))
             return None
 
         # 拉取内容为空, 表明股票当天停牌, TODO: 加入公共的停牌列表中
@@ -296,7 +300,7 @@ class ParrelTransaction(ParrelFunc):
 
         lines = content.split('"')
         if len(lines) < 2:
-            print format_log("invalid_resp", {'sid': sid, 'scode': scode, 'content': content})
+            self.logger.warning("err=invalid_resp sid=%d scode=%s content=%s", sid, scode, content)
             return
         #print lines
 
@@ -325,7 +329,8 @@ class ParrelTransaction(ParrelFunc):
             transaction_list.append(transaction)
 
         transaction_count = len(transaction_list)
-        print format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_id': last_id, 'new_id': new_id, 'detail_count': transaction_count})
+        #print format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_id': last_id, 'new_id': new_id, 'detail_count': transaction_count})
+        self.logger.info(format_log("fetch_transaction", {'sid': sid, 'scode': scode, 'p': pno, 'last_id': last_id, 'new_id': new_id, 'detail_count': transaction_count}))
 
         if transaction_count > 0:
             # 每个时间段达到70笔成交记录时, p需要加1

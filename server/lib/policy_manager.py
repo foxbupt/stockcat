@@ -5,7 +5,7 @@
 #date: 2014/06/27
 
 import sys, re, json, os
-import datetime, time
+import datetime, time, logging, logging.config
 import redis
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
@@ -24,9 +24,9 @@ class PolicyManager(object):
 
     def core(self):
         policy_content = open(self.config_info['POLICY']['config']).read()
-        print policy_content
+        #print policy_content
         worker_config = json.loads(policy_content)
-        print worker_config
+        #print worker_config
 
         datamap = self.make_datamap()
         queue_policy_map = dict()
@@ -40,8 +40,8 @@ class PolicyManager(object):
             for i in range(policy_config['thread_count']):
                 policy_instance = PolicyWorker(policy_name, i, policy_config, self.config_info, datamap)
                 policy_instance.start()
-                print "name=" + policy_name + " index=" + str(i) + " id=" + str(policy_instance.ident)
                 instance_list.append(policy_instance)
+                logging.getLogger("policy").debug("desc=policy_worker_start name=%s index=%d id=%s", policy_name, i, str(policy_instance.ident))
             self.instance_map[policy_name] = instance_list
 
         # TODO: 考虑在主线程中取出队列item, 然后稳定分发到对应instance的queue里
@@ -52,10 +52,10 @@ class PolicyManager(object):
                 if data is None:
                     cur_time = datetime.datetime.now().time()
                     cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
-                    print "policy timenumber=" + str(cur_timenumber)
+                    #print "policy timenumber=" + str(cur_timenumber)
 
                     if cur_timenumber >= int(self.config_info['POLICY']['close_time']):
-                        print "market close"
+                        logging.getLogger("policy").critical("op=market_closed day=%d time=%d", self.day, cur_timenumber)
                         break
                     else:
                         continue
@@ -73,9 +73,9 @@ class PolicyManager(object):
                 index = sid % len(self.instance_map[name])
                 self.instance_map[name][index].enqueue(item)
 
-                print "op=dispatch_item key=" + str(key) + " name=" + name + " sid=" + str(sid) + " index=" + str(index)
+                logging.getLogger("policy").debug("desc=dispatch_item key=%s name=%s sid=%d index=%d", key, name, sid, index)
             except (KeyboardInterrupt, SystemExit): 
-                print "catch keybord interrupt"
+                logging.getLogger("policy").critical("desc=system_exit")
                 break
 
         self.terminate()
@@ -87,6 +87,7 @@ class PolicyManager(object):
                 instance.join()
 
         self.instance_map.clear()
+        logging.getLogger("policy").critical("op=policy_terminate")
         
     # 构造公共数据
     def make_datamap(self):
@@ -103,7 +104,7 @@ class PolicyManager(object):
         datamap['scode2id'] = scode2id_map
         datamap['id2scode'] = id2scode_map
         datamap['past_data'] = get_past_data(self.db_config, self.redis_config, self.day, 5)
-        print len(datamap['past_data'])
+        #print len(datamap['past_data'])
 
         return datamap
 
@@ -115,6 +116,9 @@ if __name__ == "__main__":
     config_info = Util.load_config(sys.argv[1])
     config_info['DB']['port'] = int(config_info['DB']['port'])
     config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
+
+     # 初始化日志
+    logging.config.fileConfig(config_info["LOG"]["conf"])
 
     manager = PolicyManager(config_info)
     manager.core()
