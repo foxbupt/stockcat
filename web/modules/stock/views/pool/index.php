@@ -11,6 +11,16 @@ td {
 }
 </style>
 
+<script language="javascript">
+function refreshPage()
+{
+    window.location.reload();
+}
+
+// 指定秒60刷新一次
+setTimeout('refreshPage()', 30 * 1000); 
+</script>
+
 <div class="container">
 	<div class="span12">
 		<div class="hd">
@@ -45,15 +55,15 @@ td {
 					<?php foreach ($hqMap as $hqData): ?>
                     <?php $sid = $hqData['sid']; ?>
                     <?php $stockInfo = $hqData['stock']; ?>
-                    <?php $stockData = $hqData['data']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
                     <?php $qqhqUrl = "http://stockhtm.finance.qq.com/sstock/ggcx/" . $stockInfo['code'] . ".shtml"; ?>
+                    <?php $sinahqUrl = "http://finance.sina.com.cn/realstock/company/" . strtolower($stockInfo['ecode']) . $stockInfo['code'] . "/nc.shtml"; ?>
                     <?php $trendUrl = $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => CommonUtil::TREND_FIELD_PRICE, 'start_day' => 20140101)); ?>
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
-                        <td><?php echo $stockInfo['name']; ?></td>
-						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
+                        <td><?php echo isset($hqData['name'])? $hqData['name'] : $stockInfo['name']; ?></td>
+						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo isset($hqData['code'])? $hqData['code'] : $stockInfo['code']; ?></a></td>
                         <?php if (isset($contMap[$sid])): ?>
                             <?php $stockContInfo = $contMap[$sid]; ?>
                             <td><?php echo $stockContInfo['cont_days'] . "天"; ?></td>
@@ -66,7 +76,7 @@ td {
                         <?php endif; ?>
 
 						<td><?php echo isset($priceMap[$sid])? $highTypeValues[$priceMap[$sid]['high_type']] : "-"; ?></td>
-						<td><?php echo $stockData['close_price']; ?></td>
+						<td><?php echo $hqData['last_close_price']; ?></td>
 
                         <?php if (empty($hqData)): ?>  
 						<td><?php echo "0.00"; ?></td>
@@ -77,16 +87,16 @@ td {
 						<td><?php echo "-"; ?></td>
                         <?php else: ?>
                             <?php $openPrice = $hqData['open_price']; ?>
-                            <?php $curPrice = $hqData['cur_price']; ?>
-                            <?php $isHighOpen = ($openPrice >= $stockData['close_price']); ?>
+                            <?php $curPrice = $hqData['close_price']; ?>
+                            <?php $isHighOpen = ($openPrice >= $hqData['last_close_price']); ?>
 
                         <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo sprintf("%.2f", $openPrice); ?></td>
                         <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo sprintf("%.2f%%", $hqData['open_vary_portion']); ?></td>
                         <td><?php echo sprintf("%.2f", $curPrice); ?></td>
                         <td class="<?php echo ($hqData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo sprintf("%.2f%%", $hqData['vary_portion']); ?></td>
 
-                        <td><?php echo isset($hqData['trend'])? $trendMap[$hqData['trend']['trend']] : "-"; ?></td>
-                        <td class="<?php echo isset($hqData['trend']) && ($hqData['trend']['op'] == CommonUtil::OP_BUY)? 'red' : 'green'; ?>"><?php echo isset($hqData['trend'])? $opMap[$hqData['trend']['op']] : "-"; ?></td>
+                        <td><?php echo isset($hqData['policy'])? $trendMap[$hqData['policy']['trend']] : "-"; ?></td>
+                        <td class="<?php echo isset($hqData['policy']) && ($hqData['policy']['op'] == CommonUtil::OP_BUY)? 'red' : 'green'; ?>"><?php echo isset($hqData['policy'])? $opMap[$hqData['policy']['op']] : "-"; ?></td>
                             
                         <?php endif; ?>
 					</tr>	
