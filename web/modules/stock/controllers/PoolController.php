@@ -43,27 +43,6 @@ class PoolController extends Controller
         }
 
         $sidList = array_unique($sidList);
-        $key = "poollist-" . $day;
-        $sidMap = Yii::app()->redis->get($key);
-        // var_dump($sidList, $sidMap);
-
-        // 设置到redis缓存中, 用于后台获取开盘价和实时价格
-        if (empty($sidMap))
-        {
-            $sidMap = array();
-
-            foreach ($sidList as $sid)
-            {
-                $stockInfo = StockUtil::getStockInfo($sid);
-                if (!empty($stockInfo))
-                {
-                    $sidMap[$sid] = strtolower($stockInfo['ecode'] . $stockInfo['code']);
-                }
-            }
-
-            Yii::app()->redis->set($key, json_encode($sidMap), 86400);
-        }
-
         $hqDataMap = array();
         foreach ($sidList as $sid)
         {
@@ -98,13 +77,12 @@ class PoolController extends Controller
     public function actionRealtime()
     {
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
-        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("risefactor-" . $day, 0, -1, true);
+        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("rf-" . $day, 0, -1, true);
         // var_dump($riseFactorList);
 
         $datamap = array();
         $curTime = date('H:i:s');
-        $pastdata = Yii::app()->redis->getInstance()->hmGet("pastdata-" . $day, array_keys($riseFactorList));
-        // var_dump($pastdata);
+        $allTagList = CommonUtil::getTagListByCategory(CommonUtil::TAG_CATEGORY_INDUSTRY);
 
         foreach ($riseFactorList as $sid => $riseFactor)
         {
@@ -114,12 +92,20 @@ class PoolController extends Controller
             $itemdata['daily'] = json_decode($dailyValue, true);
             if (!empty($itemdata['daily']))
             {
-                $curTime = substr($itemdata['daily']['time'], 8);
+                $curTime = $itemdata['daily']['time'];
             }
 
-            $stockPastData = json_decode($pastdata[$sid], true);
-            $itemdata['volume_ratio'] = round($itemdata['daily']['predict_volume'] / $stockPastData['avg_volume'], 1);
-            $itemdata['stock'] = StockUtil::getStockInfo($sid);
+            $itemdata['daily_policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
+
+            $tags = StockUtil::getStockTagList($sid);
+            $itemdata['tags'] = array();
+            foreach ($tags as $tid)
+            {
+                if (isset($allTagList[$tid]))
+                {
+                    $itemdata['tags'][] = $allTagList[$tid];
+                }
+            }
 
             $datamap[$sid] = $itemdata;
         }
@@ -135,42 +121,71 @@ class PoolController extends Controller
     // 获取关注股票池中股票的行情数据
     public static function getPoolHQData($sid, $day, $lastDay)
     {
-        $hqData = array('sid' => $sid, 'detail' => array());
+        $hqData = array('sid' => $sid);
 
         $stockInfo = StockUtil::getStockInfo($sid);
         $hqData['stock'] = $stockInfo;
-        $hqData['data'] = $stockData = StockData::model()->findByAttributes(array('sid' => $sid, 'day' => $lastDay, 'status' => 'Y'));
-        $closePrice = (float)$stockData['close_price'];
 
-        $dailyKey = "realtime-" . $sid . "-" . $day;
+        $dailyKey = "daily-" . $sid . "-" . $day;
         $cacheValue = Yii::app()->redis->get($dailyKey);
+        // var_dump($cacheValue);
         $curTime = intval(date('Hi'));
 
         if ($cacheValue)
         {
             $dailyData = json_decode($cacheValue, true);
             // var_dump($dailyData);
-            $hqData['detail'] = $dailyData;
-            $curTime = $dailyData['time'][count($dailyData['time']) - 1];
+            $hqData = array_merge($hqData, $dailyData);
+            $hqData['open_vary_portion'] = ($hqData['last_close_price'] > 0.0)? round(($hqData['open_price'] - $hqData['last_close_price']) / $hqData['last_close_price'] * 100, 2) : 0.0;
 
-            $priceList = $dailyData['price'];
-            $openPrice = $hqData['open_price'] = (float)$priceList[0];
-            $hqData['open_vary_portion'] = round(($openPrice - $closePrice) / $closePrice * 100, 2);
-            
-            $curPrice = $hqData['cur_price'] = (float)$priceList[count($priceList) - 1];
-            $hqData['vary_portion'] = ($openPrice > 0.0)? round(($curPrice - $openPrice) / $openPrice * 100, 2) : 0.00;
-            
-            if (count($priceList) > 2)
-            {
-                $hqData['trend'] = TrendHelper::analyzeRealtimeTrend($openPrice, $curPrice, $priceList);
-            }
             // var_dump($hqData);
+            $hqData['policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
         }
 
         $hqData['cur_time'] = sprintf("%02d:%02d", $curTime/100, $curTime%100);
         return $hqData;
     }
     
+    /**
+     * @desc 展现快速拉升/下降的阶段
+     * @param $_GET['rise'] 1 上升 0 下降
+     * @param $_GET['day'] 可选
+     */
+    public function actionRapid()
+    {
+        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $rise = intval($_GET['rise']);
+        $keyPrefix = (1 == $rise)? "ts-rr-" : "ts-rf-";
+
+        $rapidList = $stockMap = array();
+        $cacheMap = Yii::app()->redis->getInstance()->hGetAll($keyPrefix . $day);
+        
+        foreach ($cacheMap as $sid => $rapidValue)
+        {
+            $stockRapidList = json_decode($rapidValue, true);
+            foreach ($stockRapidList as &$rapidInfo)
+            {
+                $rapidInfo['sid'] = $sid;
+                $rapidList[] = $rapidInfo;
+            }
+
+            $dailyKey = "daily-" . $sid . "-" . $day;
+            $cacheValue = Yii::app()->redis->get($dailyKey);
+            if ($cacheValue)
+            {
+                $stockMap[$sid] = json_decode($cacheValue, true);
+            }
+        }
+
+		uasort($rapidList, array($this, "cmpRapidFunc"));
+        $this->render('rapid', array(
+                    'rise' => $rise,
+                    'rapidList' => $rapidList,
+                    'stockMap' => $stockMap
+               ));
+
+    }
+
     /**
      * @desc 对行情数据排序
      *
@@ -190,6 +205,24 @@ class PoolController extends Controller
 		
         // 按照涨幅的大小逆序排列
 		return ($hqData1[$fieldName] < $hqData2[$fieldName])? 1 : -1;
+    }
+
+    /**
+     * @desc 对拉升数据排序
+     *
+     * @param array $rapidInfo1
+     * @param array $rapidInfo2
+     * @return int
+     */
+    public function cmpRapidFunc($rapidInfo1, $rapidInfo2)
+    {
+		if ($rapidInfo1["now_time"] == $rapidInfo["now_time"])
+		{
+			return ($rapidInfo1["vary_portion"] < $rapidInfo2["vary_portion"])? 1 : -1;
+		}
+		
+        // 按照时间的大小逆序排列
+		return ($rapidInfo1["now_time"] < $rapidInfo2["now_time"])? 1 : -1;
     }
 }
 ?>
