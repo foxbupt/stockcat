@@ -5,8 +5,8 @@
 	"pm_close": 150000,
 	"close_delay": 240,
 	"fetch_list": [
-		{"name": "daily", "object": "parrel_func.ParrelDaily", "interval": 60, "item_per_thread": 30} 
-		{"name": "realtime", "object": "parrel_func.ParrelRealtime", "interval": 60, "item_per_thread": 50} 
-		{"name": "transaction", "object": "parrel_func.ParrelTransaction", "interval": 30, "item_per_thread": 30} 
+		{"name": "daily", "object": "parrel_func.ParrelDaily", "interval": 120, "item_per_thread": 30}, 
+		{"name": "realtime", "object": "parrel_func.ParrelRealtime", "interval": 60, "item_per_thread": 50}, 
+		{"name": "transaction", "object": "parrel_func.ParrelTransaction", "interval": 60, "item_per_thread": 30} 
 	]
 } 
