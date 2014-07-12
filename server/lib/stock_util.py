@@ -4,7 +4,7 @@
 #desc: 公共接口
 #date: 2013-09-16
 
-import datetime, sys, time
+import datetime, sys, time, json
 #sys.path.append('../../../server')  
 sys.path.append('../../../../server')  
 from pyutil.sqlutil import SqlUtil, SqlConn
@@ -176,7 +176,7 @@ def get_predict_volume(cur_volume, cur_time):
     @param: db_config dict
     @param: cur_day int 当前日期
     @param: count int 过去的天数
-    @return dict
+    @return dict (sid -> past_data) sid为string
 '''
 def get_past_data(db_config, redis_config, cur_day, count):
     key = "pastdata-" + str(cur_day)
@@ -184,6 +184,7 @@ def get_past_data(db_config, redis_config, cur_day, count):
     redis_conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
 
     datamap = redis_conn.hgetall(key)
+    # 从redis中取出来的key都是string
     if datamap:
         return datamap
 
@@ -193,8 +194,8 @@ def get_past_data(db_config, redis_config, cur_day, count):
     try:
         sql = "select sid, avg(volume) as avg_volume, sum(vary_price) as sum_vary_price, sum(vary_portion) as sum_vary_portion, \
         avg(close_price) as avg_close_price, max(high_price) as high_price, min(low_price) as low_price from t_stock_data \
-        where day >= " + start_day + " and day < " + cur_day + " group by sid"
-        print sql
+        where day >= " + str(start_day) + " and day < " + str(cur_day) + " group by sid"
+        #print sql
         record_list = db_conn.query_sql(sql)
     except Exception as e:
         print e
@@ -216,7 +217,6 @@ def get_past_data(db_config, redis_config, cur_day, count):
     #print stock_datamap
 
     redis_conn.hmset(key, stock_datamap)
-    redis_conn.expire(key, 86400)
     return stock_datamap
 
 '''
