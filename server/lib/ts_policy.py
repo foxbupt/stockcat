@@ -98,33 +98,37 @@ class TSPolicy(BasePolicy):
                         break
             return
 
-        index = max(time_list.index(start_time), 2)
-        while index >= 2 and index < len(time_list):
-            now_time = time_list[index]
-            past_time = time_list[index-2]
-            index += 1
+        try:
+            index = max(time_list.index(start_time), 2)
+        except ValueError:
+            self.logger.warning("err=time_not_exist sid=%d start_time=%d", sid, start_time)
+        else:
+            while index >= 2 and index < len(time_list):
+                now_time = time_list[index]
+                past_time = time_list[index-2]
+                index += 1
 
-            # 对当前时间的最高价 减去 2分钟前的最低价，若涨幅比例超过1.6%，则认为存在快速拉升的可能
-            cur_high_price = price_pair_map[now_time][0]
-            past_low_price = price_pair_map[past_time][1]
-            vary_portion = round((cur_high_price - past_low_price) / past_low_price * 100, 2)
+                # 对当前时间的最高价 减去 2分钟前的最低价，若涨幅比例超过1.6%，则认为存在快速拉升的可能
+                cur_high_price = price_pair_map[now_time][0]
+                past_low_price = price_pair_map[past_time][1]
+                vary_portion = round((cur_high_price - past_low_price) / past_low_price * 100, 2)
 
-            if (past_low_price >= 3.0 and vary_portion >= 1.6) or (past_low_price < 3.0 and vary_portion >= 2.5):
-                rise_info = {'start_time': past_time, 'now_time': now_time, 'low': past_low_price, 'high': cur_high_price, 'vary_portion': vary_portion}
-                rise_info['duration'] = time_diff(now_time, past_time)
-                break
+                if (past_low_price >= 3.0 and vary_portion >= 1.6) or (past_low_price < 3.0 and vary_portion >= 2.5):
+                    rise_info = {'start_time': past_time, 'now_time': now_time, 'low': past_low_price, 'high': cur_high_price, 'vary_portion': vary_portion}
+                    rise_info['duration'] = time_diff(now_time, past_time)
+                    break
 
-        #print rise_info, now_time
-        if rise_info:
-            if now_time < last_time:
-                (rise_info, refresh) = self.refresh_rapid(sid, rise_info, time_list[index+1], True)
+            #print rise_info, now_time
+            if rise_info:
+                if now_time < last_time and index < len(time_list):
+                    (rise_info, refresh) = self.refresh_rapid(sid, rise_info, time_list[index], True)
 
-            rise_map[rise_info['start_time']] = rise_info
-            self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
+                rise_map[rise_info['start_time']] = rise_info
+                self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
 
-            rise_info['sid'] = sid
-            rise_info['day'] = item['day']
-            self.logger.info(format_log("ts_new_rapid_rise", rise_info))
+                rise_info['sid'] = sid
+                rise_info['day'] = item['day']
+                self.logger.info(format_log("ts_new_rapid_rise", rise_info))
 
     # 分析快速下降
     def rapid_fall(self, item):
@@ -164,32 +168,36 @@ class TSPolicy(BasePolicy):
                         break
             return
 
-        index = time_list.index(start_time)
-        while index >= 2 and index < len(time_list):
-            now_time = time_list[index]
-            past_time = time_list[index-2]
-            index += 1
+        try:
+            index = time_list.index(start_time)
+        except ValueError:
+            self.logger.warning("err=time_not_exist sid=%d start_time=%d", sid, start_time)
+        else:
+            while index >= 2 and index < len(time_list):
+                now_time = time_list[index]
+                past_time = time_list[index-2]
+                index += 1
 
-            # 对当前时间的最低价 减去 2分钟前的最高价，若跌幅比例超过1.6%，则认为存在快速拉升的可能
-            cur_low_price = price_pair_map[now_time][1]
-            past_high_price = price_pair_map[past_time][0]
-            vary_portion = round((cur_low_price - past_high_price) / past_high_price * 100, 1)
+                # 对当前时间的最低价 减去 2分钟前的最高价，若跌幅比例超过1.6%，则认为存在快速拉升的可能
+                cur_low_price = price_pair_map[now_time][1]
+                past_high_price = price_pair_map[past_time][0]
+                vary_portion = round((cur_low_price - past_high_price) / past_high_price * 100, 1)
 
-            if (past_high_price >= 3.0 and vary_portion <= -1.6) or (past_high_price < 3.0 and vary_portion <= -2.5):
-                fall_info = {'start_time': past_time, 'now_time': now_time, 'low': cur_low_price, 'high': past_high_price, 'vary_portion': vary_portion}
-                fall_info['duration'] = time_diff(now_time, past_time)
-                break
+                if (past_high_price >= 3.0 and vary_portion <= -1.6) or (past_high_price < 3.0 and vary_portion <= -2.5):
+                    fall_info = {'start_time': past_time, 'now_time': now_time, 'low': cur_low_price, 'high': past_high_price, 'vary_portion': vary_portion}
+                    fall_info['duration'] = time_diff(now_time, past_time)
+                    break
 
-        if fall_info:
-            if now_time < last_time:
-                (fall_info, refresh) = self.refresh_rapid(sid, fall_info, time_list[index+1], False)
+            if fall_info:
+                if now_time < last_time and index < len(time_list):
+                    (fall_info, refresh) = self.refresh_rapid(sid, fall_info, time_list[index], False)
 
-            fall_map[fall_info['start_time']] = fall_info
-            self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
+                fall_map[fall_info['start_time']] = fall_info
+                self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
 
-            fall_info['sid'] = sid
-            fall_info['day'] = item['day']
-            self.logger.info(format_log("ts_new_rapid_fall", fall_info))
+                fall_info['sid'] = sid
+                fall_info['day'] = item['day']
+                self.logger.info(format_log("ts_new_rapid_fall", fall_info))
 
 
     '''
