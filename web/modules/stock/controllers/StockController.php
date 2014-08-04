@@ -37,12 +37,22 @@ class StockController extends Controller
 	 */
 	public function actionTrend()
 	{
-		if (!isset($_GET['sid'], $_GET['start_day']))
+		if (!isset($_GET['start_day']) || (!isset($_GET['sid']) && !isset($_GET['code'])))
 		{
 			throw new CHttpException(404);
 		}
 		
-		$sid = intval($_GET['sid']);
+        $sid = 0;
+        if (isset($_GET['sid']))
+        {
+            $sid = intval($_GET['sid']);
+        }
+        else
+        {
+            $stockMap = StockUtil::getStockMap();
+            $sid = $stockMap[trim($_GET['code'])];
+        }
+
 		$type = isset($_GET['type'])? intval($_GET['type']) : CommonUtil::TREND_FIELD_PRICE;
 		$startDay = intval($_GET['start_day']);
 		$endDay = isset($_GET['end_day'])? intval($_GET['end_day']) : intval(date('Ymd'));

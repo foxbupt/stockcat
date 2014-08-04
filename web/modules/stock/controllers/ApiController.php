@@ -105,5 +105,48 @@ class ApiController extends CController
 		
 		echo OutputUtil::json($data);
 	}
+
+	/**
+	 * @desc 获取实时上涨列表, 只返回>=rf的股票
+	 * @param $_GET['day'] 选择日期, 可选
+	 * @param $_GET['rf'] 上涨因子, 可选, 缺省为5
+	 * @param $_GET['ratio'] 量比, 可选, 缺省为2
+	 * @return json
+	 */
+	public function actionRealtime()
+	{
+		$this->layout = false;
+        
+        $rf = isset($_GET['rf'])? intval($_GET['rf']) : 5;
+        $ratio = isset($_GET['ratio'])? floatval($_GET['ratio']) : 2;
+        $day = isset($_GET['day'])? $_GET['day'] : date('Ymd');
+        $data = array();
+
+        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("rf-" . $day, 0, -1, true);
+        foreach ($riseFactorList as $sid => $riseFactor)
+        {
+            if ($riseFactor < $rf)
+            {
+                continue;
+            }
+
+            $itemdata = array('rf' => $riseFactor, 'sid' => $sid);
+            $itemdata['daily_policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
+            if ($itemdata['daily_policy']['volume_ratio'] < $ratio)
+            {
+                continue;
+            }
+
+            $dailyValue = Yii::app()->redis->get("daily-" . $sid . "-" . $day);
+            if ($dailyValue)
+            {
+                $itemdata['daily'] = json_decode($dailyValue, true);
+            }
+
+            $data[] = $itemdata;
+        }
+
+        echo OutputUtil::json($data);
+    }
 }
 ?>
