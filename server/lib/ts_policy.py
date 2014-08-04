@@ -66,8 +66,10 @@ class TSPolicy(BasePolicy):
 
         last_time = self.time_map[sid]
         price_pair_map = self.vary_map[sid]
-        if price_pair_map is None or len(price_pair_map) <= 3:
+        if price_pair_map is None:
             self.logger.warning("desc=non_exist_pairmap sid=%d", sid)
+            return 
+        elif len(price_pair_map) <= 3:
             return
 
         # 取出的key列表后按照时间大小排列
@@ -134,8 +136,10 @@ class TSPolicy(BasePolicy):
     def rapid_fall(self, item):
         sid = item['sid']
         price_pair_map = self.vary_map[sid]
-        if price_pair_map is None or len(price_pair_map) <= 2:
+        if price_pair_map is None:
             self.logger.warning("desc=non_exist_pairmap sid=%d", sid)
+            return
+        elif len(price_pair_map) <= 3:
             return
 
         start_time = int(item['items'][0]['time'] / 100)
