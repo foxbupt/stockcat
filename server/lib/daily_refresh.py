@@ -69,7 +69,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
             print sql
 
             # 股票且设置刷新, 才插入价格突破记录
-            if refresh and int(stock_data['type']) == 1:
+            if refresh and int(stock_info['type']) == 1:
                 try:
                     db_conn.query_sql(sql, True)
                 except Exception as e:
