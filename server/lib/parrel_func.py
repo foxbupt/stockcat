@@ -69,7 +69,10 @@ class ParrelDaily(ParrelFunc):
         stock_count = len(scode_list)
 
         if "dataset" in self.worker_config:
-            scode_dataset = [self.datamap['id2scode'][sid] for sid in self.worker_config["dataset"]]
+            scode_dataset = []
+            for sid in self.worker_config["dataset"]:
+                if sid in self.datamap['id2scode']:
+                    scode_dataset.append(self.datamap['id2scode'][sid])
             item_list.append(",".join(scode_dataset))
         else:
             offset = 0
@@ -174,7 +177,8 @@ class ParrelRealtime(ParrelFunc):
         if "dataset" in self.worker_config:
             sid_list = self.worker_config['dataset']
         for sid in sid_list:
-            item_list.append((sid, self.datamap['id2scode'][sid]))
+            if sid in self.datamap['id2scode']:
+                item_list.append((sid, self.datamap['id2scode'][sid]))
         #for sid, scode in self.datamap['id2scode'].items():
         #    item_list.append((sid, scode))
         return item_list
@@ -267,7 +271,8 @@ class ParrelTransaction(ParrelFunc):
                 sid_list = self.datamap['pool_list']
 
         for sid in sid_list:
-            item_list.append((sid, self.datamap['id2scode'][sid]))
+            if sid in self.datamap['id2scode']:
+                item_list.append((sid, self.datamap['id2scode'][sid]))
 
         #print item_list
         return item_list
