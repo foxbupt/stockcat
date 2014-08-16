@@ -27,7 +27,7 @@ main()
     fi
 
     lastday=`date -d "${count} day ago" +%Y%m%d`
-    ./del_key.sh "*${lastday}*"
+    ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
     ./service.sh start all
 
     echo "finish"
