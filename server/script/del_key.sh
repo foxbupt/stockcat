@@ -12,9 +12,9 @@ main()
     fi
 
     pattern=$1
-    redis-cli keys "$pattern" | while read key
+    /usr/local/bin/redis-cli keys "$pattern" | while read key
     do
-        redis-cli del "$key"
+        /usr/local/bin/redis-cli del "$key"
         echo "del $key"
     done
 }
