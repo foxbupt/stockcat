@@ -25,6 +25,12 @@ class AnalyzeCommand extends CConsoleCommand
         foreach ($stockMap as $scode => $sid)
         {
             $stockInfo = StockUtil::getStockInfo($sid);
+            // 忽略指数
+            if (StockUtil::STOCK_TYPE_INDEXES == $stockInfo['type'])
+            {
+                continue;
+            }
+
             $stockDataList = StockData::model()->findAll(array(
                         'condition' => "sid = $sid and day >= ${startDay} and day <= $day and status = 'Y'",
                         // 'order' => 'day',
@@ -161,7 +167,8 @@ class AnalyzeCommand extends CConsoleCommand
         $volume_vary_portion_list = array_slice($volume_vary_portion, $cont_start_index, $cont_rise_count);
         $volumes =  array_slice($volumes, $cont_start_index, $cont_rise_count);
         // 成交量放大的最大比例
-        $volume_scale = round(max($volumes) / min($volumes), 1);
+        // $volume_scale = round(max($volumes) / min($volumes), 1);
+        $volume_scale = round(max($volume_vary_portion_list), 1);
 		
         // 价格连续上涨幅度 < 4% 或 成交量放大比例 < 1.5, 直接忽略
         if (($cont_vary_portion <= 3) || ($volume_scale < 1.5))
