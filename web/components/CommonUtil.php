@@ -14,16 +14,33 @@ class CommonUtil
 	const RANK_RECOMMEND = 3;
 	const RANK_STRONG_RECOMMEND = 4;
 	
-	// 趋势/波段方向: 0 震荡 1 上涨  -1 下跌
-	const DIRECTTION_UP = 1;
-	const DIRECTTION_DOWN = -1;
-	const DIRECTTION_SHAVE = 0;
+	// 趋势/波段方向: 1 下跌 2 震荡 3 上涨
+	const DIRECTION_DOWN = 1;
+	const DIRECTION_SHAVE = 2;
+	const DIRECTION_UP = 3;
+
+    // 趋势分析字段: 1 价格 2 成交量
+    const TREND_FIELD_PRICE = 1;
+    const TREND_FIELD_VOLUME = 2;
+    
+    // 操作字段: 1 卖出  2 待定 3 买入
+    const OP_SELL = 1;
+    const OP_PEND = 2;
+    const OP_BUY = 3;
+    
+    // 格式化类型: 1 价格, 2 百分比, 3 千分位数值
+    const FORMAT_TYPE_PRICE = 1;
+    const FORMAT_TYPE_PORTION = 2;
+    const FORMAT_TYPE_NUMBER = 3;
 	
 	const CACHE_KEY_COMMON_CONFIG = "config:all";
 	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
 	
 	// 全年节假日配置
 	static $holidays = array(
+                20140101,
+                20140131,
+                array('start' => 20140203, 'end' => 20140206),
                 20140407,
                 20140602,
                 20140908,
@@ -107,7 +124,7 @@ class CommonUtil
 	 */
 	public static function getTagListByCategory($category)
 	{
-		$cacheKey = self::CACHE_KEY_COMMON_TAG_CATEGORY . str($category);
+		$cacheKey = self::CACHE_KEY_COMMON_TAG_CATEGORY . $category;
 		$cacheValue = Yii::app()->redis->get($cacheKey);
 		
 		if (!$cacheValue)
@@ -163,7 +180,7 @@ class CommonUtil
     {
         $step = 1;
         // 含当天
-        $openCount = 1;
+        $openCount = 0;
         $timestamp = strtotime($day);    
     
         while (true)
@@ -183,6 +200,116 @@ class CommonUtil
         }
 
         return 0;
+    }
+    
+    /**
+     * @desc 获取指定日期范围[startDay, endDay] 内的交易天数目
+     * @param int $startDay
+     * @param int $endDay
+     * @return int
+     */
+    public static function getOpenDayCount($startDay, $endDay)
+    {
+        $count = 0;
+        $day = $startDay;
+
+        while ($day <= $endDay)
+        {
+            if (self::isMarketOpen($day))
+            {
+                $count += 1;
+            }
+
+            $day = date("Ymd", strtotime("+1 day", strtotime($day)));
+        }
+
+        return $count;
+    }
+
+    /**
+     * @desc 检查 当前值与上期值是否超出指定比例
+     *
+     * @param double $cur
+     * @param double $last
+     * @param double $portion
+     * @return bool
+     */
+    public static function checkExceed($cur, $last, $portion)
+    {
+        return (($cur - $last) / $last) >= $portion;
+    }
+    
+    /**
+     * @desc 计算两个值的差异比例
+     *
+     * @param doubel $cur
+     * @param double $last
+     * @return double
+     */
+    public static function calcPortion($cur, $last)
+    {
+    	return ($cur - $last) / $last;	
+    }
+    
+    /**
+     * @desc 从后往前搜索值在数组中出现的顺序
+     * @param value double
+     * @param list array
+     * @return mixed index/false
+     */
+    public static function reverseSearch($value, $list)
+    {
+        $count = count($list);
+
+        for ($index = $count-1; $index >= 0; $index--)
+        {
+            if ($list[$index] == $value)
+            {
+                return $index;
+            }
+        }
+
+        return false;
+    }   
+
+    /**
+     * @desc 获取最近开盘的日期
+     *
+     * @param int $day
+     * @return int
+     */
+    public static function getParamDay($day)
+    {
+        return CommonUtil::isMarketOpen($day)? $day : CommonUtil::getPastOpenDay($day, 1);
+    }
+    
+    /**
+     * @desc 格式化价格/涨幅显示
+     *
+     * @param float $number
+     * @param int $type 参见FORMAT_TYPE_xxx
+     * @return string
+     */
+    public static function formatNumber($number, $type = CommonUtil::FORMAT_TYPE_PRICE)
+    {
+    	switch ($type)
+    	{
+    		case FORMAT_TYPE_PRICE:
+    		default:
+    			return sprintf("%.2f", $number);
+    		case FORMAT_TYPE_PORTION:
+    			return sprintf("%.2f%%", $number);
+    		case FORMAT_TYPE_NUMBER:
+   			{
+   				return number_format($number);
+   			}
+    	}	
+    }
+    
+    // 获取qq的行情页面地址
+    public static function getHQUrl($code)
+    {
+    	return "http://stockhtm.finance.qq.com/sstock/ggcx/" . $code . ".shtml";	
     }
 }
 	
