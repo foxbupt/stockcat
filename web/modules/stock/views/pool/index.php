@@ -52,13 +52,14 @@ setTimeout('refreshPage()', 30 * 1000);
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($hqMap as $hqData): ?>
-                    <?php $sid = $hqData['sid']; ?>
-                    <?php $stockInfo = $hqData['stock']; ?>
+					<?php foreach ($hqMap as $dataItem): ?>
+                    <?php $sid = $dataItem['sid']; ?>
+                    <?php $dailyData = $dataItem['daily']; ?>
+                    <?php $dailyPolicyData = $dataItem['policy']; ?>
+                    <?php $stockInfo = isset($dataItem['daily'])? $dailyData : $dataItem['stock']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
-                    <?php $qqhqUrl = "http://stockhtm.finance.qq.com/sstock/ggcx/" . $stockInfo['code'] . ".shtml"; ?>
-                    <?php $sinahqUrl = "http://finance.sina.com.cn/realstock/company/" . strtolower($stockInfo['ecode']) . $stockInfo['code'] . "/nc.shtml"; ?>
-                    <?php $trendUrl = $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => CommonUtil::TREND_FIELD_PRICE, 'start_day' => 20140101)); ?>
+                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
+                    <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
@@ -76,9 +77,9 @@ setTimeout('refreshPage()', 30 * 1000);
                         <?php endif; ?>
 
 						<td><?php echo isset($priceMap[$sid])? $highTypeValues[$priceMap[$sid]['high_type']] : "-"; ?></td>
-						<td><?php echo $hqData['last_close_price']; ?></td>
+						<td><?php echo CommonUtil::formatNumber($dailyData['last_close_price']); ?></td>
 
-                        <?php if (empty($hqData)): ?>  
+                        <?php if (empty($dailyData)): ?>  
 						<td><?php echo "0.00"; ?></td>
 						<td><?php echo "0.00"; ?></td>
 						<td><?php echo "0.00"; ?></td>
@@ -86,17 +87,18 @@ setTimeout('refreshPage()', 30 * 1000);
 						<td><?php echo "-"; ?></td>
 						<td><?php echo "-"; ?></td>
                         <?php else: ?>
-                            <?php $openPrice = $hqData['open_price']; ?>
-                            <?php $curPrice = $hqData['close_price']; ?>
-                            <?php $isHighOpen = ($openPrice >= $hqData['last_close_price']); ?>
+                            <?php $openPrice = $dailyData['open_price']; ?>
+                            <?php $curPrice = $dailyData['close_price']; ?>
+                            <?php $isHighOpen = ($openPrice >= $dailyData['last_close_price']); ?>
+                            <?php $openVaryPortion = $dailyPolicyData['open_vary_portion'] ;?>
 
-                        <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo sprintf("%.2f", $openPrice); ?></td>
-                        <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo sprintf("%.2f%%", $hqData['open_vary_portion']); ?></td>
-                        <td><?php echo sprintf("%.2f", $curPrice); ?></td>
-                        <td class="<?php echo ($hqData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo sprintf("%.2f%%", $hqData['vary_portion']); ?></td>
+                        <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($openPrice); ?></td>
+                        <td class="<?php echo $isHighOpen? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($openVaryPortion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+                        <td><?php echo CommonUtil::formatNumber($curPrice); ?></td>
+                        <td class="<?php echo ($dailyData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 
-                        <td><?php echo isset($hqData['policy'])? $trendMap[$hqData['policy']['trend']] : "-"; ?></td>
-                        <td class="<?php echo isset($hqData['policy']) && ($hqData['policy']['op'] == CommonUtil::OP_BUY)? 'red' : 'green'; ?>"><?php echo isset($hqData['policy'])? $opMap[$hqData['policy']['op']] : "-"; ?></td>
+                        <td><?php echo empty($dailyPolicyData)? "-" : $trendMap[$dailyPolicyData['trend']]; ?></td>
+                        <td class="<?php echo !empty($dailyPolicyData) && ($dailyPolicyData['op'] == CommonUtil::OP_BUY)? 'red' : 'green'; ?>"><?php echo !empty($dailyPolicyData)? $opMap[$dailyPolicyData['op']] : "-"; ?></td>
                             
                         <?php endif; ?>
 					</tr>	

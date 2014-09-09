@@ -32,7 +32,7 @@ setTimeout('refreshPage()', 30 * 1000);
 				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/stock/stock/add');?>">添加股票</a>
 			</p>
 			<table class="table table-bordered">
-            <caption>当前共有<strong><?php echo count($stockMap); ?></strong>支股票</caption>
+            <caption>当前共有<strong><?php echo count($rapidList); ?></strong>支股票</caption>
 				<thead>
 					<tr>
 						<th>股票id</th>
@@ -49,20 +49,19 @@ setTimeout('refreshPage()', 30 * 1000);
 				<tbody>
 					<?php foreach ($rapidList as $rapidInfo): ?>
                     <?php $sid = $rapidInfo['sid']; ?>
-                    <?php $dailyData = $stockMap[$sid]; ?>
-                    <?php $qqhqUrl = "http://stockhtm.finance.qq.com/sstock/ggcx/" . $dailyData['code'] . ".shtml"; ?>
-                    <?php $sinahqUrl = "http://finance.sina.com.cn/realstock/company/" . strtolower($stockInfo['ecode']) . $stockInfo['code'] . "/nc.shtml"; ?>
-                    <?php $trendUrl = $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => CommonUtil::TREND_FIELD_PRICE, 'start_day' => 20140101)); ?>
+                    <?php $stockInfo = $stockMap[$sid]; ?>
+                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
+                    <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $day); ?>
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
-                        <td><?php echo $dailyData['name']; ?></td>
-						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $dailyData['code']; ?></a></td>
+                        <td><?php echo $stockInfo['name']; ?></td>
+						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
-						<td><?php echo sprintf("%.2f", $rapidInfo['vary_portion']); ?></td>
+						<td><?php echo CommonUtil::formatNumber($rapidInfo['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 						<td><?php echo $rapidInfo['duration']; ?></td>
-						<td><?php echo $rise? $rapidInfo['low'] : $rapidInfo['high']; ?></td>
-						<td><?php echo $rise? $rapidInfo['high'] : $rapidInfo['low']; ?></td>
+						<td><?php echo $rise? CommonUtil::formatNumber($rapidInfo['low']) : CommonUtil::formatNumber($rapidInfo['high']); ?></td>
+						<td><?php echo $rise? CommonUtil::formatNumber($rapidInfo['high']) : CommonUtil::formatNumber($rapidInfo['low']); ?></td>
 						<td><?php echo sprintf("%02d:%02d", intval($rapidInfo['start_time']/100), intval($rapidInfo['start_time']%100)); ?></td>
 						<td><?php echo sprintf("%02d:%02d", intval($rapidInfo['now_time']/100), intval($rapidInfo['now_time']%100)); ?></td>
 					</tr>	
