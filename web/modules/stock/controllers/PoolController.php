@@ -19,49 +19,31 @@ class PoolController extends Controller
         $lastDay = CommonUtil::getPastOpenDay($day, 1);
         // var_dump($day, $lastDay);
 
-        $sidList = array();
-
-        $contMap = array();
-        $contList = StockCont::model()->findAll(array(
-                                'condition' => "day = ${lastDay} and status = 'Y'",
-                                'order' => 'sum_price_vary_portion desc, max_volume_vary_portion desc, day asc',
-                             ));
-        foreach ($contList as $record)
+		$contInfo = DataModel::getContList($lastDay, $day);
+		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(1, 2), array(1, 2));	
+        
+        $hqDataMap = $contInfo['datamap'];
+        foreach ($thresholdInfo['datamap'] as $sid => $dataItem)
         {
-            $sidList[] = $record->sid;
-            $contMap[$record->sid] = $record->getAttributes();
+        	if (!isset($hqDataMap[$sid]))
+        	{
+            	$hqDataMap[$sid] = $dataItem;
+        	}
         }
 
-        $priceMap = array();
-        $priceList = StockPriceThreshold::model()->findAll(array(
-                                            'condition' => "day = {$lastDay} and (high_type = 1 or high_type = 2) and status = 'Y'",
-                                        ));
-        foreach ($priceList as $record)
-        {
-            $sidList[] = $record->sid;
-            $priceMap[$record->sid] = $record->getAttributes();
-        }
-
-        $sidList = array_unique($sidList);
-        $hqDataMap = array();
-        foreach ($sidList as $sid)
-        {
-            $hqDataMap[] = self::getPoolHQData($sid, $day, $lastDay);
-        }
-
-        $curTime = $hqDataMap[0]['cur_time'];
+        $dataMap = array_values($hqDataMap);
+        $curTime = isset($dataMap[0]['daily'])? $dataMap[0]['daily']['time'] : date('His');
         $curHour = intval(substr($curTime, 0, 2));
-        $curMin = intval(substr($curTime, 3, 2));
+        $curMin = intval(substr($curTime, 2, 2));
         if (($curHour == 9 && $curMin >= 25) || ($curHour > 9 && $curHour < 15) || ($curHour == 15 && $curMin == 0))
         {
-		    uasort($hqDataMap, array($this, "cmpHQFunc"));
+		    uasort($dataMap, array($this, "cmpHQFunc"));
         }
 
         $this->render('index', array(
-                    // 'sidList' => $sidList,
-                    'contMap' => $contMap,
-                    'priceMap' => $priceMap,
-                    'hqMap' => $hqDataMap,
+                    'contMap' => $contInfo['cont_map'],
+                    'priceMap' => $thresholdInfo['threshold_map'],
+                    'hqMap' => $dataMap,
                     'day' => $day,
                     'lastDay' => $lastDay,
                     'curTime' => $curTime,
@@ -77,73 +59,22 @@ class PoolController extends Controller
     public function actionRealtime()
     {
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
-        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("rf-" . $day, 0, -1, true);
-        // var_dump($riseFactorList);
-
-        $datamap = array();
+        $day = CommonUtil::getParamDay($day);
+        $datamap = DataModel::getRealtimeList($day);
+        
         $curTime = date('H:i:s');
-        $allTagList = CommonUtil::getTagListByCategory(CommonUtil::TAG_CATEGORY_INDUSTRY);
-
-        foreach ($riseFactorList as $sid => $riseFactor)
+    	if (!empty($datamap))
         {
-            $itemdata = array();
-
-            $dailyValue = Yii::app()->redis->get("daily-" . $sid . "-" . $day);
-            $itemdata['daily'] = json_decode($dailyValue, true);
-            if (!empty($itemdata['daily']))
-            {
-                $curTime = $itemdata['daily']['time'];
-            }
-
-            $itemdata['daily_policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
-
-            $tags = StockUtil::getStockTagList($sid);
-            $itemdata['tags'] = array();
-            foreach ($tags as $tid)
-            {
-                if (isset($allTagList[$tid]))
-                {
-                    $itemdata['tags'][] = $allTagList[$tid];
-                }
-            }
-
-            $datamap[$sid] = $itemdata;
+        	$item = current($datamap);
+            $curTime = $item['daily']['time'];
         }
-
+        
         // var_dump($datamap);
         $this->render('realtime', array(
-                    'riseFactorList' => $riseFactorList,
+        			'day' => $day,
                     'datamap' => $datamap,
-                    'curTime' => $curTime
+                    'curTime' => $curTime,
                 ));
-    }
-
-    // 获取关注股票池中股票的行情数据
-    public static function getPoolHQData($sid, $day, $lastDay)
-    {
-        $hqData = array('sid' => $sid);
-
-        $stockInfo = StockUtil::getStockInfo($sid);
-        $hqData['stock'] = $stockInfo;
-
-        $dailyKey = "daily-" . $sid . "-" . $day;
-        $cacheValue = Yii::app()->redis->get($dailyKey);
-        // var_dump($cacheValue);
-        $curTime = intval(date('Hi'));
-
-        if ($cacheValue)
-        {
-            $dailyData = json_decode($cacheValue, true);
-            // var_dump($dailyData);
-            $hqData = array_merge($hqData, $dailyData);
-            $hqData['open_vary_portion'] = ($hqData['last_close_price'] > 0.0)? round(($hqData['open_price'] - $hqData['last_close_price']) / $hqData['last_close_price'] * 100, 2) : 0.0;
-
-            // var_dump($hqData);
-            $hqData['policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
-        }
-
-        $hqData['cur_time'] = sprintf("%02d:%02d", $curTime/100, $curTime%100);
-        return $hqData;
     }
     
     /**
@@ -155,37 +86,35 @@ class PoolController extends Controller
     {
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $rise = intval($_GET['rise']);
-        $keyPrefix = (1 == $rise)? "ts-rr-" : "ts-rf-";
-
-        $rapidList = $stockMap = array();
-        $cacheMap = Yii::app()->redis->getInstance()->hGetAll($keyPrefix . $day);
+        $day = CommonUtil::getParamDay($day);
         
-        foreach ($cacheMap as $sid => $rapidValue)
-        {
-            $stockRapidList = json_decode($rapidValue, true);
-            foreach ($stockRapidList as &$rapidInfo)
-            {
-                $rapidInfo['sid'] = $sid;
-                $rapidList[] = $rapidInfo;
-            }
-
-            $dailyKey = "daily-" . $sid . "-" . $day;
-            $cacheValue = Yii::app()->redis->get($dailyKey);
-            if ($cacheValue)
-            {
-                $stockMap[$sid] = json_decode($cacheValue, true);
-            }
-        }
-
-		uasort($rapidList, array($this, "cmpRapidFunc"));
+        $rapidInfo = DataModel::getRapidList($day, $rise);
         $this->render('rapid', array(
+        			'day' => $day,
                     'rise' => $rise,
-                    'rapidList' => $rapidList,
-                    'stockMap' => $stockMap
+                    'rapidList' => $rapidInfo['rapid_list'],
+                    'stockMap' => $rapidInfo['stock_map']
                ));
-
     }
 
+    /**
+     * @desc 获取昨日涨停的股票当天表现
+     * @param $_GET['day'] int
+     *
+     */
+    public function actionUpLimit()
+    {
+    	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+    	$lastDay = CommonUtil::getPastOpenDay($day, 1);
+    	
+    	$data = DataModel::getUpLimitList($lastDay, $day);
+    	$this->render('uplimit', array(
+    				'lastDay' => $lastDay,
+    				'uplist' => $data['uplist'],
+    				'datamap' => $data['datamap'],
+    			));
+    }
+    
     /**
      * @desc 对行情数据排序
      *
@@ -206,23 +135,12 @@ class PoolController extends Controller
         // 按照涨幅的大小逆序排列
 		return ($hqData1[$fieldName] < $hqData2[$fieldName])? 1 : -1;
     }
-
-    /**
-     * @desc 对拉升数据排序
-     *
-     * @param array $rapidInfo1
-     * @param array $rapidInfo2
-     * @return int
-     */
-    public function cmpRapidFunc($rapidInfo1, $rapidInfo2)
+    
+    // 获取股票趋势url
+    public function getTrendUrl($sid, $type, $day)
     {
-		if ($rapidInfo1["now_time"] == $rapidInfo["now_time"])
-		{
-			return ($rapidInfo1["vary_portion"] < $rapidInfo2["vary_portion"])? 1 : -1;
-		}
-		
-        // 按照时间的大小逆序排列
-		return ($rapidInfo1["now_time"] < $rapidInfo2["now_time"])? 1 : -1;
+    	$startDay = strval(intval(intval($day) / 10000)) . "0101";
+    	return $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => $type, 'start_day' => $startDay));
     }
 }
 ?>

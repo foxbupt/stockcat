@@ -120,33 +120,73 @@ class ApiController extends CController
         $rf = isset($_GET['rf'])? intval($_GET['rf']) : 5;
         $ratio = isset($_GET['ratio'])? floatval($_GET['ratio']) : 2;
         $day = isset($_GET['day'])? $_GET['day'] : date('Ymd');
+        
+        $day = CommonUtil::getParamDay($day);
         $data = array();
 
-        $riseFactorList = Yii::app()->redis->getInstance()->zRevRange("rf-" . $day, 0, -1, true);
-        foreach ($riseFactorList as $sid => $riseFactor)
+        $datamap = DataModel::getRealtimeList($day);        
+        foreach ($datamap as $sid => $dataItem)
         {
-            if ($riseFactor < $rf)
+            if (($dataItem['rf'] < $rf) || ($dataItem['policy']['volume_ratio'] < $ratio))
             {
                 continue;
             }
-
-            $itemdata = array('rf' => $riseFactor, 'sid' => $sid);
-            $itemdata['daily_policy'] = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $day);
-            if ($itemdata['daily_policy']['volume_ratio'] < $ratio)
-            {
-                continue;
-            }
-
-            $dailyValue = Yii::app()->redis->get("daily-" . $sid . "-" . $day);
-            if ($dailyValue)
-            {
-                $itemdata['daily'] = json_decode($dailyValue, true);
-            }
-
-            $data[] = $itemdata;
+            
+            $dataItem['sid'] = $sid;
+            $data[] = $dataItem;
         }
 
         echo OutputUtil::json($data);
+    }
+
+	/**
+	 * @desc 获取快速拉升列表
+	 * @param $_GET['day'] 选择日期, 可选
+	 * @return json
+	 */
+    public function actionRapidRise()
+    {
+		$this->layout = false;
+
+        $day = isset($_GET['day'])? intval($_GET['day']) : date('Ymd');
+        $day = CommonUtil::getParamDay($day);
+        $data = DataModel::getRapidList($day, True);
+
+        echo OutputUtil::json($data);
+    }
+
+    /**
+     * @desc 获取涨幅前30的列表
+     * @param $_GET['day']
+     * @return json
+     */
+    public function actionUpLimit()
+    {
+        $this->layout = false;
+
+        $day = isset($_GET['day'])? intval($_GET['day']) : date('Ymd');
+        $day = CommonUtil::getParamDay($day);
+
+        $data = DataModel::getUpLimitList($day);
+        echo OutputUtil::json($data);
+    }
+
+    /**
+     * @desc 对拉升数据排序
+     *
+     * @param array $rapidInfo1
+     * @param array $rapidInfo2
+     * @return int
+     */
+    public function cmpRapidFunc($rapidInfo1, $rapidInfo2)
+    {
+		if ($rapidInfo1["now_time"] == $rapidInfo2["now_time"])
+		{
+			return ($rapidInfo1["vary_portion"] < $rapidInfo2["vary_portion"])? 1 : -1;
+		}
+		
+        // 按照时间的大小逆序排列
+		return ($rapidInfo1["now_time"] < $rapidInfo2["now_time"])? 1 : -1;
     }
 }
 ?>
