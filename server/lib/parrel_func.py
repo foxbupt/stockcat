@@ -76,7 +76,7 @@ class ParrelDaily(ParrelFunc):
             item_list.append(",".join(scode_dataset))
         else:
             offset = 0
-            percount = 20
+            percount = 50
             while offset < stock_count:
                 item_list.append(",".join(scode_list[offset : min(offset + percount, stock_count)]))
                 offset += percount
@@ -97,7 +97,9 @@ class ParrelDaily(ParrelFunc):
             return
 
         if content:
-            lines = content.strip("\n").split(";")
+            content = safestr(content.decode('gbk'))
+            #self.logger.info("desc=daily_content content=%s", content)
+            lines = content.strip("\r\n").split(";")
 
             for line in lines:
                 if 0 == len(line):
@@ -122,6 +124,10 @@ class ParrelDaily(ParrelFunc):
 
         fields = content.split("~")
         #print fields
+        if len(fields) < 44:
+            line_str = safestr(line)
+            self.logger.error(format_log("daily_lack_fields", {'line': line_str, 'content': content}))
+            return None
 
         # 当日停牌则不能存入
         open_price = float(fields[5])
@@ -131,26 +137,30 @@ class ParrelDaily(ParrelFunc):
 
         item = dict()
 
-        item['name'] = safestr(fields[1])
-        item['code'] = stock_code = fields[2]
-        item['sid'] = int(self.datamap['code2id'][stock_code])
-        item['day'] = self.day
-        item['last_close_price'] = float(fields[4])
-        item['open_price'] = open_price
-        item['high_price'] = float(fields[33])
-        item['low_price'] = float(fields[34])
-        item['close_price'] = close_price
-        # 当前时刻, 格式为HHMMSS
-        item['time'] = fields[30][8:]
-        item['vary_price'] = float(fields[31])
-        item['vary_portion'] = float(fields[32])
-        # 成交量转化为手
-        item['volume'] = int(fields[36])
-        item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
-        # 成交额转化为万元
-        item['amount'] = int(fields[37])
-        item['exchange_portion'] = fields[38]
-        item['swing'] = fields[43]
+        try:
+            item['name'] = safestr(fields[1])
+            item['code'] = stock_code = fields[2]
+            item['sid'] = int(self.datamap['code2id'][stock_code])
+            item['day'] = self.day
+            item['last_close_price'] = float(fields[4])
+            item['open_price'] = open_price
+            item['high_price'] = float(fields[33])
+            item['low_price'] = float(fields[34])
+            item['close_price'] = close_price
+            # 当前时刻, 格式为HHMMSS
+            item['time'] = fields[30][8:]
+            item['vary_price'] = float(fields[31])
+            item['vary_portion'] = float(fields[32])
+            # 成交量转化为手
+            item['volume'] = int(fields[36])
+            item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
+            # 成交额转化为万元
+            item['amount'] = int(fields[37])
+            item['exchange_portion'] = fields[38]
+            item['swing'] = fields[43]
+        except IndexError:
+            self.logger.error(format_log("parse_daily", {'content': content}))
+            return None
 
         return item
 
