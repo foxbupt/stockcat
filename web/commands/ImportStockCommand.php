@@ -45,6 +45,14 @@ class ImportStockCommand extends CConsoleCommand
             $stockRecord->type = 1;
             $stockRecord->code = $stockInfo['code'];
             $stockRecord->name = $stockInfo['name'];
+            if (strstr($stockInfo['code'], "60") !== False)
+            {
+                $stockInfo['ecode'] = 'SH';
+            }
+            else 
+            {
+                $stockInfo['ecode'] = 'SZ';
+            }
             $stockRecord->company = $stockInfo['company'];
             $stockRecord->business = $stockInfo['business'];
             $stockRecord->profit = $stockInfo['profit'];

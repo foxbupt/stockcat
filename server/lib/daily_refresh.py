@@ -23,7 +23,8 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
     vary_stock_list = dict()
 
     for sid, stock_info in stock_list.items():
-        if sid not in today_data_list:
+        # 忽略指数
+        if sid not in today_data_list or int(stock_info['type']) == 2:
             continue
 
         #print stock_info

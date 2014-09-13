@@ -76,15 +76,16 @@ class DataModel
      *
      * @param int $lastDay 昨天
      * @param int $day 当天
+     * @param int $contDays 连续上涨天数
      * @return array('cont_map', 'datamap')
      */
-    public static function getContList($lastDay, $day)
+    public static function getContList($lastDay, $day, $contDays = 3)
     {
         $datamap = $contMap = array();
         
         $contList = StockCont::model()->findAll(array(
-                                'condition' => "day = ${lastDay} and status = 'Y'",
-                                'order' => 'sum_price_vary_portion desc, max_volume_vary_portion desc, day asc',
+                                'condition' => "day = ${lastDay} and cont_days >= ${contDays} and status = 'Y'",
+                                'order' => 'sum_price_vary_portion desc, max_volume_vary_portion desc, cont_days desc',
                              ));
         foreach ($contList as $record)
         {
@@ -94,7 +95,7 @@ class DataModel
         }
 
         return array(
-        			'cont_map' => $contMap,
+        			'contmap' => $contMap,
         			'datamap' => $datamap,
         		);
     }
@@ -111,17 +112,29 @@ class DataModel
     public static function getThresholdList($lastDay, $day, $highTypes, $lowTypes)
     {
         $datamap = $thresholdMap = array();
-        
-        $condition = "day = ${lastDay} and ";
-        if (count($highTypes))
+        $needHigh = !empty($highTypes);
+        $needLow = !empty($lowTypes);
+
+        $condition = "day = ${lastDay} ";
+        if ($needHigh || $needLow)
         {
-        	$condition .= " high_type in (" . implode(",", $highTypes) . ") and ";
+            $condition .= " and (";
+            if ($needHigh)
+            {
+                $condition .= " high_type in (" . implode(",", $highTypes) . ")";
+                if ($needLow)
+                {
+                    $condition .= " or ";
+                }
+            }
+            if ($needLow)
+            {
+                $condition .= " low_type in (" . implode(",", $lowTypes) . ") ";
+            }
+            $condition .= " ) ";
         }
-        if (count($lowTypes))
-        {
-        	$condition .= " low_type in (" . implode(",", $lowTypes) . ") and ";
-        }
-        $condition .= " status = 'Y'";
+        $condition .= " and status = 'Y'";
+        // var_dump($condition);
         $priceList = StockPriceThreshold::model()->findAll(array(                                                                  
                                             'condition' => $condition
                                         ));

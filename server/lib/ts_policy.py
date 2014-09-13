@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
-from stock_util import time_diff
+from stock_util import market_time_diff
 from base_policy import BasePolicy
 
 class TSPolicy(BasePolicy):
@@ -89,7 +89,7 @@ class TSPolicy(BasePolicy):
 
             for rise_start_time, rise_info in rise_map.items():
                 now_time = rise_info['now_time']
-                diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
+                diff_sec = self.get_diff_time(now_time, start_time)
 
                 # 5min 以内作为一个新的波段持续
                 if diff_sec >= 0 and diff_sec <= 60 * 5:
@@ -117,7 +117,7 @@ class TSPolicy(BasePolicy):
 
                 if (past_low_price >= 3.0 and vary_portion >= 1.6) or (past_low_price < 3.0 and vary_portion >= 2.5):
                     rise_info = {'start_time': past_time, 'now_time': now_time, 'low': past_low_price, 'high': cur_high_price, 'vary_portion': vary_portion}
-                    rise_info['duration'] = time_diff(now_time, past_time)
+                    rise_info['duration'] = self.get_diff_time(rise_info['now_time'], rise_info['start_time'])
                     break
 
             #print rise_info, now_time
@@ -161,7 +161,7 @@ class TSPolicy(BasePolicy):
 
             for fall_start_time, fall_info in fall_map.items():
                 now_time = fall_info['now_time']
-                diff_sec = time_diff(int(str(start_time) + "00"), int(str(now_time) + "00"))
+                diff_sec = self.get_diff_time(now_time, start_time)
 
                 # 超过5min不再认为是连续下跌
                 if diff_sec >= 0 and diff_sec <= 60 * 5:
@@ -189,7 +189,7 @@ class TSPolicy(BasePolicy):
 
                 if (past_high_price >= 3.0 and vary_portion <= -1.6) or (past_high_price < 3.0 and vary_portion <= -2.5):
                     fall_info = {'start_time': past_time, 'now_time': now_time, 'low': cur_low_price, 'high': past_high_price, 'vary_portion': vary_portion}
-                    fall_info['duration'] = time_diff(now_time, past_time)
+                    fall_info['duration'] = self.get_diff_time(fall_info['now_time'], fall_info['start_time'])
                     break
 
             if fall_info:
@@ -241,5 +241,10 @@ class TSPolicy(BasePolicy):
                     rapid_info['vary_portion'] = round((rapid_info['low'] - rapid_info['high']) / rapid_info['high'] * 100, 2)
                     refresh = True
 
-        rapid_info['duration'] = time_diff(rapid_info['now_time'], rapid_info['start_time'])
+        rapid_info['duration'] = self.get_diff_time(rapid_info['now_time'], rapid_info['start_time'])
         return (rapid_info, refresh)
+
+    # 获取now_time - past_time的时间间隔
+    def get_diff_time(self, now_time, past_time):
+        return market_time_diff(int(str(now_time) + "00"), int(str(start_time) + "00"))
+

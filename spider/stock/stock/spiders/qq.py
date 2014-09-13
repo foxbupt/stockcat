@@ -34,13 +34,14 @@ class QqSpider(BaseSpider):
         text = match_content.group(1).strip(" \n").replace("\\n\\", "")
         #print text
         lines = text.split("\n")
-        #print lines
+        print lines
 
         date_info = lines[1].split(":")
         day = int("20" + date_info[1])
 
-        key = "daily-" + str(self.id) + "-" + str(day)
-        hq_dict = dict() 
+        hq_time = list()
+        hq_price = list()
+        hq_volume = list()
 
         for line in lines[2:]:
             fields = line.split(" ")
@@ -58,11 +59,19 @@ class QqSpider(BaseSpider):
             item['price'] = float(fields[1])
             item['volume'] = int(fields[2])
 
-            hq_dict[time] = {'price': item['price'], 'volume': item['volume']}
+            if item['volume'] <= 0:
+                continue
+
+            hq_time.append(time)
+            hq_price.append(item['price'])
+            hq_volume.append(item['volume'])
             yield item
 
+        hq_dict = {'time': hq_time, 'price': hq_price, 'volume': hq_volume}
         print hq_dict
+
         if len(self.redis_host) > 0:
+            key = "daily-" + str(self.id) + "-" + str(day)
             conn = redis.StrictRedis(self.redis_host, self.redis_port)
             conn.set(key, json.dumps(hq_dict), 86400)
 

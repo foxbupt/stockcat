@@ -12,6 +12,9 @@ main()
     fi
 
     type=$1
+    day=`date "+%Y%m%d"`
+    result_filename="${day}_${type}.txt"
+    sql_filename="${day}_${type}.sql"
 
     sid=0
     if [ $# -eq 2 ]
@@ -44,20 +47,20 @@ main()
     fi
     echo "sql = $sql"
 
-    mysql -uwork -pslanissue -Ddb_stockcat --skip-column -e "$sql" >> $type.txt
+    mysql -uwork -pslanissue -Ddb_stockcat --skip-column -e "$sql" >> ${result_filename}
     field_high="${type}_high"
     field_low="${type}_low"
 
-    cat $type.txt | while read line
+    cat ${result_filename} | while read line
     do
         sid=`echo $line | awk '{print $1}'`
         high_value=`echo $line | awk '{print $2}'`
         low_value=`echo $line | awk '{print $3}'`
 
-        echo "update t_stock set $field_high = $high_value, $field_low = $low_value where id = $sid;" >> $type.sql
+        echo "update t_stock set $field_high = $high_value, $field_low = $low_value where id = $sid;" >> ${sql_filename}
     done
 
-    mysql -uwork -pslanissue -Ddb_stockcat < $type.sql
+    mysql -uwork -pslanissue -Ddb_stockcat < ${sql_filename}
 }
 
 cd ${0%/*}

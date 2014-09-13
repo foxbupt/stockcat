@@ -171,7 +171,7 @@ class PolicyUtil:
 
         # 基本字段, 直接通过data_map匹配
         if item_type == 1:
-            if vcode == "last_low_day" or vcode = "last_high_day":
+            if vcode == "last_low_day" or vcode == "last_high_day":
                 past_interval = int(item_info['value'])
                 past_day = get_past_openday(day, past_interval)
                 result = PolicyUtil.evaluate_expression(past_day, optor, data_map[vcode])

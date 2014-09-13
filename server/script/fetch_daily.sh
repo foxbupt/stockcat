@@ -26,6 +26,11 @@ main()
 
     cd $STOCK_SCRAPY_PATH
     result_path=$STOCK_SCRAPY_PATH/data/$day
+    if [ ! -d $result_path ]
+    then
+        mkdir $result_path
+    fi
+
     log="daily_${stype}_$day.log"
     filename="daily_${stype}_$day.json"
     echo "log=$log filename=$filename"

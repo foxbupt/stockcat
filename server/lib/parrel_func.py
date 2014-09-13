@@ -119,7 +119,7 @@ class ParrelDaily(ParrelFunc):
     def parse_stock_daily(self, line):
         parts = line.split("=")
         #print line, parts
-        content = parts[1].decode('gbk').strip('"')
+        content = parts[1].strip('"')
         #print content
 
         fields = content.split("~")

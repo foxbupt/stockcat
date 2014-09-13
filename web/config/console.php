@@ -33,7 +33,7 @@ return array(
 			'charset' => 'utf8',
 		),
        'redis' => array(
-            'class' => 'RedisCache',
+            'class' => 'application.components.RedisCache',
             'servers' => array(
                 array(
                     'host' => '127.0.0.1',

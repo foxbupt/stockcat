@@ -18,6 +18,8 @@ class StockUtil
 	const CACHE_KEY_STOCK_MAP = "stock:map";
 	// 股票基本信息
 	const CACHE_KEY_STOCK_INFO = "stock:info-";
+    // 股票标签列表
+    const CACHE_KEY_STOCK_TAGS = "stock:tags-";
 	
 	/**
 	 * @desc 为股票添加标签
@@ -91,6 +93,56 @@ class StockUtil
 		
 		return json_decode($cacheValue, true);
 	}
+
+    /**
+     * @desc 获取指定日期范围内的股票交易数据
+     * @param sid int 
+     * @param startDay int 
+     * @param endDay int
+     * @return array
+     */
+    public static function getStockData($sid, $startDay, $endDay)
+    {
+        $data = array();
+
+        $recordList = StockData::model()->findAll(array(
+                 'condition' => "sid = $sid and day >= ${startDay} and day <= $endDay and status = 'Y'",
+            ));
+        foreach ($recordList as $record)
+        {
+            $data[] = $record->getAttributes();
+        }
+
+        return $data;
+    }
+
+    /**
+     * @desc 获取股票的标签列表
+     * @param sid int 
+     * @return array
+     */
+    public static function getStockTagList($sid)
+    {
+		$cacheKey = StockUtil::CACHE_KEY_STOCK_TAGS. strval($sid);
+		$cacheValue = Yii::app()->redis->get($cacheKey);
+        $cacheValue = false;
+
+		if (!$cacheValue)
+		{
+			$tagList = array();
+			$recordList = StockTag::model()->findAllByAttributes(array('sid' => $sid, 'status' => 'Y'));
+			
+			foreach ($recordList as $record)
+			{
+                $tagList[] = $record->tid;
+			}
+			
+			Yii::app()->redis->set($cacheKey, json_encode($tagList));
+			return $tagList;
+		}
+		
+		return json_decode($cacheValue, true);
+    }
 }
 
 ?>

@@ -109,7 +109,7 @@ def get_stock_realtime(stock_info):
         response = urllib2.urlopen(url, timeout=1)
         content = response.read()
     except Exception as e:
-        print "err=get_stock_realtime sid=" + sid + " exception=" + e
+        print "err=get_stock_realtime sid=" + str(sid) + " exception=" + str(e.reason)
         return None
 
     content = content.strip(' ;"\n').replace("\\n\\", "")

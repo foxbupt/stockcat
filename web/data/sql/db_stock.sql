@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS `t_stock_data`
     `volume`    int(11) NOT NULL default 0 COMMENT '成交量, 单位为手',
     `amount`    int(11) NOT NULL default 0 COMMENT '成交金额, 单位为万元', 
     `vary_price` decimal(6,2) NOT NULL default 0.00 COMMENT '涨跌额', 
-    `vary_portion` decimal(6,2) NOT NULL default 0.00 COMMENT '涨跌幅, 格式为百分比',   
+    `vary_portion` decimal(6,2) NOT NULL default 0.00 COMMENT '涨跌幅, 格式为百分比',  
+    `exchange_portion` decimal(6,2) NOT NULL default 0.00 COMMENT '换手率, 格式为百分比',
+    `swing`		decimal(6,2) NOT NULL default 0.00 COMMENT '振幅, 格式为百分比', 
 	`create_time` 	int(11) NOT NULL default 0,
 	`status`	  	enum('Y', 'N') default 'Y',
 	
@@ -192,9 +194,9 @@ CREATE TABLE IF NOT EXISTS `t_stock_var`
  
  
 /**
- * 股票价格趋势数据表
+ * 股票价格阶段阈值数据表
  */  
-CREATE TABLE IF NOT EXISTS `t_stock_price_trend`
+CREATE TABLE IF NOT EXISTS `t_stock_price_threshold`
 (
 	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
 	`sid`   int(11) NOT NULL default 0 COMMENT '股票id',
@@ -206,5 +208,7 @@ CREATE TABLE IF NOT EXISTS `t_stock_price_trend`
 	`status`	  	enum('Y', 'N') default 'Y',
 	
 	PRIMARY KEY(`id`),
-	INDEX `idx_sid` (`sid`, `low_type`, `high_type`, `day`)		
+	INDEX `idx_sid` (`sid`, `day`),
+	INDEX `idx_low` (`sid`, `low_type`),
+	INDEX `idx_high` (`sid`, `high_type`)		
 )ENGINE=Innodb DEFAULT CHARSET=utf8; 

@@ -424,5 +424,48 @@ class TrendHelper
     			));
     }
     
+    /**
+     * @desc 利用实时交易数据分析盘中趋势
+     *
+     * @param double $openPrice	开盘价
+     * @param double $curPrice 当前价格
+     * @param array $priceList	交易价格列表
+     * @return array('trend', 'op')
+     */
+    public static function analyzeRealtimeTrend($openPrice, $curPrice, $priceList)
+    {
+    	$trendInfo = array();
+    	
+        $maxPrice = max($priceList);
+        $minPrice = min($priceList);        
+        $maxVary = $maxPrice - $curPrice;
+        $minVary = $curPrice - $minPrice;
+        $varyPortion = ($curPrice - $openPrice) / $openPrice;
+
+        if (abs($varyPortion) <= 0.01)		// 涨跌幅在1%以内, 认为是震荡
+        {
+        	$trendInfo['trend'] = CommonUtil::DIRECTION_SHAVE;
+        	$trendInfo['op'] = CommonUtil::OP_PEND;
+        }   
+        else if ($curPrice > $openPrice)	// 上涨
+        {
+            $trendInfo['trend'] = (($curPrice == $maxPrice) || ($maxVary < $minVary))? CommonUtil::DIRECTION_UP : CommonUtil::DIRECTION_DOWN;
+        }
+        else if ($curPrice < $openPrice)	// 下跌
+        {
+        	$trendInfo['trend'] = (($curPrice == $minPrice) || ($minVary < $maxVary))? CommonUtil::DIRECTION_DOWN : CommonUtil::DIRECTION_UP;
+        }
+
+        if (CommonUtil::DIRECTION_DOWN == $trendInfo['trend'])
+        {
+        	$trendInfo['op'] = CommonUtil::OP_SELL;
+        }
+        else if (CommonUtil::DIRECTION_UP == $trendInfo['trend'])
+        {
+        	$trendInfo['op'] = CommonUtil::OP_BUY;
+        }
+
+        return $trendInfo;
+    }
 }
 ?>

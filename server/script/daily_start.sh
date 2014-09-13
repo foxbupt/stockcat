@@ -13,6 +13,9 @@ main()
         day=$1
     fi
 
+    lastday=`date -d "1 day ago" +%Y%m%d`
+    ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
+
     open=`is_market_open "$day"`
     echo "day=$day open=$open"
     if [ "$open" == "0" ]
@@ -20,16 +23,13 @@ main()
         exit
     fi
 
-    count=1
-    if [ $weekday -eq 1 ]
-    then
-        count=3
-    fi
+    #count=1
+    #if [ $weekday -eq 1 ]
+    #then
+    #    count=3
+    #fi
 
-    lastday=`date -d "${count} day ago" +%Y%m%d`
-    ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
-    ./service.sh start all
-
+    ./service.sh restart all
     echo "finish"
 }
 

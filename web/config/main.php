@@ -46,8 +46,8 @@ return array(
 		'db'=>array(
 			'connectionString' => 'mysql:host=localhost;dbname=db_stockcat',
 			'emulatePrepare' => true,
-			'username' => 'root',
-			'password' => '',
+			'username' => 'work',
+			'password' => 'slanissue',
 			'charset' => 'utf8',
 		),
 

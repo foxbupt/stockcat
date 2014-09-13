@@ -104,7 +104,7 @@ class PolicyManager(object):
         datamap['scode2id'] = scode2id_map
         datamap['id2scode'] = id2scode_map
         datamap['past_data'] = get_past_data(self.db_config, self.redis_config, self.day, 5)
-        #print len(datamap['past_data'])
+        print len(datamap['past_data'])
 
         return datamap
 

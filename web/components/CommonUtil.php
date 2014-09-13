@@ -284,6 +284,27 @@ class CommonUtil
     }
     
     /**
+     * @desc 获取当前时刻的市场交易状态
+     * @param int $timestamp
+     * @return int 0 未开市 1 交易中 2 中间休息 3 已毕市
+     */
+    public static function getMarketState($timestamp = null)
+    {
+        $stones = array(92500, 113000, 130000, 150000);
+        $timenumber = intval(date('His', empty($timestamp)? time() : $timestamp));
+
+        foreach ($stones as $index => $point)
+        {
+            if ($timenumber <= $point)
+            {
+                return $index;
+            }
+        }
+        
+        return 0; 
+    }
+
+    /**
      * @desc 格式化价格/涨幅显示
      *
      * @param float $number
@@ -294,12 +315,12 @@ class CommonUtil
     {
     	switch ($type)
     	{
-    		case FORMAT_TYPE_PRICE:
+            case CommonUtil::FORMAT_TYPE_PRICE:
     		default:
     			return sprintf("%.2f", $number);
-    		case FORMAT_TYPE_PORTION:
+            case CommonUtil::FORMAT_TYPE_PORTION:
     			return sprintf("%.2f%%", $number);
-    		case FORMAT_TYPE_NUMBER:
+            case CommonUtil::FORMAT_TYPE_NUMBER:
    			{
    				return number_format($number);
    			}

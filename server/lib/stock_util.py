@@ -75,7 +75,7 @@ def get_cont_stock(db_config, current_day, day_count, sum_portion, rise = True):
 
 # 获取所有股票列表, 包含指数
 def get_stock_list(db_config, type = 0):
-    sql = "select id, code, name, pinyin, ecode, alias, company, business, hist_high, hist_low, year_high, year_low, month6_high, \
+    sql = "select id, code, name, type, pinyin, ecode, alias, company, business, hist_high, hist_low, year_high, year_low, month6_high, \
             month6_low, month3_high, month3_low from t_stock where status = 'Y' "
     if type > 0:
         sql = sql + " and type = " + str(type)
@@ -220,8 +220,8 @@ def get_past_data(db_config, redis_config, cur_day, count):
     return stock_datamap
 
 '''
-    @desc: 计算HHMMSS格式时间数值之间的差异, 返回差额的秒
-    @param: t1 int
+    @desc: 计算HHMMSS格式时间数值之间的差异, 返回差额的秒(t1 >= t2)
+    @param: t1 int HHMMSS
     @param: t2 int
     @return interval
 '''
@@ -231,6 +231,23 @@ def time_diff(t1, t2):
     second_diff = int(t1%100) - int(t2%100)
 
     return hour_diff * 3600 + min_diff * 60 + second_diff
+
+'''
+    @desc: 计算2个时间值之间的交易时间间隔, 返回差额的秒(now_time >= past_time)
+    @param: now_time int HHMMSS
+    @param: past_time int
+    @return interval
+'''
+def market_time_diff(now_time, past_time):
+    if past_time < 93000:
+        past_time = 93000
+    if now_time >= 153400:
+        now_time = 153400
+    
+    if past_time >= 130000 or now_time <= 113000:
+        return time_diff(now_time, past_time)
+    else:
+        return time_diff(113000, past_time) + time_diff(now_time, 130000)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -243,5 +260,6 @@ if __name__ == "__main__":
 
     print time_diff(94310, 92500)
     print time_diff(142500, 93530)
+    print market_time_diff(931, 925)
 
     print time.time()

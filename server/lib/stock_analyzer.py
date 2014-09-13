@@ -196,7 +196,7 @@ class StockAnalyzer:
 
             if not match_low and int(threshold_record['low_type']) > 0:
                 datamap['last_low_day'] = int(threshold_record['day'])
-                datamap['last_low_price'] = float(threshold_record['price')
+                datamap['last_low_price'] = float(threshold_record['price'])
                 datamap['last_low_type'] = int(threshold_record['low_type'])
                 match_low = True
 

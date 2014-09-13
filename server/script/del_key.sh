@@ -17,6 +17,7 @@ main()
         /usr/local/bin/redis-cli del "$key"
         echo "del $key"
     done
+    /usr/local/bin/redis-cli save
 }
 
 

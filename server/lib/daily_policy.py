@@ -20,12 +20,6 @@ class DailyPolicy(BasePolicy):
         result = self.redis_conn.set(key, json.dumps(item), 86400)
         self.logger.debug(format_log("daily_serialize", item))
 
-        # 把涨幅超过1% 或 涨跌幅在1%以内的股票
-        daily_ts_key = "tsset-" + str(item['day'])
-        if item['vary_portion'] > 1.00 or abs(item['vary_portion']) <= 1.00:
-            self.redis_conn.sadd(daily_ts_key, item['sid'])
-        else:
-            self.redis_conn.srem(daily_ts_key, [item['sid']])
         # 收市后的item需要转为离线分析
         #if item['time'] >= 150300:
 
@@ -65,6 +59,13 @@ class DailyPolicy(BasePolicy):
             self.logger.info(format_log("add_rise_factor", stock_rise_map))
         else:
             self.redis_conn.zrem(rf_zset_key, sid)
+
+        # 把涨幅超过1% 或 涨跌幅在1%以内的股票加入拉取分笔交易的集合
+        daily_ts_key = "tsset-" + str(item['day'])
+        if volume_ratio >= 2.0 and (item['vary_portion'] > 1.00 or abs(item['vary_portion']) <= 1.00):
+            self.redis_conn.sadd(daily_ts_key, item['sid'])
+        else:
+            self.redis_conn.srem(daily_ts_key, [item['sid']])
 
     # 分析盘中的实时趋势
     # 操作字段(op): 1 卖出  2 待定 3 买入
