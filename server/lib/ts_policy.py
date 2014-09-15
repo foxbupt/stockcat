@@ -92,7 +92,7 @@ class TSPolicy(BasePolicy):
                 diff_sec = self.get_diff_time(start_time, now_time)
 
                 # 5min 以内作为一个新的波段持续
-                if diff_sec >= 0 and diff_sec <= 5:
+                if diff_sec >= 0 and diff_sec <= 60 * 5:
                     (rise_info, refresh) = self.refresh_rapid(sid, rise_info, start_time, True)
                     if refresh:
                         self.redis_conn.hmset(key, {sid: json.dumps(rise_map)})
@@ -164,7 +164,7 @@ class TSPolicy(BasePolicy):
                 diff_sec = self.get_diff_time(start_time, now_time)
 
                 # 超过5min不再认为是连续下跌
-                if diff_sec >= 0 and diff_sec <= 5:
+                if diff_sec >= 0 and diff_sec <= 60 * 5:
                     (fall_info, refresh) = self.refresh_rapid(sid, fall_info, start_time, False)
                     if refresh:
                         self.redis_conn.hmset(key, {sid: json.dumps(fall_map)})
@@ -247,4 +247,3 @@ class TSPolicy(BasePolicy):
     # 获取now_time - past_time的时间间隔
     def get_diff_time(self, now_time, past_time):
         return market_time_diff(int(str(now_time) + "00"), int(str(past_time) + "00"))
-
