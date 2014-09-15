@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">笨财猫</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    
+    <string name="stock_name">名称</string>
+	<string name="cont_days">天数</string>
+	<string name="close_price">价格</string>
+	<string name="price_vary_portion">累计涨幅</string>
+	<string name="vary_portion">涨幅</string>
+	<string name="threshold_type">类型</string>
+	<string name="trend">趋势</string>
+	<string name="volume_ratio">量比</string>
+	<string name="high_portion">百分比</string>
+		
+	<string name="nav_stock_pool">股票池</string>
+	<string name="nav_price_threshold">价格突破</string>
+	<string name="nav_realtime">实时上涨</string>
+	<string name="nav_stock_own">当前持仓</string>
+	<string name="nav_user_center">个人中心</string>
+</resources>

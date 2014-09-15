@@ -1,0 +1,65 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/background"
+    tools:context=".MainActivity" >
+
+    <LinearLayout 
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"       
+    >
+        <Button 
+            android:id="@+id/stock_name_btn"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1.5"
+            android:gravity="center"
+            android:text="@string/stock_name"
+            android:background="@drawable/header_background"           	 
+        />
+        <Button 
+            android:id="@+id/cont_day_btn"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/cont_days" 
+            android:background="@drawable/header_background"            	 
+        />
+        <Button 
+            android:id="@+id/close_price_btn"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/close_price" 
+            android:background="@drawable/header_background"            	 
+        />
+        <Button 
+            android:id="@+id/price_vary_portion_btn"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/price_vary_portion" 
+            android:background="@drawable/header_background"            	 
+        />
+    </LinearLayout>
+  
+    <RelativeLayout 
+        android:layout_width="match_parent" 
+        android:layout_height="match_parent" 
+    >
+        
+		<ListView 
+		    android:id="@+id/pool_list_lv"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    android:dividerHeight="1dp"
+		    android:headerDividersEnabled="true"
+		/>
+	</RelativeLayout>
+</LinearLayout>
