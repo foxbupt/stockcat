@@ -15,19 +15,8 @@ class PoolController extends Controller
     public function actionIndex()
     {
         // TODO: 目前查询上一个有效交易日的连续上涨/价格突破历史和年内新高的股票列表, 后续统一查询股票池列表
-        if (isset($_GET['day']))
-        {
-            $day = intval($_GET['day']);
-        }
-        else
-        { 
-            $day = intval(date('Ymd'));
-            if (CommonUtil::isMarketOpen($day) && intval(date("Hi")) >= 1540)
-            {
-                $day = date('Ymd', strtotime("+1 day", strtotime($day)));
-            }
-        }
-
+        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $day = CommonUtil::getParamDay($day);
         $lastDay = CommonUtil::getPastOpenDay($day, 1);
         // var_dump($day, $lastDay);
 
