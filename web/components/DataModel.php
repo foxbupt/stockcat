@@ -16,7 +16,7 @@ class DataModel
 	 */
 	public static function getRapidList($day, $isRise = True)
 	{
-		$prefix = $isRise? "ts-rr-" : "ts-rf-";
+		$prefix = $isRise? "ts-rr" : "ts-rf";
 		$key = BevaUtil::genCacheKey($prefix, $day);
 		$rapidList = $stockMap = array();
 		
