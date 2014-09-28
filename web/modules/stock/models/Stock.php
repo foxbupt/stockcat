@@ -10,6 +10,7 @@
  * @property string $name
  * @property string $pinyin
  * @property string $alias
+ * @property integer $location
  * @property string $ecode
  * @property string $company
  * @property string $business
@@ -55,7 +56,7 @@ class Stock extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('type, create_time', 'numerical', 'integerOnly'=>true),
+			array('type, location, create_time', 'numerical', 'integerOnly'=>true),
 			array('code, capital, out_capital, profit, assets, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low', 'length', 'max'=>6),
 			array('name, alias', 'length', 'max'=>32),
 			array('pinyin', 'length', 'max'=>8),
@@ -65,7 +66,7 @@ class Stock extends CActiveRecord
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, type, code, name, pinyin, alias, ecode, company, business, capital, out_capital, profit, assets, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low, create_time, status', 'safe', 'on'=>'search'),
+			array('id, type, code, name, pinyin, alias, location, ecode, company, business, capital, out_capital, profit, assets, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -92,7 +93,8 @@ class Stock extends CActiveRecord
 			'name' => '名称',
 			'pinyin' => '拼音简写',
 			'alias' => '别名',
-			'ecode' => '所在交易所',
+			'location' => '国家',
+			'ecode' => '交易所',
 			'company' => '公司名称',
 			'business' => '主营业务',
 			'capital' => '总股本(亿)',
@@ -135,6 +137,8 @@ class Stock extends CActiveRecord
 
 		$criteria->compare('alias',$this->alias,true);
 
+        $criteria->compare('location',$this->alias,true);
+        
 		$criteria->compare('ecode',$this->ecode,true);
 
 		$criteria->compare('company',$this->company,true);
