@@ -45,29 +45,27 @@ class ImportStockCommand extends CConsoleCommand
             $stockRecord->type = 1;
             $stockRecord->code = $stockInfo['code'];
             $stockRecord->name = $stockInfo['name'];
-            if (strstr($stockInfo['code'], "60") !== False)
-            {
-                $stockInfo['ecode'] = 'SH';
-            }
-            else 
-            {
-                $stockInfo['ecode'] = 'SZ';
-            }
-            $stockRecord->company = $stockInfo['company'];
-            $stockRecord->business = $stockInfo['business'];
-            $stockRecord->profit = $stockInfo['profit'];
-            $stockRecord->assets = $stockInfo['assets'];
+            $stockRecord->ecode = $stockInfo['ecode'];
+            $stockRecord->alias = isset($stockInfo['alias'])? $stockInfo['alias'] : "";
+            $stockRecord->location = isset($stockInfo['location'])? $stockInfo['location'] : 1;
+            
+            $stockRecord->company = isset($stockInfo['company'])? $stockInfo['company'] : "";
+            $stockRecord->business = isset($stockInfo['business'])? $stockInfo['business'] : "";
+            
+            $stockRecord->profit = isset($stockInfo['profit'])? $stockInfo['profit'] : 0.0;
+            $stockRecord->assets = isset($stockInfo['assets'])? $stockInfo['assets'] : 0.0;
+            $stockRecord->dividend = isset($stockInfo['dividend'])? $stockInfo['dividend'] : 0.0;
             $stockRecord->capital = $stockInfo['captial'];
-            $stockRecord->out_capital = $stockInfo['out_captial'];
+            $stockRecord->out_capital = isset($stockInfo['out_captial'])? $stockInfo['out_captial'] : $stockInfo['captial'];
 
             $stockRecord->save();
 		}
 		
 		// 更新股票信息
-		$location = trim(trim($stockInfo['location'], "省"), "市");	
+		$location = trim(trim($stockInfo['loc'], "省"), "市");	
 		$stockInfo['capital'] = $stockInfo['captial'];
 		$stockInfo['out_capital'] = $stockInfo['out_captial'];
-		unset($stockInfo['location'], $stockInfo['code'], $stockInfo['captial'], $stockInfo['captial']);
+		unset($stockInfo['loc'], $stockInfo['code'], $stockInfo['captial'], $stockInfo['captial']);
 		
 		$result = $stockRecord->updateByPk($stockRecord->id, $stockInfo);
 		echo "op=update_stock result=" . $result . " stock_id=" . $stockRecord->id . " code=" . $stockRecord['code'] . " name=" . $stockInfo['name'] . "\n";

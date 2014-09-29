@@ -9,12 +9,14 @@ class StockItem(Item):
     name = Field()
     code = Field()
     company = Field()
-    location = Field()
+    loc = Field()
     business = Field()
     captial = Field()
     out_captial = Field()
     profit = Field()
     assets = Field()
+    location = Field()
+    dividend = Field()
 
 class StockTagItem(Item):
     name = Field()
