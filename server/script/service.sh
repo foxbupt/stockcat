@@ -102,25 +102,29 @@ start_policy()
 
 stop_scheduler()
 {
-    pid=`ps aux | grep "scheduler" | grep -v "grep" | grep "python" | awk '{print $2}'`
-    if [ -z "$pid" ]
+    pidlist=`ps aux | grep "scheduler" | grep -v "grep" | grep "python" | awk '{print $2}'`
+    if [ -z "$pidlist" ]
     then
         echo "no scheduler process"
-    elif [ $pid -gt 0 ]
-    then
-        kill -9 "$pid"
+    else
+        echo "$pidlist" | while read pid
+        do
+            kill -9 "$pid"
+        done
     fi
 }
 
 stop_policy()
 {
-    pid=`ps aux | grep "policy_manager" | grep -v "grep" | awk '{print $2}'`
-    if [ -z "$pid" ]
+    pidlist=`ps aux | grep "policy_manager" | grep -v "grep" | awk '{print $2}'`
+    if [ -z "$pidlist" ]
     then
         echo "no policy process"
-    elif [ $pid -gt 0 ]
-    then
-        kill -9 "$pid"
+    else
+        echo "$pidlist" | while read pid
+        do
+            kill -9 "$pid"
+        done
     fi
 }
 
