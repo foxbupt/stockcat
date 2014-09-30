@@ -56,11 +56,11 @@ class Stock extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('type, location, create_time', 'numerical', 'integerOnly'=>true),
+			array('type, location, ecode, create_time', 'numerical', 'integerOnly'=>true),
 			array('code, capital, out_capital, profit, assets, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low', 'length', 'max'=>6),
-			array('name, alias', 'length', 'max'=>32),
+			array('name', 'length', 'max'=>32),
+			array('alias', 'length', 'max'=>64),
 			array('pinyin', 'length', 'max'=>8),
-			array('ecode', 'length', 'max'=>2),
 			array('company', 'length', 'max'=>256),
 			array('business', 'length', 'max'=>2048),
 			array('status', 'length', 'max'=>1),

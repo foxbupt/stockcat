@@ -35,7 +35,19 @@ class CommonUtil
 	
 	const CACHE_KEY_COMMON_CONFIG = "config:all";
 	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
+
+    // location: 1 china 2 hk 3 us
+    const LOCATION_CHINA = 1;
+    const LOCATION_HK = 2;
+    const LOCATION_US = 3;
 	
+    // ecode: 1 sh 2 sz 3 hk 4 nasdaq 5 nyse
+    const ECODE_SH = 1;
+    const ECODE_SZ = 2;
+    const ECODE_HK = 3;
+    const ECODE_NASDAQ = 4;
+    const ECODE_NYSE = 5;
+
 	// 全年节假日配置
 	static $holidays = array(
                 20140101,

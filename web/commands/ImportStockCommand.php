@@ -36,6 +36,9 @@ class ImportStockCommand extends CConsoleCommand
 	
 	public function importStock($stockInfo)
 	{
+		// 更新股票信息
+		$loc = isset($stockInfo['loc'])? trim(trim($stockInfo['loc'], "省"), "市") : "";	
+
 		$stockRecord = Stock::model()->findByAttributes(array('code' => $stockInfo['code'], 'status' => 'Y'));
 		if (empty($stockRecord))
 		{
@@ -45,7 +48,7 @@ class ImportStockCommand extends CConsoleCommand
             $stockRecord->type = 1;
             $stockRecord->code = $stockInfo['code'];
             $stockRecord->name = $stockInfo['name'];
-            $stockRecord->ecode = $stockInfo['ecode'];
+            $stockRecord->ecode = self::formatEcode($stockInfo['ecode']);
             $stockRecord->alias = isset($stockInfo['alias'])? $stockInfo['alias'] : "";
             $stockRecord->location = isset($stockInfo['location'])? $stockInfo['location'] : 1;
             
@@ -57,36 +60,74 @@ class ImportStockCommand extends CConsoleCommand
             $stockRecord->dividend = isset($stockInfo['dividend'])? $stockInfo['dividend'] : 0.0;
             $stockRecord->capital = $stockInfo['captial'];
             $stockRecord->out_capital = isset($stockInfo['out_captial'])? $stockInfo['out_captial'] : $stockInfo['captial'];
+            $stockRecord->create_time = time();
 
-            $stockRecord->save();
+            $result = $stockRecord->save()? 1 : 0;
+            if (!$result)
+            {
+                var_dump($stockRecord->getErrors());
+            }
+            $op = "add_stock";
 		}
+	    else
+        {    
+            // convert captial to capital
+            $stockInfo['ecode'] = self::formatEcode($stockInfo['ecode']);
+            $stockInfo['capital'] = $stockInfo['captial'];
+            $stockInfo['out_capital'] = $stockInfo['out_captial'];
+            unset($stockInfo['loc'], $stockInfo['code'], $stockInfo['captial'], $stockInfo['out_captial']);
+            
+            $result = $stockRecord->updateByPk($stockRecord->id, $stockInfo);
+            $op = "update_stock";
+        }
+		echo "op=$op result=" . $result . " stock_id=" . $stockRecord->id . " code=" . $stockRecord['code'] . " name=" . $stockInfo['name'] . "\n";
 		
-		// 更新股票信息
-		$location = trim(trim($stockInfo['loc'], "省"), "市");	
-		$stockInfo['capital'] = $stockInfo['captial'];
-		$stockInfo['out_capital'] = $stockInfo['out_captial'];
-		unset($stockInfo['loc'], $stockInfo['code'], $stockInfo['captial'], $stockInfo['captial']);
-		
-		$result = $stockRecord->updateByPk($stockRecord->id, $stockInfo);
-		echo "op=update_stock result=" . $result . " stock_id=" . $stockRecord->id . " code=" . $stockRecord['code'] . " name=" . $stockInfo['name'] . "\n";
-		
-		$tid = 0;	
-		if (isset($this->tagList[$location]))
+		if (!empty($loc)) // 地域不为空则添加为tag
 		{
-			$tid = $this->tagList[$location];
-		}
-		else
-		{
-			Yii::import('common.components.Pinyinv2');
-			
-			$slug = Pinyinv2::getPinyin(mb_convert_encoding($location, 'gbk', 'utf-8'));
-			$tid = CommonUtil::addTag($location, $slug, CommonUtil::TAG_CATEGORY_LOCATION);
-			$this->tagList[$location] = $tid;
-			echo "op=add_tag location=" . $location . " slug=" .  $slug . " tid=" . $tid . "\n";
-		}
-		
-		StockUtil::addStockTag($stockRecord->id, $tid);		
-		return true;
+    		$tid = 0;	
+    		if (isset($this->tagList[$loc]))
+    		{
+    			$tid = $this->tagList[$loc];
+    		}
+    		else
+    		{
+    			Yii::import('common.components.Pinyinv2');
+    			
+    			$slug = Pinyinv2::getPinyin(mb_convert_encoding($loc, 'gbk', 'utf-8'));
+    			$tid = CommonUtil::addTag($loc, $slug, CommonUtil::TAG_CATEGORY_LOCATION);
+    			$this->tagList[$location] = $tid;
+    			echo "op=add_tag location=" . $location . " slug=" .  $slug . " tid=" . $tid . "\n";
+    		}
+    		
+    		StockUtil::addStockTag($stockRecord->id, $tid);		
+	    }
+		return $result;
 	}
+
+    // convert ecode to number
+    public static function formatEcode($ecode)
+    {
+        $ecode = strtolower($ecode);
+        if ("sh" == $ecode)
+        {
+            return CommonUtil::ECODE_SH;
+        }
+        else if ("sz" == $ecode)
+        {
+            return CommonUtil::ECODE_SZ;
+        }
+        else if ("hk" == $ecode)
+        {
+            return CommonUtil::ECODE_HK;
+        }
+        else if ("nasdaq" == $ecode)
+        {
+            return CommonUtil::ECODE_NASDAQ;
+        }
+        else if ("nyse" == $ecode)
+        {
+            return CommonUtil::ECODE_NYSE;
+        }
+    }
 }
 ?>
