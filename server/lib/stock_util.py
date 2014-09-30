@@ -12,6 +12,8 @@ import redis
 
 # 假期定义
 holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141007}]
+# ecode
+ecodes = {1:"sh", 2:"sz", 3:"hk", 4:"NASDAQ", 5:"NYSE"}
 
 # 判断当天是否开市
 def is_market_open(day):
@@ -75,7 +77,7 @@ def get_cont_stock(db_config, current_day, day_count, sum_portion, rise = True):
 
 # 获取所有股票列表, 包含指数
 def get_stock_list(db_config, type = 0):
-    sql = "select id, code, name, type, pinyin, ecode, alias, company, business, hist_high, hist_low, year_high, year_low, month6_high, \
+    sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
             month6_low, month3_high, month3_low from t_stock where status = 'Y' "
     if type > 0:
         sql = sql + " and type = " + str(type)
@@ -248,6 +250,19 @@ def market_time_diff(now_time, past_time):
         return time_diff(now_time, past_time)
     else:
         return time_diff(113000, past_time) + time_diff(now_time, 130000)
+
+'''
+    @desc: 
+    @param: code string
+    @param: ecode int
+    @param: location int
+    @return string
+'''
+def get_scode(code, ecode, location):
+    if 1 == location or 2 == location:
+        return ecodes[ecode] + code
+    elif 3 == location:
+        return "us" + code
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

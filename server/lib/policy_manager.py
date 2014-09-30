@@ -11,7 +11,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from policy_worker import PolicyWorker
-from stock_util import get_stock_list, get_past_openday, get_past_data
+from stock_util import get_stock_list, get_past_openday, get_past_data, get_scode
 
 class PolicyManager(object):
     instance_map = {}
@@ -35,11 +35,13 @@ class PolicyManager(object):
             for i in range(policy_config['process_count']):
                 policy_instance = PolicyWorker(policy_name, policy_config, self.config_info, datamap)
                 policy_instance.start()
+
                 instance_list.append(policy_instance)
-                logging.getLogger("policy").debug("desc=policy_worker_start name=%s index=%d id=%s", policy_name, i, str(policy_instance.ident))
+                logging.getLogger("policy").debug("desc=policy_worker_start name=%s index=%d id=%s", policy_name, i, str(policy_instance.get_pid()))
 
         for instance in instance_list:
             instance.join()
+        logging.getLogger("policy").critical("op=policy_manager_exit")
 
     def terminate(self):
         for instance in self.instance_list:
@@ -57,7 +59,7 @@ class PolicyManager(object):
         scode2id_map = dict()
         id2scode_map = dict()
         for sid, stock_info in stock_list.items():
-            scode = stock_info['ecode'].lower() + stock_info['code']
+            scode = get_scode(stock_info['code'], int(stock_info['ecode']), int(stock_info['location']))
             scode2id_map[stock_info['code']] = sid
             id2scode_map[sid] = scode
 

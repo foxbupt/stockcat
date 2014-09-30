@@ -18,7 +18,7 @@ class DailyPolicy(BasePolicy):
     def serialize(self, item):
         key = "daily-" + str(item['sid']) + "-" + str(item['day'])
         result = self.redis_conn.set(key, json.dumps(item), 86400)
-        self.logger.debug(format_log("daily_serialize", item))
+        self.logger.debug("%s", format_log("daily_item", item))
 
         # 收市后的item需要转为离线分析
         #if item['time'] >= 150300:
@@ -105,4 +105,4 @@ class DailyPolicy(BasePolicy):
 
         trend_info['sid'] = item['sid']
         trend_info['day'] = item['day']
-        self.logger.debug(format_log("daily_day_trend", trend_info))
+        self.logger.debug("%s", format_log("daily_day_trend", trend_info))

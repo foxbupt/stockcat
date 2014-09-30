@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from fetch_worker import FetchWorker
-from stock_util import get_stock_list, get_past_openday, time_diff
+from stock_util import get_stock_list, get_past_openday, time_diff, get_scode
 
 class Scheduler(object):
     worker_list = []
@@ -119,7 +119,7 @@ class Scheduler(object):
         code2id_map = dict()
         id2scode_map = dict()
         for sid, stock_info in stock_list.items():
-            scode = stock_info['ecode'].lower() + stock_info['code']
+            scode = get_scode(stock_info['code'], int(stock_info['ecode']), int(stock_info['location']))
             code2id_map[stock_info['code']] = sid
             id2scode_map[sid] = scode
 

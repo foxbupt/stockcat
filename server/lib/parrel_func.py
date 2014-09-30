@@ -92,6 +92,9 @@ class ParrelDaily(ParrelFunc):
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
+        except urllib2.HTTPError as e:
+            self.logger.warning("err=get_stock_daily scode=%s code=%s", scode, str(e.code))
+            return 
         except urllib2.URLError as e:
             self.logger.warning("err=get_stock_daily scode=%s reason=%s", scode, str(e.reason))
             return
@@ -202,6 +205,9 @@ class ParrelRealtime(ParrelFunc):
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
+        except urllib2.HTTPError as e:
+            self.logger.warning("err=get_stock_realtime sid=%d scode=%s code=%s", sid, scode, str(e.code))
+            return None
         except urllib2.URLError as e:
             self.logger.warning("err=get_stock_realtime sid=%d scode=%s reason=%s", sid, scode, str(e.reason))
             return None
@@ -304,6 +310,9 @@ class ParrelTransaction(ParrelFunc):
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
+        except urllib2.HTTPError as e:
+            self.logger.warning("err=get_stock_transaction sid=%d scode=%s pno=%d code=%s", sid, scode, pno, str(e.code))
+            return None
         except urllib2.URLError as e:
             self.logger.warning("err=get_stock_transaction sid=%d scode=%s pno=%d reason=%s", sid, scode, pno, str(e.reason))
             return None

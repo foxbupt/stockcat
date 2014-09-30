@@ -19,3 +19,5 @@ class RTPolicy(BasePolicy):
         for minute_item in item['items']:
             #print minute_item
             self.redis_conn.rpush(key, json.dumps(minute_item))
+            self.logger.debug("desc=realtime_item sid=%d day=%d volume=%.2f price=%.2f time=%d", 
+                    item['sid'], item['day'], minute_item['volume'], minute_item['price'], minute_item['time'])
