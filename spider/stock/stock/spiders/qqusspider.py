@@ -15,21 +15,26 @@ from stock.items import StockItem
 
 class QQUsSpider(BaseSpider):
     name = "qqus"
-    allowed_domains = ["gtimg.cn", "finance.qq.com", "stockhtm.finance.qq.com", "stock.finance.qq.com]"
-    base_url = "http://www.10jqka.com"
+    allowed_domains = ["gtimg.cn", "finance.qq.com", "stockhtm.finance.qq.com", "stock.finance.qq.com"]
     industry = ""
 
-    def __init__(self, category, page_count):
-        for i in range(1, int(page_count) + 1):
-            url = "http://stock.gtimg.cn/data/index.php?appn=usRank&t=" + category + "/volume&p=" + str(i) + "&o=0&l=80&v=list_data&_du_r_t=" + str(random.random())
+    def __init__(self, url, category, page_count):
+        self.category = category
+        self.page_count = int(page_count)
+        self.url = url
+        self.start_urls = [url]
+
+    def parse(self, response):
+        for i in range(1, self.page_count + 1):
+            url = "http://stock.gtimg.cn/data/index.php?appn=usRank&t=" + self.category + "/volume&p=" + str(i) + "&o=0&l=80&v=list_data&_du_r_t=" + str(random.random())
             print url
-            self.start_urls.append(url)
+            yield Request(url, callback=self.parse_json)
 
     # 解析列表页的应答包
-    def parse(self, response):
+    def parse_json(self, response):
         parts = response.body.split("=")
         content = safestr(parts[1].decode('gbk'))
-        print content
+        #print content
 
         data = json.loads(content)
         item_list = data['data']['result']
@@ -41,8 +46,8 @@ class QQUsSpider(BaseSpider):
 
             code = info[0]   
             code_parts = code.split(".")
-            if len(code_parts) == 2:
-                ecode = code_parts[1]
+            if len(code_parts) >= 2:
+                ecode = code_parts[-1]
                 if "N" == ecode:
                     item['ecode'] = "NYSE"
                 elif "OQ" == ecode:
@@ -51,11 +56,13 @@ class QQUsSpider(BaseSpider):
             item['name'] = info[2]
             item['code'] = info[1]
 
-            stock_url = "http://stockhtm.finance.qq.com/astock/ggcx/" + cpde + ".htm"
-            print stock_url
-            yield Request(stock_url, callback=self.parse_data)
-            
-    # 解析api的请求应答        
+            stock_url = "http://stockhtm.finance.qq.com/astock/ggcx/" + code + ".htm"
+            #print stock_url
+            request = Request(stock_url, callback=self.parse_data)
+            request.meta['item'] = item
+            yield request
+
+    # 解析
     def parse_data(self, response):
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
@@ -74,18 +81,18 @@ class QQUsSpider(BaseSpider):
                 continue
             else:
                 text = text.replace(",", "")
-                print text
+                #print text
                 m = re.match(r"(\d+)[^0-9]*", text)
                 if m:
-                    item['captial'] = int(m.group(1)) / 10000
+                    item['captial'] = float(float(m.group(1)) / 10000)
 
-        print item
+        #print item
 
         ecode = "N"
         if item['ecode'] == "NASDAQ":
             ecode = "OQ"
         info_url = "http://stock.finance.qq.com/astock/list/view/info.php?c=" + item['code'] + "." + ecode
-        print info_url
+        #print info_url
 
         request = Request(info_url, callback=self.parse_company)
         request.meta['item'] = item
@@ -96,11 +103,13 @@ class QQUsSpider(BaseSpider):
         hxs = HtmlXPathSelector(response)
         item = response.meta['item']
 
-        for index, td_text in enumerate(hxs.select('//table/tbody/tr/td/text()').extract()):
-            if 1 == index:
-                item['alias'] = safestr(td_text.decode('gbk'))
-            elif 8 == index:
-                item['business'] = safestr(td_text.decode('gbk'))
+        td_list = hxs.select('//table/tr/td/text()').extract()
+        td_count = len(td_list)
+        if td_count >= 2:
+            item['alias'] = safestr(td_list[1])
+        if td_count >= 9:
+            item['business'] = safestr(td_list[-1])
 
+        #print item
         return item
 

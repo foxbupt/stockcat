@@ -8,6 +8,8 @@ from scrapy.item import Item, Field
 class StockItem(Item):
     name = Field()
     code = Field()
+    ecode = Field()
+    alias = Field()
     company = Field()
     loc = Field()
     business = Field()
