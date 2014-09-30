@@ -24,6 +24,7 @@ class DataModel
 		foreach ($cacheMap as $sid => $rapidValue)
 		{
 			$stockRapidList = json_decode($rapidValue, true);
+            // print_r($stockRapidList);
 			foreach ($stockRapidList as &$rapidInfo)
 			{
 				$rapidInfo['sid'] = $sid;
