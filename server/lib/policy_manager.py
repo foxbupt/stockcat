@@ -29,64 +29,24 @@ class PolicyManager(object):
         #print worker_config
 
         datamap = self.make_datamap()
-        queue_policy_map = dict()
-        queue_list = []
+        instance_list = []
 
         for policy_name, policy_config in worker_config.items():
-            queue_list.append(policy_config['queue'])
-            queue_policy_map[policy_config['queue']] = policy_name
-
-            instance_list = []
-            for i in range(policy_config['thread_count']):
-                policy_instance = PolicyWorker(policy_name, i, policy_config, self.config_info, datamap)
+            for i in range(policy_config['process_count']):
+                policy_instance = PolicyWorker(policy_name, policy_config, self.config_info, datamap)
                 policy_instance.start()
                 instance_list.append(policy_instance)
                 logging.getLogger("policy").debug("desc=policy_worker_start name=%s index=%d id=%s", policy_name, i, str(policy_instance.ident))
-            self.instance_map[policy_name] = instance_list
 
-        # TODO: 考虑在主线程中取出队列item, 然后稳定分发到对应instance的queue里
-        conn = redis.StrictRedis(self.redis_config['host'], self.redis_config['port'])
-        while True:
-            try:
-                data = conn.blpop(queue_list, 1)
-                if data is None:
-                    cur_time = datetime.datetime.now().time()
-                    cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
-                    #print "policy timenumber=" + str(cur_timenumber)
-
-                    if cur_timenumber >= int(self.config_info['POLICY']['close_time']):
-                        logging.getLogger("policy").critical("op=market_closed day=%d time=%d", self.day, cur_timenumber)
-                        break
-                    else:
-                        continue
-
-                key = data[0]
-                if key not in queue_policy_map:
-                    conn.rpush(key, data[1])
-                    continue
-
-                name = queue_policy_map[key]
-                item = json.loads(data[1])
-                #print item
-
-                sid = item['sid']
-                index = sid % len(self.instance_map[name])
-                self.instance_map[name][index].enqueue(item)
-
-                logging.getLogger("policy").debug("desc=dispatch_item key=%s name=%s sid=%d index=%d", key, name, sid, index)
-            except (KeyboardInterrupt, SystemExit): 
-                logging.getLogger("policy").critical("desc=system_exit")
-                break
-
-        self.terminate()
+        for instance in instance_list:
+            instance.join()
 
     def terminate(self):
-        for policy_name, instance_list in self.instance_map.items():
-            for instance in instance_list:
-                instance.stop()
-                instance.join()
+        for instance in self.instance_list:
+            instance.stop()
+            instance.join()
 
-        self.instance_map.clear()
+        self.instance_list.clear()
         logging.getLogger("policy").critical("op=policy_terminate")
         
     # 构造公共数据

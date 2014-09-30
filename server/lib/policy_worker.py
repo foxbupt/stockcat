@@ -5,31 +5,36 @@
 #date: 2014/06/27
 
 import sys, re, json, os, traceback, logging
-import datetime, time, threading, Queue
+import datetime, time
+import multiprocessing as mp
+import redis
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 
-class PolicyWorker(threading.Thread):
+class PolicyWorker():
     loop = True
 
-    def __init__(self, name, index, worker_config, config_info, datamap):
-        threading.Thread.__init__(self)
-
+    def __init__(self, name, worker_config, config_info, datamap):
         self.name = name
-        self.index = index
         self.worker_config = worker_config
         self.config_info = config_info
+        self.queue = config_info['queue']
         self.datamap = datamap
-        self.queue = Queue.Queue(0)
-
-    # 入队列操作
-    def enqueue(self, item):
-        self.queue.put(item)
+        self.process = None
 
     # 终止运行
     def stop(self):
         self.loop = False
 
+    # 创建进程
+    def start(self):
+        self.process = mp.Process(self.run)
+        self.process.start()
+
+    def join(self):
+        self.process.join()
+
+    # 进程运行函数
     def run(self):
         # 根据object导入对应module获取运行函数
         (module_name, object_name) = self.worker_config['object'].split(".")
@@ -37,21 +42,33 @@ class PolicyWorker(threading.Thread):
         object_creator = getattr(module, object_name)
         policy_object = object_creator(self.config_info, self.datamap)
 
-        while True:
+        item_count = 0
+        redis_config = self.worker_config['REDIS']
+        conn = redis.StrictRedis(self.redis_config['host'], self.redis_config['port'])
+
+        while self.loop:
             try:
-                item = self.queue.get(False, 2)
-            except Queue.Empty:
-                if self.loop:
-                    continue
-                else:
-                    #print "being exit"
-                    break
-            else:
-                #item = self.queue.get()
+                data = conn.blpop(self.queue, 1)
+                if data is None:
+                    cur_time = datetime.datetime.now().time()
+                    cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
+                    #print "policy timenumber=" + str(cur_timenumber)
+
+                    if cur_timenumber >= int(self.config_info['POLICY']['close_time']):
+                        logging.getLogger("policy").critical("op=market_closed time=%d", cur_timenumber)
+                        break
+                    else:
+                        continue
+
+                item = json.loads(data)
+                #print item
                 if item is None:
                     continue
 
-                #print item
+                item_count = item_count + 1
+                if item_count % 20 == 0: # 抽样输出日志便于线下测试
+                    logging.getLogger("policy").debug("desc=item_info processor=%s|%s", func_name, data); 
+
                 for func_name in self.worker_config['processor_list']:
                     try:
                         getattr(policy_object, func_name)(item)
@@ -60,7 +77,8 @@ class PolicyWorker(threading.Thread):
                     else:
                         #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
                         logging.getLogger("policy").debug("desc=policy_processor name=%s processor=%s sid=%d day=%d", self.name, func_name, item['sid'], item['day'])
-
+            except Exception as e:
+                logging.getLogger("policy").critical("err=pop_item name=%s", self.name)
             #self.queue.task_done()
-        logging.getLogger("policy").critical("op=policy_worker_exit name=%s index=%d", self.name, self.index)
+        logging.getLogger("policy").critical("op=policy_worker_exit name=%s pid=%u", self.name, self.process.pid)
 
