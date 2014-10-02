@@ -21,15 +21,31 @@ class PoolController extends Controller
         // var_dump($day, $lastDay);
 
 		$contInfo = DataModel::getContList($lastDay, $day);
+		$contMap = $contInfo['contmap'];
+		
 		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(1, 2), array(1, 2));	
-        // print_r($thresholdInfo);
+        $thresholdMap = $thresholdInfo['threshold_map'];
+		// print_r($thresholdInfo);
         
-        $hqDataMap = $contInfo['datamap'];
+        $hqDataMap = array();
+        foreach ($contInfo['datamap'] as $sid => $dataItem)
+        {
+        	$dataItem['cont_days'] = $contMap[$sid]['cont_days'];
+        	$dataItem['sum_price_vary_portion'] = $contMap[$sid]['sum_price_vary_portion'];
+        	$dataItem['max_volume_vary_portion'] = $contMap[$sid]['max_volume_vary_portion'];
+        	$hqDataMap[$sid] = $dataItem;
+        }
+        
         foreach ($thresholdInfo['datamap'] as $sid => $dataItem)
         {
         	if (!isset($hqDataMap[$sid]))
         	{
-            	$hqDataMap[$sid] = $dataItem;
+            	$dataItem['high_type'] = $thresholdMap[$sid]['high_type'];
+            	$hqDataMap[] = $dataItem;
+        	}
+        	else 
+        	{
+        		$hqDataMap[$sid]['high_type'] = $thresholdMap[$sid]['high_type'];
         	}
         }
 
@@ -39,12 +55,10 @@ class PoolController extends Controller
         $curMin = intval(substr($curTime, 2, 2));
         if (($curHour == 9 && $curMin >= 25) || ($curHour > 9 && $curHour < 15) || ($curHour == 15 && $curMin == 0))
         {
-		    uasort($dataMap, array($this, "cmpHQFunc"));
+		    $datamap = SortHelper::sort($dataMap, array("daily.vary_portion", "daily.open_vary_portion"), false);
         }
 
-        $this->render('index', array(
-                    'contMap' => $contInfo['contmap'],
-                    'priceMap' => $thresholdInfo['threshold_map'],
+        $this->render('index', array(                   
                     'hqMap' => $dataMap,
                     'day' => $day,
                     'lastDay' => $lastDay,
@@ -94,7 +108,7 @@ class PoolController extends Controller
         $this->render('rapid', array(
         			'day' => $day,
                     'rise' => $rise,
-                    'rapidList' => $rapidInfo['rapid_list'],
+                    'rapidList' => SortHelper::sort($rapidInfo['rapid_list'], array("now_time", "vary_portion"), false),
                     'stockMap' => $rapidInfo['stock_map']
                ));
     }

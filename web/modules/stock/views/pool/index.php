@@ -55,18 +55,17 @@ td {
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
                         <td><?php echo isset($hqData['name'])? $hqData['name'] : $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo isset($hqData['code'])? $hqData['code'] : $stockInfo['code']; ?></a></td>
-                        <?php if (isset($contMap[$sid])): ?>
-                            <?php $stockContInfo = $contMap[$sid]; ?>
-                            <td><?php echo $stockContInfo['cont_days'] . "天"; ?></td>
-                            <td><?php echo $stockContInfo['sum_price_vary_portion'] . "%"; ?></td>
-                            <td><?php echo $stockContInfo['max_volume_vary_portion']; ?></td>
+                        <?php if (isset($dataItem['cont_days'])): ?>
+                            <td><?php echo $dataItem['cont_days'] . "天"; ?></td>
+                            <td><?php echo $dataItem['sum_price_vary_portion'] . "%"; ?></td>
+                            <td><?php echo $dataItem['max_volume_vary_portion']; ?></td>
                         <?php else: ?>
                             <td>-</td> 
                             <td>-</td> 
                             <td>-</td> 
                         <?php endif; ?>
 
-						<td><?php echo isset($priceMap[$sid])? $highTypeValues[$priceMap[$sid]['high_type']] : "-"; ?></td>
+						<td><?php echo isset($dataItem["high_type"])? $highTypeValues[$dataItem['high_type']] : "-"; ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['last_close_price']); ?></td>
 
                         <?php if (empty($dailyData)): ?>  

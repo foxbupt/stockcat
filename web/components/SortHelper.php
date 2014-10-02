@@ -107,5 +107,38 @@ class SortHelper
 
         return strcmp($value1, $value2);
     }
+    
+    /**
+     * @desc 获取数组中指定字段的值, 支持多级字段
+     *
+     * @param array $map
+     * @param string $field 字段名, 支持a.b.c
+     * @return string
+     */
+    public static function getFieldValue($map, $field)
+    {
+    	if (isset($map[$field]))
+    	{
+    		return $map[$field];
+    	}
+    	else if (strstr($field, ".") !== FALSE)
+    	{
+    		$parts = explode(".", $field);
+    		$value = $map;
+    		while ($key = array_shift($parts))
+    		{
+    			if (is_array($value))
+    			{
+    				$value = $value[$key];
+    			}
+   				else 
+   				{
+   					return "";
+   				}
+    		}
+    		
+    		return $value;
+    	}
+    }
 }
 ?>

@@ -33,7 +33,6 @@ class DataModel
  			$stockMap[$sid] = StockUtil::getStockInfo($sid);
 		}
 
-		uasort($rapidList, array(self, "cmpRapidFunc"));      
 		return array(
 					'rapid_list' => $rapidList, 
 					'stock_map' => $stockMap
@@ -206,23 +205,5 @@ class DataModel
        	
        	return $dataItem;
     }
-    
-	/** 
-      * @desc 对短时间内出现较大变动的股票进行排序
-      *
-      * @param array $rapidInfo1
-      * @param array $rapidInfo2
-      * @return int
-      */                                                                                                                            
-     public static function cmpRapidFunc($rapidInfo1, $rapidInfo2)
-     {   
-         if ($rapidInfo1["now_time"] == $rapidInfo2["now_time"])
-         {   
-             return ($rapidInfo1["vary_portion"] < $rapidInfo2["vary_portion"])? 1 : -1; 
-         }   
-     
-         // 涨跌幅相同, 按照时间大小逆序排列
-         return ($rapidInfo1["now_time"] < $rapidInfo2["now_time"])? 1 : -1; 
-     }   
 }
 ?>
