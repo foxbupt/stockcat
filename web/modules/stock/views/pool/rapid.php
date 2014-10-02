@@ -17,8 +17,8 @@ function refreshPage()
     window.location.reload();
 }
 
-// 指定秒60刷新一次
-setTimeout('refreshPage()', 30 * 1000); 
+// 指定120秒刷新一次
+setTimeout('refreshPage()', 120 * 1000); 
 </script>
 
 <div class="container">

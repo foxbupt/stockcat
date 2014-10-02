@@ -36,18 +36,27 @@ class CommonUtil
 	const CACHE_KEY_COMMON_CONFIG = "config:all";
 	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
 
-    // location: 1 china 2 hk 3 us
+    // 股票所属国家(location): 1 中国 2 香港(hk) 3 美国(us)
     const LOCATION_CHINA = 1;
     const LOCATION_HK = 2;
     const LOCATION_US = 3;
 	
-    // ecode: 1 sh 2 sz 3 hk 4 nasdaq 5 nyse
+    // 交易所(ecode): 1 上海(sh) 2 深圳(sz) 3 香港(hk) 4 纳斯达克(nasdaq) 5 纽交所(nyse)
     const ECODE_SH = 1;
     const ECODE_SZ = 2;
     const ECODE_HK = 3;
     const ECODE_NASDAQ = 4;
     const ECODE_NYSE = 5;
 
+    // 交易所映射: ecode => ecode_name
+    static $ecodeMaps = array(
+    		self::ECODE_SH => "sh",
+    		self::ECODE_SZ => "sz",
+    		self::ECODE_HK => "hk",
+    		self::ECODE_NASDAQ => "NASDAQ",
+    		self::ECODE_NYSE => "NYSE",
+    	);
+    	
 	// 全年节假日配置
 	static $holidays = array(
                 20140101,
@@ -339,10 +348,27 @@ class CommonUtil
     	}	
     }
     
-    // 获取qq的行情页面地址
-    public static function getHQUrl($code)
+    /**
+     * @desc 获取qq的行情页面地址
+     * @param code string
+     * @param $ecode int
+     * @param location int
+     * @return string
+     */ 
+    public static function getHQUrl($code, $ecode = CommonUtil::ECODE_SH, $location = CommonUtil::LOCATION_CHINA)
     {
-    	return "http://stockhtm.finance.qq.com/sstock/ggcx/" . $code . ".shtml";	
+    	switch ($location)
+    	{
+    		case CommonUtil::LOCATION_CHINA:
+    			return "http://stockhtm.finance.qq.com/sstock/ggcx/" . $code . ".shtml";	
+    		case CommonUtil::LOCATION_HK:
+				return "http://stock.qq.com/hk" . $code;
+    		case CommonUtil::LOCATION_US:
+   			{	
+   				$postfix = (CommonUtil::ECODE_NASDAQ == $ecode)? "N" : "OQ";
+   				return "http://stockhtm.finance.qq.com/astock/ggcx/WUBA." . $postfix . ".htm";
+   			}
+    	}
     }
 }
 	

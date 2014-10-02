@@ -11,16 +11,6 @@ td {
 }
 </style>
 
-<script language="javascript">
-function refreshPage()
-{
-    window.location.reload();
-}
-
-// 指定秒60刷新一次
-setTimeout('refreshPage()', 30 * 1000); 
-</script>
-
 <div class="container">
 	<div class="span12">
 		<div class="hd">
