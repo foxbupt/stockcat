@@ -10,7 +10,7 @@ class SortHelper
 	/**
 	 * @desc 对数组按照给定的字段列表进行排序
 	 *
-	 * @param array $data OUT
+	 * @param array $data 
 	 * @param mixed $fields string/array
 	 * @param bool $asc
 	 * @return array
@@ -35,9 +35,10 @@ class SortHelper
 			}
 		}
 		
-		uasort($values, $asc? "cmpList" : "rcmpList");
+		uasort($values, $asc? "SortHelper::cmpList" : "SortHelper::rcmpList");
 		$result = array();
-		foreach ($values as $key)
+
+		foreach (array_keys($values) as $key)
 		{
 			$result[] = $data[$key];
 		}
@@ -56,12 +57,7 @@ class SortHelper
 	{
 		if (!is_array($unit1))
 		{
-			if ($unit1 == $unit2) 
-			{
-				return 0;
-			}
-			
-			return $unit1 < $unit2? -1 : 1;
+            return self::cmpValue($unit1, $unit2);
 		}
 		
 		foreach ($unit1 as $index => $value)
@@ -72,14 +68,14 @@ class SortHelper
 			}
 			else
 			{
-				return ($value < $unit2[$index])? -1 : 1;
+				return self::cmpValue($value, $unit2[$index]);
 			}
 		}
 		
 		return 0;
 	}
 	
-/**
+    /**
 	 * @desc 公共的逆序排序函数
 	 *
 	 * @param array $unit1
@@ -88,29 +84,28 @@ class SortHelper
 	 */
 	public static function rcmpList($unit1, $unit2)
 	{
-		if (!is_array($unit1))
-		{
-			if ($unit1 == $unit2) 
+	    return self::cmpList($unit2, $unit1);	
+	}
+
+    /**
+     * @desc 对两个值进行比较: 区分数值和字符串 
+     * @param value1
+     * @param value2
+     * @return int
+     */
+    public static function cmpValue($value1, $value2)
+    {
+        if (is_numeric($value1))
+        {
+			if ($value1 == $value2) 
 			{
 				return 0;
 			}
 			
-			return $unit1 < $unit2? 1 : -1;
-		}
-		
-		foreach ($unit1 as $index => $value)
-		{
-			if ($value == $unit2[$index])
-			{
-				continue;
-			}
-			else
-			{
-				return ($value < $unit2[$index])? 1 : -1;
-			}
-		}
-		
-		return 0;
-	}
+			return $value1 < $value2? -1 : 1;
+        }
+
+        return strcmp($value1, $value2);
+    }
 }
 ?>
