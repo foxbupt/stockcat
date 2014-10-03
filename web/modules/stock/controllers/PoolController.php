@@ -16,7 +16,7 @@ class PoolController extends Controller
     {
         // TODO: 目前查询上一个有效交易日的连续上涨/价格突破历史和年内新高的股票列表, 后续统一查询股票池列表
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
-        $day = CommonUtil::getParamDay($day);
+        // $day = CommonUtil::getParamDay($day);
         $lastDay = CommonUtil::getPastOpenDay($day, 1);
         // var_dump($day, $lastDay);
 
