@@ -29,7 +29,7 @@ class QQUsDailySpider(BaseSpider):
 
             fields = line.split()
             #print fields, fields[1:]
-            self.code2id[fields[1][2:]] = fields[0]
+            self.code2id[fields[1][2:]] = int(fields[0])
             code_list.append(fields[1])
         file.close()
         
@@ -74,7 +74,7 @@ class QQUsDailySpider(BaseSpider):
                 continue
 
             item['code'] = stock_code = fields[2][0:rindex]
-            print stock_code
+            #print stock_code
             item['sid'] = self.code2id[stock_code]
             item['day'] = int(self.day)
             item['last_close_price'] = fields[4]
