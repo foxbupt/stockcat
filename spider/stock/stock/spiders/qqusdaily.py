@@ -89,7 +89,7 @@ class QQUsDailySpider(BaseSpider):
             # 美股缺少成交额的数据, 统一为0
             item['amount'] = int(fields[37])
             # 美股缺少换手率
-            #item['exchange_portion'] = fields[38]
+            item['exchange_portion'] = 0.0
             # 计算振幅
             item['swing'] = (float(item['high_price']) - float(item['low_price'])) / float(item['last_close_price']) * 100
 
