@@ -39,7 +39,7 @@ class ImportStockCommand extends CConsoleCommand
 		// 更新股票信息
 		$loc = isset($stockInfo['loc'])? trim(trim($stockInfo['loc'], "省"), "市") : "";	
 
-		$stockRecord = Stock::model()->findByAttributes(array('code' => $stockInfo['code'], 'status' => 'Y'));
+		$stockRecord = Stock::model()->findByAttributes(array('code' => $stockInfo['code']));
 		if (empty($stockRecord))
 		{
 			echo "op=stock_record_nonexist code=" . $stockInfo['code'] . "\n";
@@ -55,11 +55,11 @@ class ImportStockCommand extends CConsoleCommand
             $stockRecord->company = isset($stockInfo['company'])? $stockInfo['company'] : "";
             $stockRecord->business = isset($stockInfo['business'])? $stockInfo['business'] : "";
             
-            $stockRecord->profit = isset($stockInfo['profit'])? $stockInfo['profit'] : 0.0;
-            $stockRecord->assets = isset($stockInfo['assets'])? $stockInfo['assets'] : 0.0;
-            $stockRecord->dividend = isset($stockInfo['dividend'])? $stockInfo['dividend'] : 0.0;
-            $stockRecord->capital = $stockInfo['captial'];
-            $stockRecord->out_capital = isset($stockInfo['out_captial'])? $stockInfo['out_captial'] : $stockInfo['captial'];
+            $stockRecord->profit = isset($stockInfo['profit'])? sprintf("%.2f", $stockInfo['profit']) : 0.0;
+            $stockRecord->assets = isset($stockInfo['assets'])? sprintf("%.2f", $stockInfo['assets']) : 0.0;
+            $stockRecord->dividend = isset($stockInfo['dividend'])? sprintf("%.2f", $stockInfo['dividend']) : 0.0;
+            $stockRecord->capital = isset($stockInfo['captial'])? sprintf("%.2f", $stockInfo['captial']) : 0.0;
+            $stockRecord->out_capital = isset($stockInfo['out_captial'])? sprintf("%.2f", $stockInfo['out_captial']) : sprintf("%.2f", $stockInfo['captial']);
             $stockRecord->create_time = time();
 
             $result = $stockRecord->save()? 1 : 0;
@@ -73,8 +73,26 @@ class ImportStockCommand extends CConsoleCommand
         {    
             // convert captial to capital
             $stockInfo['ecode'] = self::formatEcode($stockInfo['ecode']);
-            $stockInfo['capital'] = $stockInfo['captial'];
-            $stockInfo['out_capital'] = $stockInfo['out_captial'];
+            if (isset($stockInfo['captial']))
+            {
+                $stockInfo['capital'] = $stockInfo['captial'];
+            }
+            if (isset($stockInfo['out_captial']))
+            {
+                $stockInfo['out_capital'] = $stockInfo['out_captial'];
+            }
+
+            foreach (array('dividend', 'profit', 'assets') as $key)
+            {
+                if ($stockInfo[$key] == 0.0)
+                {
+                    unset($stockInfo[$key]);
+                }
+                else
+                {
+                    $stockInfo[$key] = sprintf("%.2f", $stockInfo[$key]);
+                }
+            }
             unset($stockInfo['loc'], $stockInfo['code'], $stockInfo['captial'], $stockInfo['out_captial']);
             
             $result = $stockRecord->updateByPk($stockRecord->id, $stockInfo);
@@ -107,6 +125,11 @@ class ImportStockCommand extends CConsoleCommand
     // convert ecode to number
     public static function formatEcode($ecode)
     {
+        if (is_numeric($ecode))
+        {
+            return $ecode;
+        }
+
         $ecode = strtolower($ecode);
         if ("sh" == $ecode)
         {
