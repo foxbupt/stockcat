@@ -5,7 +5,7 @@
 #date: 2014/10/05
 
 import sys, re, json, random
-import datetime
+import time
 sys.path.append('../../../server')  
 from pyutil.util import safestr
 from scrapy.spider import BaseSpider
@@ -25,8 +25,8 @@ class XueQiuSpider(BaseSpider):
 
     # 获取当前时间戳, 单位为ms
     def get_milltime(self):
-        timestamp = datetime.time.time()
-        return timestamp * 1000 + random.random(1, 999)
+        timestamp = time.time()
+        return int(timestamp * 1000)
 
     def start_requests(self):
         request_list = []
@@ -49,20 +49,20 @@ class XueQiuSpider(BaseSpider):
         for info in item_list:
             code_list.append(info['symbol'])
 
-        quotes_url = "http://xueqiu.com/stock/quote.json?code=" + ",".join(code_list) + "&_=" +  + str(self.get_milltime())
+        quotes_url = "http://xueqiu.com/stock/quote.json?code=" + ",".join(code_list) + "&_=" + str(self.get_milltime())
         print quotes_url
         request = Request(quotes_url, callback=self.parse_quotes, cookies=self.cookies)
         yield request
 
     # 解析批量quote的数据
     def parse_quotes(self, response):
-        content = response.body
+        content = safestr(response.body)
         quotes_data = json.loads(content)
 
         for quote_info in quotes_data['quotes']:
             # 已退市
             if 3 == int(quote_info['flag']):
-                print "op=stock_quit code=" + quote_info['symbol'] + " name=" + quote_info['name']
+                print "op=stock_quit code=" + safestr(quote_info['symbol'])  + " name=" + safestr(quote_info['name'])
                 continue
 
             item = StockItem()
@@ -70,18 +70,21 @@ class XueQiuSpider(BaseSpider):
 
             item['code'] = quote_info['symbol']
             item['name'] = quote_info['name']
-            exchange = quote_info['exchange']
+            stock_name = safestr(quote_info['name'])
+            exchange = safestr(quote_info['exchange'])
+
             if exchange == "NASDAQ":
                 item['ecode'] = 4
             elif exchange == "NYSE":
                 item['ecode'] = 5
             else:   # 非nasdaq/nyse的美股忽略
-                print "op=stock_ignore code=" + quote_info['symbol'] + " name=" + quote_info['name'] + " exchange=" + exchange
+                #print quote_info
+                print "op=stock_ignore code=" + safestr(quote_info['symbol']) + " name=" + stock_name + " exchange=" + exchange
                 continue
 
             # 总股本 
             if len(quote_info['totalShares']) > 0:
-                item['out_captial'] = float(quote_info['totalShares']) / 10000
+                item['out_captial'] = float(quote_info['totalShares']) / 100000000
             # 股息
             if len(quote_info['dividend']) > 0:
                 item['dividend'] = float(quote_info['dividend'])   
@@ -92,6 +95,6 @@ class XueQiuSpider(BaseSpider):
             if len(quote_info['net_assets']) > 0:
                 item['assets'] = float(quote_info['net_assets'])
 
-            print item
+            #print item
             yield item    
 
