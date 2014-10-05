@@ -5,6 +5,7 @@
 #date: 2014/10/05
 
 import sys, re, json, random
+import datetime
 sys.path.append('../../../server')  
 from pyutil.util import safestr
 from scrapy.spider import BaseSpider
@@ -22,10 +23,16 @@ class XueQiuSpider(BaseSpider):
         self.start_urls = []
         self.cookies = {"bid": "0b3f8ffc3b0e62c8dff0a60f3cc59463_hzrroxf5", "xq_a_token": "BFpJco0vb0XJXjzmk8Cgif", "xq_r_token": "w7VlSRAvY1sS67zuaYDCxY", "xq_token_expire": "Thu%20Oct%2016%202014%2020%3A25%3A53%20GMT%2B0800%20(CST)", "xq_is_login": 1}
 
+    # 获取当前时间戳, 单位为ms
+    def get_milltime(self):
+        timestamp = datetime.time.time()
+        return timestamp * 1000 + random.random(1, 999)
+
     def start_requests(self):
         request_list = []
         for i in range(1, self.page_count + 1):
-            url = "http://xueqiu.com/stock/cata/stocklist.json?page=" + str(i) + "&size=30&order=desc&orderby=marketCapital&type=0%2C1%2C2%2C3&_=1412486553231"
+            url = "http://xueqiu.com/stock/cata/stocklist.json?page=" + str(i) + "&size=30&order=desc&orderby=marketCapital&type=0%2C1%2C2%2C3&_=" + str(self.get_milltime())
+            print url
             request_list.append(Request(url, callback=self.parse, cookies=self.cookies))
 
         return request_list
@@ -42,7 +49,7 @@ class XueQiuSpider(BaseSpider):
         for info in item_list:
             code_list.append(info['symbol'])
 
-        quotes_url = "http://xueqiu.com/stock/quote.json?code=" + ",".join(code_list) + "&_=" + 
+        quotes_url = "http://xueqiu.com/stock/quote.json?code=" + ",".join(code_list) + "&_=" +  + str(self.get_milltime())
         print quotes_url
         request = Request(quotes_url, callback=self.parse_quotes, cookies=self.cookies)
         yield request
