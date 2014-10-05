@@ -57,8 +57,10 @@ class Stock extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('type, location, ecode, create_time', 'numerical', 'integerOnly'=>true),
-			array('code, capital, out_capital, profit, assets, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low', 'length', 'max'=>6),
-			array('name', 'length', 'max'=>32),
+			array('capital, out_capital, hist_high, hist_low, year_high, year_low, month6_high, month6_low, month3_high, month3_low', 'length', 'max'=>6),
+			array('profit, assets, dividend', 'length', 'max'=>8),
+			array('name', 'length', 'max'=>64),
+			array('code', 'length', 'max'=>12),
 			array('alias', 'length', 'max'=>64),
 			array('pinyin', 'length', 'max'=>8),
 			array('company', 'length', 'max'=>256),
