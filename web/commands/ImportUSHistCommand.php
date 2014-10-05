@@ -33,20 +33,24 @@ class ImportUSHistCommand extends CConsoleCommand
 			}
 			
 			$data = array('sid' => $sid, 'amount' => 0, 'exchange_portion' => 0.0);	
-			$data['day'] = intval(str_replace("-", "", $fields[0]));
+			$data['day'] = intval(date("Ymd", strtotime($fields[0])));
 			$data['open_price'] = floatval($fields[1]);
 			$data['high_price'] = floatval($fields[2]);
 			$data['low_price'] = floatval($fields[3]);
 			$data['close_price'] = floatval($fields[4]);
-			$data['volume'] = floatval($fields[5]);
-			$data['adj_close_price'] = floatval($fields[6]);
+			$data['volume'] = is_numeric($fields[5])? floatval($fields[5]) : 0;
+            if (count($fields) >= 7)
+            {
+			    $data['adj_close_price'] = floatval($fields[6]);
+            }
 			$data['last_close_price'] = $lastClosePrice;
+			
+			$data['vary_price'] = (0 == $lastClosePrice)? 0.0 : round($data['close_price'] - $lastClosePrice, 2);
+			$data['vary_portion'] = (0 == $lastClosePrice)? 0.0 : round($data['vary_price']/$lastClosePrice * 100, 2);
+			$data['swing'] = (0 == $lastClosePrice)? 0.0 : round(($data['high_price'] - $data['low_price']) / $lastClosePrice * 100, 2);
+			
 			$lastClosePrice = $data['close_price'];
-			
-			$data['vary_price'] = (0 == $lastClosePrice)? 0.0 : ($data['close_price'] - $lastClosePrice);
-			$data['vary_portion'] = (0 == $lastClosePrice)? 0.0 : $data['vary_price']/$lastClosePrice * 100;
-			$data['swing'] = (0 == $lastClosePrice)? 0.0 : (($data['high_price'] - $data['low_price']) / $lastClosePrice * 100);
-			
+            // print_r($data);
 			$result = self::addRecord($data);
 			echo "op=import_us_hist_data result=" . $result . " sid=" . $data['sid'] . ' day=' . $data['day'] . "\n";
 		}	
