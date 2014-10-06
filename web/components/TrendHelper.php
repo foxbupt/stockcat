@@ -13,9 +13,10 @@ class TrendHelper
      * desc 按周分割交易日期
      * @param startDay int
      * @param endDay int
+     * @param location int 
      * @return array(array('start', 'end', 'count'), ...)
      */
-    public static function partition($startDay, $endDay)
+    public static function partition($startDay, $endDay, $location = CommonUtil::LOCATION_CHINA)
     {
         $parts = array();
         $fromWday = 0;
@@ -26,7 +27,7 @@ class TrendHelper
 
         do
         {
-            while (!CommonUtil::isMarketOpen($rangeStart))
+            while (!CommonUtil::isMarketOpen($rangeStart, $location))
             {
                 $timestamp = strtotime("+1 day", $timestamp);
                 $rangeStart = date('Ymd', $timestamp);

@@ -58,7 +58,8 @@ class CommonUtil
     	);
     	
 	// 全年节假日配置
-	static $holidays = array(
+	static $holidays = array( 
+			self::LOCATION_CHINA =>	array(
                 20140101,
                 20140131,
                 array('start' => 20140203, 'end' => 20140206),
@@ -67,8 +68,24 @@ class CommonUtil
                 20140908,
 				array('start' => 20140501, 'end' => 20140502),
 				array('start' => 20141001, 'end' => 20141007),
-			);
-	 
+			),
+			self::LOCATION_US => array(
+				20140101,
+				20140120,
+				20140217,
+				20140418,
+				20140526,
+				20140704,
+				20140901,
+				20141127,
+				20141224,
+				20141225
+			));
+
+	static $timestones = array(
+	
+		);
+					
 	/**
 	 * @desc 添加标签, 存在则返回已有标签id
 	 *
@@ -169,9 +186,10 @@ class CommonUtil
 	 * @desc 判断指定日期是否开市
 	 *
 	 * @param int $day
+	 * @param int $location
 	 * @return bool
 	 */
-	public static function isMarketOpen($day)
+	public static function isMarketOpen($day, $location = self::LOCATION_CHINA)
 	{
 		// 判断是否为周六或周日
 		$dateinfo = getdate(strtotime($day));
@@ -180,7 +198,8 @@ class CommonUtil
 			return false;
 		}
 		
-		foreach (self::$holidays as $unit)
+		$locationHolidays = self::$holidays[$location];
+		foreach ($locationHolidays as $unit)
 		{
 			if ((is_array($unit) && ($unit['start'] <= $day) && ($day <= $unit['end'])) || ($unit == $day))
 			{
@@ -195,9 +214,10 @@ class CommonUtil
      * @desc: 获取当前日期最近的第几个交易日
      * @param: int $day
      * @param: int $offset
+     * @param: int $location
      * @return int
      */
-    public static function getPastOpenDay($day, $offset)
+    public static function getPastOpenDay($day, $offset, $location = CommonUtil::LOCATION_CHINA)
     {
         $step = 1;
         // 含当天
@@ -210,7 +230,7 @@ class CommonUtil
             $lastDay = date('Ymd', $lastTimestamp);
             $step += 1;
 
-            if (self::isMarketOpen($lastDay))
+            if (self::isMarketOpen($lastDay, $location))
             {
                 $openCount += 1;
                 if ($openCount == $offset)
@@ -227,16 +247,17 @@ class CommonUtil
      * @desc 获取指定日期范围[startDay, endDay] 内的交易天数目
      * @param int $startDay
      * @param int $endDay
+     * @param int $location
      * @return int
      */
-    public static function getOpenDayCount($startDay, $endDay)
+    public static function getOpenDayCount($startDay, $endDay, $location = CommonUtil::LOCATION_CHINA)
     {
         $count = 0;
         $day = $startDay;
 
         while ($day <= $endDay)
         {
-            if (self::isMarketOpen($day))
+            if (self::isMarketOpen($day, $location))
             {
                 $count += 1;
             }
@@ -297,11 +318,12 @@ class CommonUtil
      * @desc 获取最近开盘的日期
      *
      * @param int $day
+     * @param int $location
      * @return int
      */
-    public static function getParamDay($day)
+    public static function getParamDay($day, $location = CommonUtil::LOCATION_CHINA)
     {
-        return CommonUtil::isMarketOpen($day)? $day : CommonUtil::getPastOpenDay($day, 1);
+        return CommonUtil::isMarketOpen($day, $location)? $day : CommonUtil::getPastOpenDay($day, 1, $location);
     }
     
     /**

@@ -15,7 +15,7 @@ class StockUtil
 	const STOCK_TYPE_INDEXES = 2;
 	
 	// 所有股票的code => sid映射关系
-	const CACHE_KEY_STOCK_MAP = "stock:map";
+	const CACHE_KEY_STOCK_MAP = "stock:map-";
 	// 股票基本信息
 	const CACHE_KEY_STOCK_INFO = "stock:info-";
     // 股票标签列表
@@ -43,15 +43,16 @@ class StockUtil
 	
 	/**
 	 * @desc 获取所有股票code -> id的映射关系
+	 * @param $location int 缺省为1
 	 * @return array(code => sid)
 	 */
-	public static function getStockMap()
+	public static function getStockMap($location = CommonUtil::LOCATION_CHINA)
 	{
-		$cacheValue = Yii::app()->redis->get(StockUtil::CACHE_KEY_STOCK_MAP);
+		$cacheValue = Yii::app()->redis->get(StockUtil::CACHE_KEY_STOCK_MAP . strval($location));
 		if (!$cacheValue)
 		{
 			$stockMap = array();
-			$recordList = Stock::model()->findAllByAttributes(array('status' => 'Y'));
+			$recordList = Stock::model()->findAllByAttributes(array('location' => $location, 'status' => 'Y'));
 			foreach ($recordList as $record)
 			{
 				$stockMap[$record->code] = $record->id;
@@ -74,7 +75,7 @@ class StockUtil
 	{
 		$cacheKey = StockUtil::CACHE_KEY_STOCK_INFO . strval($sid);
 		$cacheValue = Yii::app()->redis->get($cacheKey);
-        $cacheValue = false;
+        // $cacheValue = false;
 
 		if (!$cacheValue)
 		{
@@ -125,7 +126,7 @@ class StockUtil
     {
 		$cacheKey = StockUtil::CACHE_KEY_STOCK_TAGS. strval($sid);
 		$cacheValue = Yii::app()->redis->get($cacheKey);
-        $cacheValue = false;
+        // $cacheValue = false;
 
 		if (!$cacheValue)
 		{

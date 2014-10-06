@@ -35,17 +35,18 @@ class TrendCommand extends CConsoleCommand
 
     public function run($args)
     {
-        if (count($args) < 2)
+        if (count($args) < 3)
         {
-            echo "Usage: php -c /etc/php.ini console_entry.php trend <start_day> <end_day> [type] [sid]\n";
+            echo "Usage: php -c /etc/php.ini console_entry.php trend <start_day> <end_day> <location> [type] [sid]\n";
             echo "type取值: 1 价格 2 成交量\n";
             exit(1);
         }
 
         $startDay = intval($args[0]);
         $endDay = intval($args[1]);
-        $type = isset($args[2])? intval($args[2]) : CommonUtil::TREND_FIELD_PRICE;
-        $sid = isset($args[3])? intval($args[3]) : 0;
+        $location = intval($args[2]);
+        $type = isset($args[3])? intval($args[3]) : CommonUtil::TREND_FIELD_PRICE;
+        $sid = isset($args[4])? intval($args[4]) : 0;
         // var_dump($startDay, $endDay, $type, $sid);
 
         $stockList = array();
@@ -55,7 +56,7 @@ class TrendCommand extends CConsoleCommand
         }
         else
         {
-            $stockMap = StockUtil::getStockMap();
+            $stockMap = StockUtil::getStockMap($location);
             $stockList = array_values($stockMap);
         }
 
@@ -71,7 +72,7 @@ class TrendCommand extends CConsoleCommand
             $latestTrendId = empty($latestTrendRecord)? 0 : $latestTrendRecord->id;
             $newStartDay = empty($latestTrendRecord)? $startDay : max($latestTrendRecord->start_day, $startDay);
             
-           	$trendList = $this->analyze($sid, $newStartDay, $endDay, $type, $this->trendConfig[$type]);
+           	$trendList = $this->analyze($sid, $newStartDay, $endDay, $type, $this->trendConfig[$type], $location);
             // print_r($trendList);
             if (empty($trendList))
             {
@@ -93,9 +94,10 @@ class TrendCommand extends CConsoleCommand
      * @param endDay int 结束日期
      * @param type int 分析类型: 价格/成交量
      * @param config array 分析配置
+     * @param location int 所属国家
      * @return array('start' => array('day', 'value'), 'end', 'high', 'low', 'trend')
      */
-    public function analyze($sid, $startDay, $endDay, $type, $config)
+    public function analyze($sid, $startDay, $endDay, $type, $config, $location = CommonUtil::LOCATION_CHINA)
     {
         $stockData = StockUtil::getStockData($sid, $startDay, $endDay);
         if (count($stockData) < 3)
@@ -103,7 +105,7 @@ class TrendCommand extends CConsoleCommand
             return false;
         }
 
-        $periods = TrendHelper::partition($startDay, $endDay); 
+        $periods = TrendHelper::partition($startDay, $endDay, $location); 
         // print_r($periods);
         $weekTrends = array();
         $index = 0;

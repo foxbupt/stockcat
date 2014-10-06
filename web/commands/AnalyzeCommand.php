@@ -9,19 +9,19 @@ class AnalyzeCommand extends CConsoleCommand
 {
     public function run($args)
     {
-        if (count($args) < 1)
+        if (count($args) < 2)
         {
-            echo "Usage: php -c /etc/php.ini console_entry.php analyze <day> [interval]\n";
+            echo "Usage: php -c /etc/php.ini console_entry.php analyze <location> <day> [interval]\n";
             exit(1);
         }
 
-        $day = intval($args[0]);
-        $interval = (count($args) >= 2)? intval($args[1]) : 10;
-        $startDay = CommonUtil::getPastOpenDay($day, $interval);
+        $location = intval($args[0]);
+        $day = intval($args[1]);
+        $interval = (count($args) >= 3)? intval($args[2]) : 10;
+        $startDay = CommonUtil::getPastOpenDay($day, $interval, $location);
         var_dump($startDay, $interval, $day);
 
-        $stockMap = StockUtil::getStockMap();
-
+        $stockMap = StockUtil::getStockMap($location);
         foreach ($stockMap as $scode => $sid)
         {
             $stockInfo = StockUtil::getStockInfo($sid);
