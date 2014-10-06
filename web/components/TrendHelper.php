@@ -86,10 +86,18 @@ class TrendHelper
     public static function getFieldRangeData($stockData, $startDay, $endDay, $fieldName = "close_price", $offset = 0)
     {
     	$index = $offset;
+        $items = $days = $values = array();
     	
     	while ($index < count($stockData))
         {
             $item = $stockData[$index];
+            // 美股中部分数据存在开盘/收盘价格为0的情况, 忽略之
+            if (($item['open_price'] == 0.0) || ($item['close_price'] == 0.0))
+            {
+                $index += 1;
+                continue;
+            }
+
             if (($item['day'] >= $startDay) && ($item['day'] <= $endDay))
             {
                 $days[] = $item['day'];
@@ -128,6 +136,11 @@ class TrendHelper
         // $items = $periodData['items'];
     	$count = $periodData['count'];
     	
+        if (0 == $count)
+        {
+            return Null;
+        }
+
         $startValue = $values[0];	// $items[0]['open_price'];
         $endValue = $values[$count-1];
     	$periodTrendInfo['start'] = array('day' => $days[0], 'value' => $startValue);
@@ -375,7 +388,7 @@ class TrendHelper
     	$attrs['start_value'] = $trendItem['start']['value'];
     	$attrs['end_day'] = $trendItem['end']['day'];
     	$attrs['end_value'] = $trendItem['end']['value'];
-    	$attrs['vary_portion'] = round(($trendItem['end']['value'] - $trendItem['start']['value']) / $trendItem['start']['value'] * 100, 2);
+    	$attrs['vary_portion'] = round(CommonUtil::calcPortion($trendItem['end']['value'], $trendItem['start']['value']) * 100, 2);
     	$attrs['high'] = $trendItem['high']['value'];
     	$attrs['high_day'] = $trendItem['high']['day'];
     	$attrs['low'] = $trendItem['low']['value'];

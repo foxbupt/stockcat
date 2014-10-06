@@ -36,7 +36,8 @@ class CommonUtil
 	const CACHE_KEY_COMMON_CONFIG = "config:all";
 	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
 
-    // 股票所属国家(location): 1 中国 2 香港(hk) 3 美国(us)
+    // 股票所属国家(location): 0 全部 1 中国 2 香港(hk) 3 美国(us)
+    const LOCATION_ALL = 0;
     const LOCATION_CHINA = 1;
     const LOCATION_HK = 2;
     const LOCATION_US = 3;
@@ -290,7 +291,7 @@ class CommonUtil
      */
     public static function calcPortion($cur, $last)
     {
-    	return ($cur - $last) / $last;	
+    	return ($last != 0.0)? ($cur - $last) / $last : 0.0;	
     }
     
     /**

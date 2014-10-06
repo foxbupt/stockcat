@@ -52,7 +52,13 @@ class StockUtil
 		if (!$cacheValue)
 		{
 			$stockMap = array();
-			$recordList = Stock::model()->findAllByAttributes(array('location' => $location, 'status' => 'Y'));
+            $attrs = array('status' => 'Y');
+            if ($location > 0)
+            {
+                $attrs['location'] =  $location;
+            }
+
+			$recordList = Stock::model()->findAllByAttributes($attrs);
 			foreach ($recordList as $record)
 			{
 				$stockMap[$record->code] = $record->id;
