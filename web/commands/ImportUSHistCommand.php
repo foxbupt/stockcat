@@ -51,6 +51,11 @@ class ImportUSHistCommand extends CConsoleCommand
 			
 			$lastClosePrice = $data['close_price'];
             // print_r($data);
+            if ((0 == $data['volume']) && (0 == $data['vary_price']))
+            {
+            	continue;
+            }
+            
 			$result = self::addRecord($data);
 			echo "op=import_us_hist_data result=" . $result . " sid=" . $data['sid'] . ' day=' . $data['day'] . "\n";
 		}	
