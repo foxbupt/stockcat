@@ -24,7 +24,7 @@ class StockController extends Controller
         $sid = isset($_GET['sid'])? intval($_GET['sid']) : 0;
         if ((0 == $sid) && isset($_GET['code']))
         {
-            $stockMap = StockUtil::getStockMap();
+            $stockMap = StockUtil::getStockMap(CommonUtil::LOCATION_ALL);
             $sid = $stockMap[trim($_GET['code'])];
         }
 
@@ -97,7 +97,7 @@ class StockController extends Controller
         }
         else
         {
-            $stockMap = StockUtil::getStockMap();
+            $stockMap = StockUtil::getStockMap(CommonUtil::LOCATION_ALL);
             $sid = $stockMap[trim($_GET['code'])];
         }
 
