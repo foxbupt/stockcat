@@ -52,7 +52,7 @@ main()
         #echo "$url"
 
         data_filename="${path}/${code}.csv"
-        #wget "$url" -O ${data_filename}
+        wget "$url" -O ${data_filename}
 
         $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php importushist $sid ${data_filename} >> $WEB_PATH/import_ushist.log
         echo "op=import_ushist sid=$sid code=$code filename=$data_filename"
