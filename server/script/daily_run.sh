@@ -5,20 +5,26 @@
 
 main()
 {
-    day=`date "+%Y%m%d"`
-    if [ $# -eq 1 ]
+    location=1
+    if [ $# -ge 1 ]
     then
-        day=$1
+        location=$1
+    fi
+
+    day=`get_curday "$location"`
+    if [ $# -eq 2 ]
+    then
+        day=$2
     fi
 
     result_path=$STOCK_SCRAPY_PATH/data/$day
-    log="analyze_$day.log"
+    log="analyze_$location_$day.log"
 
     # 更新每日的最高价/最低价
-    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $day >> $result_path/refresh_highlow.log 
+    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_$location_highlow.log 
 
     # 深入分析
-    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $day 10 >> $result_path/$log
+    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $location $day 10 >> $result_path/$log
 
     echo "finish"
 }

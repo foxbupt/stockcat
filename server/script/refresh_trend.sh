@@ -5,27 +5,34 @@
 
 main()
 {
-    range="all"
-    if [ $# -eq 1 ]
+    if [ $# -lt 1 ]
     then
-        range=$1
+        echo "Usage: $0 <location> [range] [day]"
+        exit
+    fi
+
+    location=$1
+    range="all"
+    if [ $# -ge 2 ]
+    then
+        range=$2
     fi
 
     start_day=`date -d '-3 month' +%Y%m%d`
-    day=`date "+%Y%m%d"`
-    if [ $# -eq 2 ]
+    day=`get_curday "$location"`
+    if [ $# -eq 3 ]
     then
-        day=$2
+        day=$3
     fi
 
-    echo "day=$day range=$range"
+    echo "loation=$location day=$day range=$range"
     result_path=$STOCK_SCRAPY_PATH/data/$day
-    log="trend_$day.log"
+    log="trend_$location_$day.log"
 
     # 更新所有股票
     if [ $range == "all" ]
     then
-        $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php trend $start_day $day 1 >> $result_path/$log
+        $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php trend $start_day $day $location 1 >> $result_path/$log
     elif [ $range == "pool" ]
     then
         pool_filename="pool_$day.txt"
@@ -37,7 +44,7 @@ main()
         sort $result_path/$pool_filename | uniq | while read sid
         do
             #echo "desc=refresh_pool_trend sid=$sid"
-            $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php trend $start_day $day 1 "$sid" >> $result_path/$log
+            $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php trend $start_day $day $location 1 "$sid" >> $result_path/$log
         done
     fi
 
