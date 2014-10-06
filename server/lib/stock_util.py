@@ -12,11 +12,12 @@ import redis
 
 # 假期定义
 holidays = [20140101, 20140131, {'start': 20140203, 'end': 20140206}, 20140407, {'start':20140501, 'end':20140502}, 20140602, 20140908, {'start': 20141001, 'end':20141007}]
+us_holidays = [20140101,20140120,20140217,20140418,20140526,20140704,20140901,20141127,20141224,20141225]
 # ecode
 ecodes = {1:"sh", 2:"sz", 3:"hk", 4:"NASDAQ", 5:"NYSE"}
 
 # 判断当天是否开市
-def is_market_open(day):
+def is_market_open(day, location = 1):
     current_time = datetime.datetime(int(day[0:4]), int(day[4:6]), int(day[6:8]))  
     weekday = current_time.weekday()
     #print day, weekday
@@ -26,7 +27,13 @@ def is_market_open(day):
         return False
 
     intday = int(day)
-    for item in holidays:
+    market_holidays = []
+    if 1 == location:
+        market_holidays = holidays
+    elif 3 == location:
+        market_holidays = us_holidays
+
+    for item in market_holidays:
         if (isinstance(item, dict) and item['start'] <= intday and intday <= item['end']) or (intday == item):
             return False
     return True
@@ -35,9 +42,10 @@ def is_market_open(day):
     @desc: 获取当前日期最近的第几个交易日
     @param current_day string
     @param offset int
+    @param location int 缺省为1(china)
     @return in
 '''
-def get_past_openday(current_day, offset):
+def get_past_openday(current_day, offset, location = 1):
     current_time = datetime.datetime(int(current_day[0:4]), int(current_day[4:6]), int(current_day[6:8]))  
     step = 1
     # 含当天
@@ -46,7 +54,7 @@ def get_past_openday(current_day, offset):
     while True:
         last_day = '{0:%Y%m%d}'.format(current_time + datetime.timedelta(days = -1 * step))
         step += 1
-        if is_market_open(last_day):
+        if is_market_open(last_day, location):
             open_count += 1
             if open_count == offset:
                 return last_day
@@ -76,11 +84,13 @@ def get_cont_stock(db_config, current_day, day_count, sum_portion, rise = True):
     return [item['sid'] for item in record_list]
 
 # 获取所有股票列表, 包含指数
-def get_stock_list(db_config, type = 0):
+def get_stock_list(db_config, type = 0, location = 1):
     sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
             month6_low, month3_high, month3_low from t_stock where status = 'Y' "
     if type > 0:
         sql = sql + " and type = " + str(type)
+    if location > 0:
+        sql = sql + " and location = " + str(location)
 
     try:
         db_conn = SqlUtil.get_db(db_config)
