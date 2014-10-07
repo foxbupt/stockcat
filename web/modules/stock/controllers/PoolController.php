@@ -26,12 +26,13 @@ class PoolController extends Controller
 		$contInfo = DataModel::getContList($lastDay, $day);
 		$contMap = $contInfo['contmap'];
 		
-		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(1, 2), array(1, 2));	
+		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(1, 2), array());	
         $thresholdMap = $thresholdInfo['threshold_map'];
-		// print_r($thresholdInfo);
+		// var_dump($contMap, $thresholdMap);
         
         $hqDataMap = array();
         $sidList = StockUtil::getStockList($location);
+        // var_dump(count($sidList));
         foreach ($contInfo['datamap'] as $sid => $dataItem)
         {
         	if (!in_array($sid, $sidList))
@@ -55,7 +56,7 @@ class PoolController extends Controller
         	if (!isset($hqDataMap[$sid]))
         	{
             	$dataItem['high_type'] = $thresholdMap[$sid]['high_type'];
-            	$hqDataMap[] = $dataItem;
+            	$hqDataMap[$sid] = $dataItem;
         	}
         	else 
         	{
@@ -64,6 +65,7 @@ class PoolController extends Controller
         }
 
         $dataMap = array_values($hqDataMap);
+        // var_dump($dataMap);
         $curTime = isset($dataMap[0]['daily'])? $dataMap[0]['daily']['time'] : date('His');
         $curHour = intval(substr($curTime, 0, 2));
         $curMin = intval(substr($curTime, 2, 2));

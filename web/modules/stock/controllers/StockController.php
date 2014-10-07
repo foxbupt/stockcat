@@ -100,6 +100,10 @@ class StockController extends Controller
             $stockMap = StockUtil::getStockMap(CommonUtil::LOCATION_ALL);
             $sid = $stockMap[trim($_GET['code'])];
         }
+        if (empty($sid))
+        {
+            throw new CHttpException(404);
+        }
 
 		$type = isset($_GET['type'])? intval($_GET['type']) : CommonUtil::TREND_FIELD_PRICE;
 		$startDay = intval($_GET['start_day']);

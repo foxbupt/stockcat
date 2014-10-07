@@ -198,10 +198,7 @@ class DataModel
        		$dataItem['daily'] = json_decode($cacheValue, true);	            
        		$dataItem['policy'] = Yii::app()->redis->getInstance()->hGetAll(BevaUtil::genCacheKey("daily-policy", array($sid, $day)));
        	}
-       	else 
-       	{
-       		$dataItem['stock'] = StockUtil::getStockInfo($sid);
-       	}
+       	$dataItem['stock'] = StockUtil::getStockInfo($sid);
        	
        	return $dataItem;
     }

@@ -388,8 +388,8 @@ class CommonUtil
 				return "http://stock.qq.com/hk" . $code;
     		case CommonUtil::LOCATION_US:
    			{	
-   				$postfix = (CommonUtil::ECODE_NASDAQ == $ecode)? "N" : "OQ";
-   				return "http://stockhtm.finance.qq.com/astock/ggcx/WUBA." . $postfix . ".htm";
+   				$postfix = (CommonUtil::ECODE_NASDAQ == $ecode)? "OQ" : "N";
+   				return "http://stockhtm.finance.qq.com/astock/ggcx/" . $code . "." . $postfix . ".htm";
    			}
     	}
     }
