@@ -72,6 +72,18 @@ class StockUtil
 	}
 	
 	/**
+	 * @desc 获取location对应的股票
+	 *
+	 * @param int $location
+	 * @return array(sid, ...)
+	 */
+	public static function getStockList($location = CommonUtil::LOCATION_CHINA)
+	{
+		$stockMap = self::getStockMap($location);
+		return array_values($stockMap);
+	}
+	
+	/**
 	 * @desc 根据股票id获取股票基本信息
 	 *
 	 * @param int $sid

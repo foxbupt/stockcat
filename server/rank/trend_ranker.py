@@ -8,13 +8,16 @@ import sys, re, json, os
 import datetime, time, logging, logging.config
 import redis
 sys.path.append('../../../../server')
+sys.path.append('../lib')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
-from stock_util import get_stock_info
+from stock_util import get_stock_info, get_stock_trendlist
+
 from base_ranker import BaseRanker
 
 class TrendRanker(BaseRanker):
     trend_list = []
+    
 
     '''
     @desc: 趋势评级的逻辑实现
@@ -24,3 +27,8 @@ class TrendRanker(BaseRanker):
     @return dict
     '''
     def rank(self, sid, day, range):
+    	past_day = self.get_pastday(day, range)
+    	print past_day
+
+    	self.trend_list = get_stock_trendlist(self.db_config, sid, past_day, day)
+

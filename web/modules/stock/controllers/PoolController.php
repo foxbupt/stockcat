@@ -11,13 +11,16 @@ class PoolController extends Controller
     /**
      * @desc 股票池列表实时刷新展示
      * @param $_GET['day'] 可选
+     * @param $_GET['location'] 可选
      */
     public function actionIndex()
     {
         // TODO: 目前查询上一个有效交易日的连续上涨/价格突破历史和年内新高的股票列表, 后续统一查询股票池列表
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+        
         // $day = CommonUtil::getParamDay($day);
-        $lastDay = CommonUtil::getPastOpenDay($day, 1);
+        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
         // var_dump($day, $lastDay);
 
 		$contInfo = DataModel::getContList($lastDay, $day);
@@ -28,8 +31,14 @@ class PoolController extends Controller
 		// print_r($thresholdInfo);
         
         $hqDataMap = array();
+        $sidList = StockUtil::getStockList($location);
         foreach ($contInfo['datamap'] as $sid => $dataItem)
         {
+        	if (!in_array($sid, $sidList))
+        	{
+        		continue;
+        	}
+        	
         	$dataItem['cont_days'] = $contMap[$sid]['cont_days'];
         	$dataItem['sum_price_vary_portion'] = $contMap[$sid]['sum_price_vary_portion'];
         	$dataItem['max_volume_vary_portion'] = $contMap[$sid]['max_volume_vary_portion'];
@@ -38,6 +47,11 @@ class PoolController extends Controller
         
         foreach ($thresholdInfo['datamap'] as $sid => $dataItem)
         {
+        	if (!in_array($sid, $sidList))
+        	{
+        		continue;
+        	}
+        	
         	if (!isset($hqDataMap[$sid]))
         	{
             	$dataItem['high_type'] = $thresholdMap[$sid]['high_type'];
@@ -55,7 +69,7 @@ class PoolController extends Controller
         $curMin = intval(substr($curTime, 2, 2));
         if (($curHour == 9 && $curMin >= 25) || ($curHour > 9 && $curHour < 15) || ($curHour == 15 && $curMin == 0))
         {
-		    $datamap = SortHelper::sort($dataMap, array("daily.vary_portion", "daily.open_vary_portion"), false);
+		    $dataMap = SortHelper::sort($dataMap, array("daily.vary_portion", "daily.open_vary_portion"), false);
         }
 
         $this->render('index', array(                   
