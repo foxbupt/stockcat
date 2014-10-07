@@ -161,6 +161,29 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
     return True
 
 '''
+  @desc: 获取股票指定日期范围内的趋势列表
+  @param: db_config dict
+  @param: sid int
+  @param: start_day int
+  @param: end_day int
+  @return list
+'''
+def get_stock_trendlist(db_config, sid, start_day, end_day):
+    sql = "select sid, type, start_day, end_day, count, high_day, high, low_day, low, start_value, end_value, vary_portion, trend, shave \
+            from t_stock_trend where status = 'Y' and sid = {sid} and ((start_day >= {start_day} and start_day <= {end_day}) \
+            or (end_day >= {start_day} and end_day <= {end_day})) order by start_day asc".format(sid=sid, start_day=start_day, end_day=end_day)
+    print sql
+
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+
+    return record_list
+
+'''
   @desc: 预估当天的成交量
   @param cur_volume 当天的成交量
   @param cur_time 当天的时刻
