@@ -18,10 +18,11 @@ main()
     fi
 
     result_path=$STOCK_SCRAPY_PATH/data/$day
-    log="analyze_$location_$day.log"
+    log="analyze_${location}_${day}.log"
+    echo "location=$location day=$day log=$log"
 
     # 更新每日的最高价/最低价
-    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_$location_highlow.log 
+    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_${location}_highlow.log 
 
     # 深入分析
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $location $day 10 >> $result_path/$log

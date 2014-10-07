@@ -14,7 +14,7 @@ PHP_BIN=/usr/bin/php
 SCRAPY_BIN=/usr/bin/scrapy
 
 # 公共假期
-HOLIDAYS=(20140101 20140131 20140203 20140204 20140205 20140206 20140407 20140501 20140502 20140602 20140908 20141001 20141002 20141003 20141006 20141007)
+HOLIDAYS=(20140101 20140131 20140203 20140204 20140205 20140206 20140407 20140501 20140502 20140602 20140908 20141001 20141002 20141003 20141004 20141005 20141006 20141007)
 US_HOLIDAYS=(20140101 20140120 20140217 20140418 20140526 20140704 20140901 20141127 20141224 20141225)
 
 #desc: 判断当天是否开市
@@ -35,10 +35,11 @@ is_market_open()
     weekday=`date -d "$day" "+%w"`
     if [ 1 -eq $location ] 
     then
-        holidays=$HOLIDAYS
+        holidays=(`echo ${HOLIDAYS[@]}`)
     else
-        holidays=$US_HOLIDAYS
+        holidays=(`echo ${US_HOLIDAYS[@]}`)
     fi
+    #echo "day=$day location=$location holiday_count=${#holidays[*]} holidays=${holidays[@]}"
 
     if [ 0 -eq $weekday -o 6 -eq $weekday ]
     then

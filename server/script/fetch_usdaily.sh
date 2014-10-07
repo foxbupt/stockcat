@@ -31,8 +31,8 @@ main()
         mkdir $result_path
     fi
 
-    log="usdaily_${stype}_$day.log"
-    filename="usdaily_${stype}_$day.json"
+    log="usdaily_${stype}_${day}.log"
+    filename="usdaily_${stype}_${day}.json"
     echo "log=$log filename=$filename"
 
     # 用scrapy抓取总览信息
