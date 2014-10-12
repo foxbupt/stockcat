@@ -28,7 +28,7 @@
 								<li><a href="/">首页</a></li>
 								
 								<li class="dropdown">
-								  <a class="dropdown-toggle" id="poolMenu" data-toggle="dropdown" href="<?php echo Yii::app()->createUrl('/stock/pool/index'); ?>">
+								  <a class="dropdown-toggle" id="poolMenu" data-toggle="dropdown">
 								    	股票池 <span class="caret"></span>
 								  </a>
 								  <ul class="dropdown-menu" role="menu" >
@@ -40,7 +40,7 @@
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/realtime'); ?>">实时上涨列表</a></li>
 								
 								<li class="dropdown">
-								  <a class="dropdown-toggle" data-toggle="dropdown" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">
+								  <a class="dropdown-toggle" data-toggle="dropdown">
 								    	昨日涨停列表 <span class="caret"></span>
 								  </a>
 								  <ul class="dropdown-menu" role="menu" >
@@ -51,7 +51,7 @@
 								
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 1)); ?>">快速拉升列表</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 0)); ?>">快速下跌列表</a></li>
-								<li class="divider"></li>
+								<li><p class="navbar-text">|</p></li>
 								<li><a href="/news">资讯</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/report/list'); ?>">研报</a></li>
 								<li><a href="/faq">使用帮助</a></li>
