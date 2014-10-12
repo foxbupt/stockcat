@@ -444,9 +444,10 @@ class TrendHelper
      * @param double $openPrice	开盘价
      * @param double $curPrice 当前价格
      * @param array $priceList	交易价格列表
+     * @param double $shaveVaryPortion 震荡涨跌幅范围
      * @return array('trend', 'op')
      */
-    public static function analyzeRealtimeTrend($openPrice, $curPrice, $priceList)
+    public static function analyzeRealtimeTrend($openPrice, $curPrice, $priceList, $shaveVaryPortion = 0.01)
     {
     	$trendInfo = array();
     	
@@ -456,7 +457,7 @@ class TrendHelper
         $minVary = $curPrice - $minPrice;
         $varyPortion = ($curPrice - $openPrice) / $openPrice;
 
-        if (abs($varyPortion) <= 0.01)		// 涨跌幅在1%以内, 认为是震荡
+        if (abs($varyPortion) <= $shaveVaryPortion)		// 涨跌幅在1%以内, 认为是震荡
         {
         	$trendInfo['trend'] = CommonUtil::DIRECTION_SHAVE;
         	$trendInfo['op'] = CommonUtil::OP_PEND;
@@ -481,5 +482,196 @@ class TrendHelper
 
         return $trendInfo;
     }
+    
+    /**
+	 * @desc 分析指定日期范围的趋势列表
+	 *
+	 * @param int $sid
+	 * @param array $trendList
+	 * @param int $startDay
+	 * @param int $endDay
+	 * @param int $location
+	 * @return array('open_price', 'open_day', 'high_price', 'high_day', 'low_price', 'low_day',
+	 * 			'close_price', 'close_day', 'total' => array(), 'near' => array())
+	 */
+	public static function analyzeTrendList($sid, $trendList, $startDay, $endDay, $location = CommonUtil::LOCATION_CHINA)
+	{
+		$data = array();
+		$count = count($trendList);
+		$openPrice = $highPrice = $lowPrice = $closePrice = 0;
+		$openDay = $highDay = $lowDay = $closeDay = 0;
+		$lastIndex = -1;
+		
+		foreach ($trendList as $index => $trendRecord)
+		{
+			if ($startDay < $trendRecord->start_day)
+			{
+				continue;
+			}
+			else if ($endDay < $trendRecord->start_day)
+			{
+				$lastIndex = $index;
+				break;
+			}
+			
+			if (0 == $openDay)
+			{
+				$openDay = $trendRecord->start_day;
+				$openPrice = $trendRecord->start_value;
+			}
+			else if ($index == $count-1)
+			{
+				$endDay = $trendRecord->end_day;
+				$closePrice = $trendRecord->end_value;
+			}
+			
+			if ($trendRecord->high >= $highPrice)
+			{
+				$highPrice = $trendRecord->high;
+				$highDay = $trendRecord->high_day;
+			}
+			
+			if ($trendRecord->low <= $lowPrice)
+			{
+				$lowPrice = $trendRecord->low;
+				$lowDay = $trendRecord->low_day;
+			}
+		}
+		
+		if (-1 == $lastIndex) // 表明指定区间内没有趋势记录
+		{
+			return false;
+		}
+		
+		$data['sid'] = $sid;
+		$data['open_price'] = $openPrice;
+		$data['open_day'] = $startDay;
+		$data['high_price'] = $highPrice;
+		$data['high_day'] = $highDay;
+		$data['low_price'] = $lowPrice;
+		$data['low_day'] = $lowDay;
+		$data['close_price'] = $closePrice = $trendList[$lastIndex-1]['end_value'];
+		$data['close_day'] = $trendList[$lastIndex-1]['end_day'];
+		
+		// 整体价格的涨跌幅和涨跌比例
+		$data['total'] = array(
+					'vary_price' => $closePrice - $openPrice, 
+					'vary_portion' => CommonUtil::calcPortion($closePrice, $openPrice) * 100
+				);
+		
+		// 获取离当前日期最近的突破点类型, 并计算自突破点以来的趋势
+		$data['near']['type'] = ($lowDay >= $highDay)? CommonUtil::TREND_NEAR_LOW : CommonUtil::TREND_NEAR_HIGH;
+		if (CommonUtil::TREND_NEAR_LOW == $data['near'])
+		{
+			$data['near']['offset'] = CommonUtil::getOpenDayCount($lowDay, $endDay, $location);
+			$data['near']['vary_portion'] = CommonUtil::calcPortion($closePrice, $lowPrice) * 100;
+		}
+		else
+		{
+			$data['near']['offset'] = CommonUtil::getOpenDayCount($highDay, $endDay, $location);
+			$data['near']['vary_portion'] = CommonUtil::calcPortion($closePrice, $highPrice) * 100;
+		}
+		
+		if ($data['near']['offset'] >= 2*5) // 离突破点的日期在两周以上, 才计算这段趋势
+		{
+			$nearTrend = CommonUtil::DIRECTION_SHAVE;
+			if (abs($data['near']['vary_portion']) >= 10.0)
+			{
+				 $nearTrend = ($data['near']['vary_portion'] >= 0.0)? CommonUtil::DIRECTION_UP : CommonUtil::DIRECTION_DOWN;		 
+			}
+			$data['near']['trend'] = $nearTrend;
+		}
+		
+		return $data;
+	}
+	
+	/**
+	 * @desc 输出(open, high, low, close)的趋势
+	 *
+	 * @param double $openPrice
+	 * @param double $highPrice
+	 * @param double $lowPrice
+	 * @param double $closePrice
+	 * @param array $trendConfig ('trend_vary_portion', 'shave_vary_portion')
+	 * @return array('trend', 'shave', 'vary_price', 'vary_portion', 'threshold_vary_price', 'threshold_vary_portion')
+	 */
+	public static function outputTrend($openPrice, $highPrice, $lowPrice, $closePrice, $trendConfig)
+	{
+		$varyPortion = CommonUtil::calcPortion($closePrice, $openPrice) * 100;
+		$thresholdVaryPortion = CommonUtil::calcPortion($highPrice, $lowPrice) * 100;
+		
+		$trend = CommonUtil::DIRECTION_SHAVE;
+		if (abs($varyPortion) >= $trendConfig['trend_vary_portion'])
+		{
+			$trend = ($varyPortion >= 0.0)? CommonUtil::DIRECTION_UP : CommonUtil::DIRECTION_DOWN;
+		}
+		
+		$shave = isset($trendConfig['shave_vary_portion'])? 
+			($thresholdVaryPortion >= $trendConfig['shave_vary_portion']) : ($thresholdVaryPortion >= $trendConfig['trend_vary_portion']);
+			
+		return array(
+					'trend' => $trend, 
+					'shave' => $shave,
+					'vary_price' => $closePrice - $openPrice,
+					'vary_portion' => $varyPortion,
+					'threshold_vary_price' => $highPrice - $lowPrice,
+					'threshold_vary_portion' => $thresholdVaryPortion,
+				);		
+	}
+	
+	/**
+	 * @desc 获取趋势支点指标
+	 *
+	 * @param int $sid
+	 * @param double $closePrice
+	 * @param array $trendList
+	 * @return array('support', 'resist')
+	 */
+	public static function getPivot($sid, $closePrice, $trendList)
+	{
+		$count = count($trendList);
+		
+		$latestIndex = $count - 1;		
+		$latestRecord = $trendList[$latestIndex];	
+		$currentTrend = $latestRecord->trend;
+		
+		if (1 == $latestRecord->shave) // 震荡
+		{
+			if (CommonUtil::DIRECTION_SHAVE == $latestRecord->trend)
+			{
+				$latestIndex = $latestIndex - 1;
+				$latestRecord = $trendList[$latestIndex];
+				$currentTrend = $latestRecord->trend;
+			}
+			else 
+			{
+				$currentTrend = $latestRecord->shave;
+			}
+		}
+		
+		// 当前趋势为上涨/下跌, 找到其最近的一段反方向的趋势
+		$lastIndex = $latestIndex - 1;
+		while ($lastIndex >= 0)
+		{
+			$record = $trendList[$lastIndex];
+			if ((0 == $record->shave) && ($currentTrend != $record->trend))
+			{
+				break;
+				/*
+				if (((CommonUtil::DIRECTION_UP == $currentTrend) && ($record->high >= $closePrice))
+					|| ((CommonUtil::DIRECTION_DOWN == $currentTrend) && ($record->low <= $closePrice)))
+				{
+					break;
+				} */
+			}
+			
+			$lastIndex -= 1;
+		}
+		
+		$lastHigh = $trendList[$lastIndex]->high;
+		$lastLow = $trendList[$lastIndex]->low;
+					
+		return array('sid' => $sid, 'support' => $lastLow, 'resist' => $lastHigh);
+	}
 }
 ?>

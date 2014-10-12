@@ -23,6 +23,10 @@ class CommonUtil
     const TREND_FIELD_PRICE = 1;
     const TREND_FIELD_VOLUME = 2;
     
+    // 趋势临近点: 1 靠近最低点 2 靠近最高点
+    const TREND_NEAR_LOW = 1;
+    const TREND_NEAR_HIGH = 2;
+    
     // 操作字段: 1 卖出  2 待定 3 买入
     const OP_SELL = 1;
     const OP_PEND = 2;
