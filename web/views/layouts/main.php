@@ -27,16 +27,15 @@
 							<ul class="nav">
 								<li><a href="#">首页</a></li>
 								
-								<div class="dropdown">
-								  <button class="btn btn-default dropdown-toggle" type="button" id="poolMenu" data-toggle="dropdown">
-								    	股票池 
-								    <span class="caret"></span>
-								  </button>
+								<li class="dropdown">
+								  <a class="dropdown-toggle" id="poolMenu" data-toggle="dropdown">
+								    	股票池 <span class="caret"></span>
+								  </a>
 								  <ul class="dropdown-menu" role="menu" >
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/index'); ?>">A股</a></li>
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/index', array('location' => CommonUtil::LOCATION_US)); ?>">美股</a></li>
 								  </ul>
-								</div>
+								</li>
 								
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/realtime'); ?>">实时上涨列表</a></li>
 								<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">昨日涨停列表</a></li>
