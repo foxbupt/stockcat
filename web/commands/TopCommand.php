@@ -52,6 +52,7 @@ class TopCommand extends CConsoleCommand
 		{
 			$startDay = $pastDay;
 		}
+		var_dump($pastDay, $startDay);
 		
 		$recommendList = array();
 		foreach ($sidList as $sid)

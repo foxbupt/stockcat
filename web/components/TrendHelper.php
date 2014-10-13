@@ -498,31 +498,31 @@ class TrendHelper
 	{
 		$data = array();
 		$count = count($trendList);
+		
+		// 日期范围内的趋势个数
+		$rangeCount = 0;
 		$openPrice = $highPrice = $lowPrice = $closePrice = 0;
 		$openDay = $highDay = $lowDay = $closeDay = 0;
-		$lastIndex = -1;
+		$lastIndex = $count - 1;
 		
 		foreach ($trendList as $index => $trendRecord)
 		{
-			if ($startDay < $trendRecord->start_day)
+			if (($startDay > $trendRecord->end_day) || ($endDay < $trendRecord->start_day))
 			{
 				continue;
 			}
-			else if ($endDay < $trendRecord->start_day)
+			
+			$rangeCount = 0;
+			// 存在endDay > 所有趋势的结束日期的情况, 所以lastIndex默认为最后一个趋势
+			if ($endDay <= $trendRecord->end_day)
 			{
-				$lastIndex = $index;
-				break;
+				$lastIndex = min($index, $lastIndex);
 			}
 			
 			if (0 == $openDay)
 			{
 				$openDay = $trendRecord->start_day;
 				$openPrice = $trendRecord->start_value;
-			}
-			else if ($index == $count-1)
-			{
-				$endDay = $trendRecord->end_day;
-				$closePrice = $trendRecord->end_value;
 			}
 			
 			if ($trendRecord->high >= $highPrice)
@@ -538,7 +538,7 @@ class TrendHelper
 			}
 		}
 		
-		if (-1 == $lastIndex) // 表明指定区间内没有趋势记录
+		if (0 == $rangeCount) // 表明指定区间内没有趋势记录
 		{
 			return false;
 		}
@@ -551,7 +551,7 @@ class TrendHelper
 		$data['low_price'] = $lowPrice;
 		$data['low_day'] = $lowDay;
 		$data['close_price'] = $closePrice = $trendList[$lastIndex-1]['end_value'];
-		$data['close_day'] = $trendList[$lastIndex-1]['end_day'];
+		$data['close_day'] = $endDay = $trendList[$lastIndex-1]['end_day'];
 		
 		// 整体价格的涨跌幅和涨跌比例
 		$data['total'] = array(
