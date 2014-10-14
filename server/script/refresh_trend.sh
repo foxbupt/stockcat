@@ -27,7 +27,7 @@ main()
 
     echo "loation=$location day=$day range=$range"
     result_path=$STOCK_SCRAPY_PATH/data/$day
-    log="trend_$location_$day.log"
+    log="trend_${location}_${day}.log"
 
     # 更新所有股票
     if [ $range == "all" ]
