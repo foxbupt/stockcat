@@ -543,6 +543,7 @@ class TrendHelper
 			return false;
 		}
 		
+		$data['sid'] = $sid;
 		$data['open_price'] = $openPrice;
 		$data['open_day'] = $openDay;
 		$data['high_price'] = $highPrice;
@@ -656,7 +657,7 @@ class TrendHelper
 			$lastIndex -= 1;
 		}*/
 		
-		return array('sid' => $sid, 'support' => $support, 'resist' => $resist);
+		return array('support' => $support, 'resist' => $resist);
 	}
 }
 ?>
