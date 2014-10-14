@@ -59,7 +59,7 @@ class TopCommand extends CConsoleCommand
 			$trendData = TrendHelper::analyzeTrendList($sid, $trendList, $startDay, $day, $location);
             // var_dump($trendData);
 			
-			if (abs($trendData['near']['vary_portion']) >= 20.0)
+			if (abs($trendData['near']['vary_portion']) >= 50.0)
 			{
 				echo "op=ignore_trend_near_hrise sid=$sid " . StatLogUtil::array2log($trendData) . "\n";
 				continue; 
