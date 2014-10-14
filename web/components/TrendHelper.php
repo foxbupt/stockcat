@@ -641,8 +641,8 @@ class TrendHelper
 		
 		// 取倒数第2段和第3段的趋势(一定有段趋势与当前趋势不同), 取最高点/最低点比较
 		$resist = max($lastHigh, max($trendList[$latestIndex-1]->high, $trendList[$latestIndex-2]->high));
-		$support = min($trendList[$latestIndex-1]->low, $trendList[$latestIndex-2]->low);
-		$support = (0 == $lastLow)? $support : min($support, $lastLow);
+		$support = max($trendList[$latestIndex-1]->low, $trendList[$latestIndex-2]->low);
+		$support = (0 == $lastLow)? $support : max($support, $lastLow);
 		/*
 		// 当前趋势为上涨/下跌, 找到其最近的一段反方向的趋势
 		$lastIndex = $latestIndex - 1;
