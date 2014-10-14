@@ -21,7 +21,7 @@ main()
     do
         sid=`echo $line | awk '{print $1}'`
         code=`echo $line | awk '{print $2}'`
-        filename="${code}_hist.json"
+        filename="${code}_hist_${start}_${end}.json"
         echo "sid=$sid code=$code filename=$filename"
         $SCRAPY_BIN crawl ifeng -a id=$sid -a code=$code -a start_date=$start -a end_date=$end -o $result_path/$filename --logfile=$result_path/fetch_histdat.log 
     done < $STOCK_LIST
@@ -30,7 +30,7 @@ main()
     do
         sid=`echo $line | awk '{print $1}'`
         code=`echo $line | awk '{print $2}'`
-        filename="${code}_hist.json"
+        filename="${code}_hist_${start}_${end}.json"
         echo "sid=$sid code=$code filename=$filename"
         $SCRAPY_BIN crawl ifeng -a id=$sid -a code=$code -a start_date=$start -a end_date=$end -o $result_path/$filename --logfile=$result_path/fetch_histdat.log 
     done < $INDEX_LIST
