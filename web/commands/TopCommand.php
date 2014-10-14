@@ -23,7 +23,7 @@ class TopCommand extends CConsoleCommand
 		$day = (CommonUtil::LOCATION_CHINA == $location)? intval(date('Ymd')) : intval(date('Ymd', strtotime("1 days ago", time())));
 		$day = CommonUtil::getParamDay($day, $location);	
 			
-		$sidList = CommonUtil::getStockList($location);
+		$sidList = StockUtil::getStockList($location);
 		if (("trend" == $type) || ($type == "all"))
 		{
 			$trendRecommendList = self::recommendTrend($sidList, $day, $location);
@@ -46,8 +46,8 @@ class TopCommand extends CConsoleCommand
 	 */
 	public static function recommendTrend($sidList, $day, $location)
 	{
-		$pastDay = intval(strtotime("3 months ago", strtotime($day)));
-		$startDay = intval(substr($day, 0, 4) . "01");
+		$pastDay = intval(date('Ymd', strtotime("-3 months", strtotime($day))));
+		$startDay = intval(substr($day, 0, 4) . "0101");
 		if ($startDay >= $pastDay)
 		{
 			$startDay = $pastDay;
@@ -58,7 +58,8 @@ class TopCommand extends CConsoleCommand
 		foreach ($sidList as $sid)
 		{
 			$trendList = TrendHelper::getTrendList($sid, CommonUtil::TREND_FIELD_PRICE, $startDay, $day);
-			$trendData = TrendHelper::anazyleTrendList($sid, $location, $trendList, $startDay, $day);
+			$trendData = TrendHelper::analyzeTrendList($sid, $trendList, $startDay, $day, $location);
+            var_dump($trendData);
 			
 			if (abs($trendData['near']['vary_portion']) >= 20.0)
 			{
@@ -75,10 +76,11 @@ class TopCommand extends CConsoleCommand
 				continue;
 			}
 			
-			$closePrice = $latestTrendRecord->close_price;
+			$closePrice = $latestTrendRecord->end_value;
 			$pivotInfo = TrendHelper::getPivot($sid, $closePrice, $trendList);	
 			$supportVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['support']) * 100;
 			$resistVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['resist']) * 100;		
+            var_dump($pivotInfo, $supportVaryPortion, $resistVaryPortion);
 			
 			// TODO: 需要判断shave
 			if (((CommonUtil::DIRECTION_UP == $latestTrendRecord->trend) && ($resistVaryPortion >= 2.0))
@@ -90,6 +92,7 @@ class TopCommand extends CConsoleCommand
 				
 				$recommendList[] = $trendData;
 				echo "op=recommend_stock_trend " . StatLogUtil::array2log($trendData) . "\n";	
+                exit(1);
 			}
 		}
 		

@@ -429,9 +429,9 @@ class TrendHelper
     		$partCondition .= " and trend={$trend} ";
     	}
     	return StockTrend::model()->findAll(array(
-    				'condition' => "{$partCondition} and ((start_day >= :startDay and start_day <= :endDay) or (end_day >= :startDay and endDay <= :endDay)) and status = 'Y'",
+    				'condition' => "{$partCondition} and ((start_day >= :startDay and start_day <= :endDay) or (end_day >= :startDay and end_day <= :endDay)) and status = 'Y'",
     				'params' => array(
-    						':startDay' => $startDay,
+    						'startDay' => $startDay,
     						'endDay' => $endDay,
     				),
     				'order' => 'start_day asc'
@@ -498,6 +498,7 @@ class TrendHelper
 	{
 		$data = array();
 		$count = count($trendList);
+        var_dump($count);
 		
 		// 日期范围内的趋势个数
 		$rangeCount = 0;
@@ -512,7 +513,6 @@ class TrendHelper
 				continue;
 			}
 			
-			$rangeCount = 0;
 			// 存在endDay > 所有趋势的结束日期的情况, 所以lastIndex默认为最后一个趋势
 			if ($endDay <= $trendRecord->end_day)
 			{
@@ -531,11 +531,12 @@ class TrendHelper
 				$highDay = $trendRecord->high_day;
 			}
 			
-			if ($trendRecord->low <= $lowPrice)
+			if ((0 == $lowPrice) || ($trendRecord->low <= $lowPrice))
 			{
 				$lowPrice = $trendRecord->low;
 				$lowDay = $trendRecord->low_day;
 			}
+            $rangeCount += 1;
 		}
 		
 		if (0 == $rangeCount) // 表明指定区间内没有趋势记录
@@ -550,8 +551,8 @@ class TrendHelper
 		$data['high_day'] = $highDay;
 		$data['low_price'] = $lowPrice;
 		$data['low_day'] = $lowDay;
-		$data['close_price'] = $closePrice = $trendList[$lastIndex-1]['end_value'];
-		$data['close_day'] = $endDay = $trendList[$lastIndex-1]['end_day'];
+		$data['close_price'] = $closePrice = $trendList[$lastIndex]['end_value'];
+		$data['close_day'] = $endDay = $trendList[$lastIndex]['end_day'];
 		
 		// 整体价格的涨跌幅和涨跌比例
 		$data['total'] = array(
