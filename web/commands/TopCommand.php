@@ -87,6 +87,7 @@ class TopCommand extends CConsoleCommand
 			$trendData['support_vary_portion'] = $supportVaryPortion;
 			$trendData['resist_vary_portion'] = $resistVaryPortion;
 			$trendData['trend'] = $latestTrendRecord->trend;
+			$trendData['current_price'] = $closePrice;
 				
 			// TODO: 需要判断shave
 			if ((CommonUtil::DIRECTION_UP == $trendData['trend']) && ($resistVaryPortion >= 2.0))
