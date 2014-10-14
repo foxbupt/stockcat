@@ -543,7 +543,6 @@ class TrendHelper
 			return false;
 		}
 		
-		$data['sid'] = $sid;
 		$data['open_price'] = $openPrice;
 		$data['open_day'] = $openDay;
 		$data['high_price'] = $highPrice;
@@ -561,7 +560,7 @@ class TrendHelper
 		
 		// 获取离当前日期最近的突破点类型, 并计算自突破点以来的趋势
 		$data['near']['type'] = ($lowDay >= $highDay)? CommonUtil::TREND_NEAR_LOW : CommonUtil::TREND_NEAR_HIGH;
-		if (CommonUtil::TREND_NEAR_LOW == $data['near'])
+		if (CommonUtil::TREND_NEAR_LOW == $data['near']['type'])
 		{
 			$data['near']['offset'] = CommonUtil::getOpenDayCount($lowDay, $endDay, $location);
 			$data['near']['vary_portion'] = CommonUtil::calcPortion($closePrice, $lowPrice) * 100;

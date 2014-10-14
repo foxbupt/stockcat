@@ -27,7 +27,6 @@ class TopCommand extends CConsoleCommand
 		if (("trend" == $type) || ($type == "all"))
 		{
 			$trendRecommendList = self::recommendTrend($sidList, $day, $location);
-			var_dump($trendRecommendList);
 		}
 	}
 	
