@@ -37,7 +37,7 @@ class TopCommand extends CConsoleCommand
 	 * 		2、找出离年内最高价或最低价在20%上下范围的股票
 	 * 		3、若当前价格已经是最高点, 若最后一段趋势上涨幅度 >=20%, 则忽略
 	 * 		4a)、找出当前趋势为上涨, 且当前价格超过前一段上涨的高点 (2%)
-	 * 		4b)、当前趋势为下跌, 且最低点 >= 支撑位, 当前价格在支撑位上方(2%)
+	 * 		// 4b)、当前趋势为下跌, 且最低点 >= 支撑位, 当前价格在支撑位上方(2%)
 	 *
 	 * @param array $sidList
 	 * @param int $day
@@ -52,18 +52,17 @@ class TopCommand extends CConsoleCommand
 		{
 			$startDay = $pastDay;
 		}
-		var_dump($pastDay, $startDay);
 		
 		$recommendList = array();
 		foreach ($sidList as $sid)
 		{
 			$trendList = TrendHelper::getTrendList($sid, CommonUtil::TREND_FIELD_PRICE, $startDay, $day);
 			$trendData = TrendHelper::analyzeTrendList($sid, $trendList, $startDay, $day, $location);
-            var_dump($trendData);
+            // var_dump($trendData);
 			
 			if (abs($trendData['near']['vary_portion']) >= 20.0)
 			{
-				echo "op=ignore_stock_trend sid=$sid " . StatLogUtil::array2log($trendData) . "\n";
+				echo "op=ignore_trend_near_hrise sid=$sid " . StatLogUtil::array2log($trendData) . "\n";
 				continue; 
 			}
 			
@@ -72,27 +71,32 @@ class TopCommand extends CConsoleCommand
 			if (($trendData['close_price'] == $trendData['high_price']) && ($latestTrendRecord->trend == CommonUtil::DIRECTION_UP) 
 				&& ($latestTrendRecord->vary_portion >= 20.0))
 			{
-				echo "op=ignore_stock_trend_highrise " . StatLogUtil::array2log($latestTrendRecord->getAttributes()) . "\n";
+				echo "op=ignore_trend_latest_hrise " . StatLogUtil::array2log($latestTrendRecord->getAttributes()) . "\n";
 				continue;
 			}
 			
-			$closePrice = $latestTrendRecord->end_value;
+			$stockDataList = StockUtil::getStockData($sid, $day, $day);
+			$closePrice = (1 == count($stockDataList))? $stockDataList[0]['close_price'] : $latestTrendRecord->end_value;
+			
 			$pivotInfo = TrendHelper::getPivot($sid, $closePrice, $trendList);	
 			$supportVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['support']) * 100;
-			$resistVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['resist']) * 100;		
-            var_dump($pivotInfo, $supportVaryPortion, $resistVaryPortion);
+			$resistVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['resist']) * 100;		         
+			// var_dump($pivotInfo, $supportVaryPortion, $resistVaryPortion);
 			
-			// TODO: 需要判断shave
-			if (((CommonUtil::DIRECTION_UP == $latestTrendRecord->trend) && ($resistVaryPortion >= 2.0))
-				|| ((CommonUtil::DIRECTION_DOWN == $latestTrendRecord->trend) && ($supportVaryPortion >= 2.0)))				
-			{
-				$trendData['pivot'] = $pivotInfo;
-				$trendData['support_vary_portion'] = $supportVaryPortion;
-				$trendData['resist_vary_portion'] = $resistVaryPortion;
+			$trendData['pivot'] = $pivotInfo;
+			$trendData['support_vary_portion'] = $supportVaryPortion;
+			$trendData['resist_vary_portion'] = $resistVaryPortion;
+			$trendData['trend'] = $latestTrendRecord->trend;
 				
+			// TODO: 需要判断shave
+			if ((CommonUtil::DIRECTION_UP == $trendData['trend']) && ($resistVaryPortion >= 2.0))
+			{								
+				echo "op=recommend_trend_above_resist " . StatLogUtil::array2log($trendData) . "\n";	
 				$recommendList[] = $trendData;
-				echo "op=recommend_stock_trend " . StatLogUtil::array2log($trendData) . "\n";	
-                exit(1);
+			}
+			else 
+			{
+				echo "op=ignore_trend_non_match " . StatLogUtil::array2log($trendData) . "\n";	
 			}
 		}
 		

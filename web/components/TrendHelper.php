@@ -497,13 +497,12 @@ class TrendHelper
 	public static function analyzeTrendList($sid, $trendList, $startDay, $endDay, $location = CommonUtil::LOCATION_CHINA)
 	{
 		$data = array();
-		$count = count($trendList);
-        var_dump($count);
-		
+		$count = count($trendList);		
 		// 日期范围内的趋势个数
 		$rangeCount = 0;
+		
 		$openPrice = $highPrice = $lowPrice = $closePrice = 0;
-		$openDay = $highDay = $lowDay = $closeDay = 0;
+		$openDay = $highDay = $lowDay = 0;
 		$lastIndex = $count - 1;
 		
 		foreach ($trendList as $index => $trendRecord)
@@ -546,13 +545,13 @@ class TrendHelper
 		
 		$data['sid'] = $sid;
 		$data['open_price'] = $openPrice;
-		$data['open_day'] = $startDay;
+		$data['open_day'] = $openDay;
 		$data['high_price'] = $highPrice;
 		$data['high_day'] = $highDay;
 		$data['low_price'] = $lowPrice;
 		$data['low_day'] = $lowDay;
 		$data['close_price'] = $closePrice = $trendList[$lastIndex]['end_value'];
-		$data['close_day'] = $endDay = $trendList[$lastIndex]['end_day'];
+		$data['close_day'] = $trendList[$lastIndex]['end_day'];
 		
 		// 整体价格的涨跌幅和涨跌比例
 		$data['total'] = array(
@@ -634,22 +633,17 @@ class TrendHelper
 		
 		$latestIndex = $count - 1;		
 		$latestRecord = $trendList[$latestIndex];	
-		$currentTrend = $latestRecord->trend;
 		
-		if (1 == $latestRecord->shave) // 震荡
-		{
-			if (CommonUtil::DIRECTION_SHAVE == $latestRecord->trend)
-			{
-				$latestIndex = $latestIndex - 1;
-				$latestRecord = $trendList[$latestIndex];
-				$currentTrend = $latestRecord->trend;
-			}
-			else 
-			{
-				$currentTrend = $latestRecord->shave;
-			}
-		}
+		// 上涨趋势时结束价不是最高价 或 其它趋势时, 取当前趋势的最高点
+		$lastHigh = ($latestRecord->high != $latestRecord->end_value)? $latestRecord->high : 0.0;
+		// 下跌趋势时结束价不是最低价 或 其它趋势时, 取当前趋势的最低点
+		$lastLow = ($latestRecord->low != $latestRecord->end_value)? $latestRecord->low : 0.0;
 		
+		// 取倒数第2段和第3段的趋势(一定有段趋势与当前趋势不同), 取最高点/最低点比较
+		$lastHigh = max($lastHigh, max($trendList[$latestIndex-1]->high, $trendList[$latestIndex-2]->high));
+		$lastLow = min($lastLow, min($trendList[$latestIndex-1]->low, $trendList[$latestIndex-2]->low));
+		
+		/*
 		// 当前趋势为上涨/下跌, 找到其最近的一段反方向的趋势
 		$lastIndex = $latestIndex - 1;
 		while ($lastIndex >= 0)
@@ -658,20 +652,11 @@ class TrendHelper
 			if ((0 == $record->shave) && ($currentTrend != $record->trend))
 			{
 				break;
-				/*
-				if (((CommonUtil::DIRECTION_UP == $currentTrend) && ($record->high >= $closePrice))
-					|| ((CommonUtil::DIRECTION_DOWN == $currentTrend) && ($record->low <= $closePrice)))
-				{
-					break;
-				} */
 			}
 			
 			$lastIndex -= 1;
-		}
+		}*/
 		
-		$lastHigh = $trendList[$lastIndex]->high;
-		$lastLow = $trendList[$lastIndex]->low;
-					
 		return array('sid' => $sid, 'support' => $lastLow, 'resist' => $lastHigh);
 	}
 }
