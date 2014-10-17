@@ -22,7 +22,8 @@ class TopCommand extends CConsoleCommand
 		
 		$day = (CommonUtil::LOCATION_CHINA == $location)? intval(date('Ymd')) : intval(date('Ymd', strtotime("1 days ago", time())));
 		$day = CommonUtil::getParamDay($day, $location);	
-			
+
+		// TODO: 对于运行出来的推荐列表, 当前处于停牌且超过一周的忽略之.
 		$sidList = StockUtil::getStockList($location);
 		if (("trend" == $type) || ($type == "all"))
 		{

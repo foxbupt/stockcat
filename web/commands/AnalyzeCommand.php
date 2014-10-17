@@ -84,7 +84,9 @@ class AnalyzeCommand extends CConsoleCommand
         $close = floatval($stockDataList[$count-1]['close_price']);
         $out_capitalisation = $close * floatval($stockInfo['out_capital']); 
         // var_dump($close, $out_capitalisation);
-        if ($out_capitalisation <= 10)
+        
+        // A股>10亿, 美股不限制(部分股票获取不到市值)
+        if ((CommonUtil::LOCATION_CHINA == $stockInfo['location']) && ($out_capitalisation <= 10))
         {
             $logInfo['reason'] = "low_out_capitalisation";
             $logInfo['out_cap'] = $out_capitalisation;
