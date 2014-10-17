@@ -161,6 +161,33 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
     return True
 
 '''
+  @desc: 获取股票指定日期范围内的价格突破记录
+  @param: db_config dict
+  @param: sid int
+  @param: start_day int
+  @param: end_day int
+  @param: high_type 高点类型
+  @param: low_type 低点类型
+  @return list
+'''
+def get_stock_price_threshold(db_config, sid, start_day, end_day, high_type, low_type):
+    sql = "select sid, day, price, low_type, high_type from t_stock where status = 'Y' and sid = {sid} and day >= {start_day} and day <= {end_day}"\
+            .format(sid=sid, start_day=start_day, end_day=end_day)
+    if high_type > 0:
+        sql = sql + " and high_type = " + str(high_type)
+    if low_type > 0:
+        sql = sql + " and low_type = " + str(low_type)
+
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+
+    return record_list
+    
+'''
   @desc: 获取股票指定日期范围内的趋势列表
   @param: db_config dict
   @param: sid int

@@ -16,7 +16,7 @@ from stock_util import *
 
 
 # 刷新股票的历史最高/最低价
-def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, refresh = True):
+def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, location = 1, refresh = True):
     db_conn = SqlUtil.get_db(db_config)
     high_field_list = ["hist_high", "year_high", "month6_high", "month3_high"]
     low_field_list = ["hist_low", "year_low", "month6_low", "month3_low"]
@@ -52,15 +52,27 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
             field_list = []
             high_type = low_type = 0
 
+            # 起始日期定为之前3个交易日, 3个交易日内无同类型突破记录  
+            range_start_day = get_past_openday(day, 3, location)
+
             if high_index < 4:
                 high_type = high_index + 1
-                add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+
+                high_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, high_type, 0)
+                if 0 == len(high_threshold_list):
+                    add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+
                 for field_name in high_field_list[high_index:]:
                     stock_info[field_name] = close_price
                     field_list.append(field_name + "=" + str(stock_info[field_name]))
 
             if low_index < 4:
                 low_type = low_index + 1
+
+                low_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, 0, low_type)
+                if 0 == len(low_threshold_list):
+                    add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+
                 add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
                 for field_name in low_field_list[low_index:]:
                     stock_info[field_name] = close_price
@@ -120,5 +132,5 @@ if __name__ == "__main__":
 
     if len(today_data_list) > 0:
         stock_list = get_stock_list(db_config, 0, location)
-        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, need_refresh)
+        vary_stock_list = refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list, day, location, need_refresh)
 

@@ -159,7 +159,7 @@ class DataModel
      * @param int $limit 限制条数
      * @return array('uplist', 'stock_map')
      */
-    public static function getUpLimitList($lastDay, $day, $varyPortion = 9.00, $limit = 30)
+    public static function getUpLimitList($lastDay, $day, $varyPortion = 8.00, $limit = 30)
     {
     	$uplist = $dataMap = array();
     	$recordList = StockData::model()->findAll(array(
