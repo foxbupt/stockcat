@@ -11,7 +11,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
-from buy_analyzer import StockBuyAnalyzer
+#from buy_analyzer import StockBuyAnalyzer
 from stock_util import *
 
 
@@ -61,6 +61,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
                 high_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, high_type, 0)
                 if 0 == len(high_threshold_list):
                     add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+                    print format_log("add_high_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'high_type': high_type})
 
                 for field_name in high_field_list[high_index:]:
                     stock_info[field_name] = close_price
@@ -72,8 +73,8 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
                 low_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, 0, low_type)
                 if 0 == len(low_threshold_list):
                     add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+                    print format_log("add_low_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'low_type': low_type})
 
-                add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
                 for field_name in low_field_list[low_index:]:
                     stock_info[field_name] = close_price
                     field_list.append(field_name + "=" + str(stock_info[field_name]))

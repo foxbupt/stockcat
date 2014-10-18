@@ -46,6 +46,7 @@ def is_market_open(day, location = 1):
     @return in
 '''
 def get_past_openday(current_day, offset, location = 1):
+    current_day = str(current_day)
     current_time = datetime.datetime(int(current_day[0:4]), int(current_day[4:6]), int(current_day[6:8]))  
     step = 1
     # 含当天
@@ -171,7 +172,7 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
   @return list
 '''
 def get_stock_price_threshold(db_config, sid, start_day, end_day, high_type, low_type):
-    sql = "select sid, day, price, low_type, high_type from t_stock where status = 'Y' and sid = {sid} and day >= {start_day} and day <= {end_day}"\
+    sql = "select sid, day, price, low_type, high_type from t_stock_price_threshold where status = 'Y' and sid = {sid} and day >= {start_day} and day <= {end_day}"\
             .format(sid=sid, start_day=start_day, end_day=end_day)
     if high_type > 0:
         sql = sql + " and high_type = " + str(high_type)
