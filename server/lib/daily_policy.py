@@ -36,7 +36,7 @@ class DailyPolicy(BasePolicy):
             return
         past_data = json.loads(past_data_value)
 
-        open_vary_portion = (item['close_price'] - item['open_price']) / item['open_price'] * 100
+        open_vary_portion = (item['open_price'] - item['last_close_price']) / item['last_close_price'] * 100
         volume_ratio = item['predict_volume'] / past_data['avg_volume']
         if abs(item['open_price'] - item['high_price']) < 0.01:
             high_portion = item['close_price'] / item['high_price']
