@@ -6,18 +6,14 @@
  * The followings are the available columns in table 't_stock_pool':
  * @property string $id
  * @property integer $sid
- * @property string $name
  * @property integer $day
+ * @property string $current_price
+ * @property string $volume_ratio
  * @property integer $trend
  * @property integer $wave
- * @property integer $start_day
- * @property integer $cont_days
- * @property string $current_price
- * @property string $sum_price_vary_amount
- * @property string $sum_price_vary_portion
- * @property string $max_volume_vary_portion
- * @property integer $score
- * @property integer $add_time
+ * @property integer $source
+ * @property integer $rank
+ * @property integer $create_time
  * @property string $status
  */
 class StockPool extends CActiveRecord
@@ -47,13 +43,12 @@ class StockPool extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('sid, day, trend, wave, start_day, cont_days, score, add_time', 'numerical', 'integerOnly'=>true),
-			array('name', 'length', 'max'=>32),
-			array('current_price, sum_price_vary_amount, sum_price_vary_portion, max_volume_vary_portion', 'length', 'max'=>6),
+			array('sid, day, trend, wave, source, rank, create_time', 'numerical', 'integerOnly'=>true),
+			array('current_price, volume_ratio', 'length', 'max'=>6),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, name, day, trend, wave, start_day, cont_days, current_price, sum_price_vary_amount, sum_price_vary_portion, max_volume_vary_portion, score, add_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, day, current_price, volume_ratio, trend, wave, source, rank, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -65,7 +60,6 @@ class StockPool extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
-            'stock' => array(self::BELONGS_TO, 'Stock', 'sid'),
 		);
 	}
 
@@ -76,19 +70,15 @@ class StockPool extends CActiveRecord
 	{
 		return array(
 			'id' => 'Id',
-			'sid' => '代码',
-			'name' => '名称',
-			'day' => '日期',
-			'trend' => '整体趋势',
-			'wave' => '当前波段',
-			'start_day' => '起始日期',
-			'cont_days' => '持续天数',
-			'current_price' => '当日收盘价',
-			'sum_price_vary_amount' => '价格累计金额',
-			'sum_price_vary_portion' => '价格累计幅度',
-			'max_volume_vary_portion' => '最大成交量变化',
-			'score' => '评分',
-			'add_time' => '添加时间',
+			'sid' => 'Sid',
+			'day' => 'Day',
+			'current_price' => 'Current Price',
+			'volume_ratio' => 'Volume Ratio',
+			'trend' => 'Trend',
+			'wave' => 'Wave',
+			'source' => 'Source',
+			'rank' => 'Rank',
+			'create_time' => 'Create Time',
 			'status' => 'Status',
 		);
 	}
@@ -108,29 +98,21 @@ class StockPool extends CActiveRecord
 
 		$criteria->compare('sid',$this->sid);
 
-		$criteria->compare('name',$this->name,true);
-
 		$criteria->compare('day',$this->day);
+
+		$criteria->compare('current_price',$this->current_price,true);
+
+		$criteria->compare('volume_ratio',$this->volume_ratio,true);
 
 		$criteria->compare('trend',$this->trend);
 
 		$criteria->compare('wave',$this->wave);
 
-		$criteria->compare('start_day',$this->start_day);
+		$criteria->compare('source',$this->source);
 
-		$criteria->compare('cont_days',$this->cont_days);
+		$criteria->compare('rank',$this->rank);
 
-		$criteria->compare('current_price',$this->current_price,true);
-
-		$criteria->compare('sum_price_vary_amount',$this->sum_price_vary_amount,true);
-
-		$criteria->compare('sum_price_vary_portion',$this->sum_price_vary_portion,true);
-
-		$criteria->compare('max_volume_vary_portion',$this->max_volume_vary_portion,true);
-
-		$criteria->compare('score',$this->score);
-
-		$criteria->compare('add_time',$this->add_time);
+		$criteria->compare('create_time',$this->create_time);
 
 		$criteria->compare('status',$this->status,true);
 
