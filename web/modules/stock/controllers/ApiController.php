@@ -93,13 +93,12 @@ class ApiController extends CController
         
         $rf = isset($_GET['rf'])? intval($_GET['rf']) : 5;
         $ratio = isset($_GET['ratio'])? floatval($_GET['ratio']) : 2;
-        $day = isset($_GET['day'])? $_GET['day'] : date('Ymd');
-        
+        $day = isset($_GET['day'])? $_GET['day'] : date('Ymd');        
         $day = CommonUtil::getParamDay($day);
+        
         $data = array();
-
         $datamap = DataModel::getRealtimeList($day);        
-        foreach ($datamap as $sid => $dataItem)
+        foreach ($datamap as $dataItem)
         {
             if (($dataItem['rf'] < $rf) || ($dataItem['policy']['volume_ratio'] < $ratio))
             {
@@ -131,6 +130,7 @@ class ApiController extends CController
     /**
      * @desc 获取涨幅前30的列表
      * @param $_GET['day']
+     * @param $_GET['location'] 可选
      * @return json
      */
     public function actionUpLimit()
@@ -138,28 +138,11 @@ class ApiController extends CController
         $this->layout = false;
 
         $day = isset($_GET['day'])? intval($_GET['day']) : date('Ymd');
-        $day = CommonUtil::getParamDay($day);
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+        $lastday = CommonUtil::getPastOpenDay($day, 1, $location);
 
-        $data = DataModel::getUpLimitList($day);
+        $data = DataModel::getUpLimitList($lastday, $day, $location);
         echo OutputUtil::json($data);
-    }
-
-    /**
-     * @desc 对拉升数据排序
-     *
-     * @param array $rapidInfo1
-     * @param array $rapidInfo2
-     * @return int
-     */
-    public function cmpRapidFunc($rapidInfo1, $rapidInfo2)
-    {
-		if ($rapidInfo1["now_time"] == $rapidInfo2["now_time"])
-		{
-			return ($rapidInfo1["vary_portion"] < $rapidInfo2["vary_portion"])? 1 : -1;
-		}
-		
-        // 按照时间的大小逆序排列
-		return ($rapidInfo1["now_time"] < $rapidInfo2["now_time"])? 1 : -1;
     }
 }
 ?>

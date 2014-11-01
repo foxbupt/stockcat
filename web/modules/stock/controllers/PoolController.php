@@ -148,27 +148,6 @@ class PoolController extends Controller
     			));
     }
     
-    /**
-     * @desc 对行情数据排序
-     *
-     * @param array $hqData1
-     * @param array $hqData2
-     * @return int
-     */
-    public function cmpHQFunc($hqData1, $hqData2)
-    {
-    	// 9:30后采用当天涨幅排序
-		$fieldName = (intval(date('Hi')) >= 930)? "vary_portion" : "open_vary_portion";
-		
-		if ($hqData1[$fieldName] == $hqData2[$fieldName])
-		{
-			return 0;
-		}
-		
-        // 按照涨幅的大小逆序排列
-		return ($hqData1[$fieldName] < $hqData2[$fieldName])? 1 : -1;
-    }
-    
     // 获取股票趋势url
     public function getTrendUrl($sid, $type, $day)
     {

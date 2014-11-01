@@ -169,6 +169,7 @@ class DataModel
     									'order' => 'vary_portion desc, volume asc',
     								));
 
+    	$count = 0;							
     	foreach ($recordList as $record)
     	{
     		$sid = $record->sid;
@@ -179,6 +180,12 @@ class DataModel
 
     		$uplist[] = $record->getAttributes();
     		$dataMap[$sid] = self::getHQData($sid, $day);
+    		
+    		$count += 1;
+    		if (($limit > 0) && ($count >= $limit))
+    		{
+    			break;
+    		}
     	}
 
     	return array(
