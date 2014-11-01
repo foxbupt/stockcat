@@ -137,9 +137,10 @@ class PoolController extends Controller
     public function actionUpLimit()
     {
     	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
     	$lastDay = CommonUtil::getPastOpenDay($day, 1);
     	
-    	$data = DataModel::getUpLimitList($lastDay, $day);
+    	$data = DataModel::getUpLimitList($lastDay, $day, $location);
     	$this->render('uplimit', array(
     				'lastDay' => $lastDay,
     				'uplist' => $data['uplist'],

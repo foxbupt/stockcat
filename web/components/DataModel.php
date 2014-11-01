@@ -155,21 +155,28 @@ class DataModel
      * @desc  获取涨幅排行前列的股票列表
      * @param int $lastDay
      * @param int $day
+     * @param int $location int
      * @param double $varyPortion 涨幅 
      * @param int $limit 限制条数
      * @return array('uplist', 'stock_map')
      */
-    public static function getUpLimitList($lastDay, $day, $varyPortion = 8.00, $limit = 30)
+    public static function getUpLimitList($lastDay, $day, $location, $varyPortion = 8.00, $limit = 30)
     {
     	$uplist = $dataMap = array();
+        $stockList = StockUtil::getStockList($location);
     	$recordList = StockData::model()->findAll(array(
     									'condition' => "day = ${lastDay} and vary_portion >= ${varyPortion} and status = 'Y'",
     									'order' => 'vary_portion desc, volume asc',
-    									'limit' => $limit
     								));
+
     	foreach ($recordList as $record)
     	{
     		$sid = $record->sid;
+            if (!in_array($sid, $stockList))
+            {
+                continue;
+            }
+
     		$uplist[] = $record->getAttributes();
     		$dataMap[$sid] = self::getHQData($sid, $day);
     	}
