@@ -9,6 +9,7 @@
  * @property integer $day
  * @property string $current_price
  * @property string $volume_ratio
+ * @property string $rise_factor
  * @property integer $trend
  * @property integer $wave
  * @property integer $source
@@ -44,11 +45,11 @@ class StockPool extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('sid, day, trend, wave, source, rank, create_time', 'numerical', 'integerOnly'=>true),
-			array('current_price, volume_ratio', 'length', 'max'=>6),
+			array('current_price, volume_ratio, rise_factor', 'length', 'max'=>6),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, day, current_price, volume_ratio, trend, wave, source, rank, create_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, day, current_price, volume_ratio, rise_factor, trend, wave, source, rank, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -74,6 +75,7 @@ class StockPool extends CActiveRecord
 			'day' => 'Day',
 			'current_price' => 'Current Price',
 			'volume_ratio' => 'Volume Ratio',
+			'rise_factor' => 'Rise Factor',
 			'trend' => 'Trend',
 			'wave' => 'Wave',
 			'source' => 'Source',
@@ -103,6 +105,8 @@ class StockPool extends CActiveRecord
 		$criteria->compare('current_price',$this->current_price,true);
 
 		$criteria->compare('volume_ratio',$this->volume_ratio,true);
+
+		$criteria->compare('rise_factor',$this->rise_factor,true);
 
 		$criteria->compare('trend',$this->trend);
 
