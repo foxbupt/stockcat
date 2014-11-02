@@ -42,6 +42,10 @@ class AnalyzeCommand extends CConsoleCommand
             {
                 self::addStockCont($day, $stockInfo, $result);
                 echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
+				
+                // 添加到股票池
+                $poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_CONT, array('wave' => CommonUtil::DIRECTION_UP));
+                echo "op=add_pool_succ result=" . ($poolResult? 1:0) . " day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . "\n";
             }
         }
 
@@ -52,7 +56,6 @@ class AnalyzeCommand extends CConsoleCommand
      */
     public static function filter($sid, $day, $interval, $stockInfo, $stockDataList)
     {
-    	$filterInfo = array();
 		$count = count($stockDataList);
         $logInfo = array(
                     'op' => 'filter_not_match',
@@ -85,8 +88,9 @@ class AnalyzeCommand extends CConsoleCommand
         $out_capitalisation = $close * floatval($stockInfo['out_capital']); 
         // var_dump($close, $out_capitalisation);
         
-        // A股>10亿, 美股不限制(部分股票获取不到市值)
-        if ((CommonUtil::LOCATION_CHINA == $stockInfo['location']) && ($out_capitalisation <= 10))
+        // A股>10亿, 美股 > 5亿刀(部分股票获取不到市值)
+        if (((CommonUtil::LOCATION_CHINA == $stockInfo['location']) && ($out_capitalisation <= 10))
+        	|| ((CommonUtil::LOCATION_US == $stockInfo['location']) && ($out_capitalisation > 0) && ($out_capitalisation <= 5)))
         {
             $logInfo['reason'] = "low_out_capitalisation";
             $logInfo['out_cap'] = $out_capitalisation;

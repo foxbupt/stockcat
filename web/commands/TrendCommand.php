@@ -84,6 +84,8 @@ class TrendCommand extends CConsoleCommand
             	$result = TrendHelper::addTrendRecord($sid, $type, $trendItem, ($newStartDay == $trendItem['start']['day'])? $latestTrendId : 0);
             	echo "op=add_trend result=$result sid=$sid type=$type latest_trend_id=$latestTrendId " . StatLogUtil::array2log($trendItem) . "\n";
             }
+            
+            // TODO: 每次更新完trend记录后, 追加当天的支点
         }
     }
 

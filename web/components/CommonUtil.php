@@ -3,6 +3,9 @@
 Yii::import('application.models.Tag');
 class CommonUtil
 {	
+	const CACHE_KEY_COMMON_CONFIG = "config:all";
+	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
+	
 	// 标签分类: 1 行业 2 地域  3 概念
 	const TAG_CATEGORY_INDUSTRY = 1;
 	const TAG_CATEGORY_LOCATION = 2;
@@ -37,9 +40,11 @@ class CommonUtil
     const FORMAT_TYPE_PORTION = 2;
     const FORMAT_TYPE_NUMBER = 3;
 	
-	const CACHE_KEY_COMMON_CONFIG = "config:all";
-	const CACHE_KEY_COMMON_TAG_CATEGORY = "tag:category-";
-
+    // 股票池来源(source): 1 连续上涨, 2 价格突破, 4 趋势突破阻力位
+    const SOURCE_CONT = 1;
+    const SOURCE_PRICE_THRESHOLD = 2;
+    const SOURCE_UP_RESIST = 4;
+    
     // 股票所属国家(location): 0 全部 1 中国 2 香港(hk) 3 美国(us)
     const LOCATION_ALL = 0;
     const LOCATION_CHINA = 1;

@@ -21,10 +21,10 @@ main()
     log="analyze_${location}_${day}.log"
     echo "location=$location day=$day log=$log"
 
-    # 更新每日的最高价/最低价
+    # 更新每日的最高价/最低价, 记录价格突破的股票
     /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_${location}_highlow.log 
 
-    # 深入分析
+    # 分析出连续上涨的股票
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $location $day 10 >> $result_path/$log
 
     echo "finish"

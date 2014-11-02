@@ -45,7 +45,8 @@ class StockPool extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('sid, day, trend, wave, source, rank, create_time', 'numerical', 'integerOnly'=>true),
-			array('current_price, volume_ratio, rise_factor', 'length', 'max'=>6),
+			array('close_price', 'length', 'max'=>10),
+			array('volume_ratio, rise_factor', 'length', 'max'=>6),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
@@ -73,7 +74,7 @@ class StockPool extends CActiveRecord
 			'id' => 'Id',
 			'sid' => 'Sid',
 			'day' => 'Day',
-			'current_price' => 'Current Price',
+			'close' => 'Close Price',
 			'volume_ratio' => 'Volume Ratio',
 			'rise_factor' => 'Rise Factor',
 			'trend' => 'Trend',
@@ -102,7 +103,7 @@ class StockPool extends CActiveRecord
 
 		$criteria->compare('day',$this->day);
 
-		$criteria->compare('current_price',$this->current_price,true);
+		$criteria->compare('close_price',$this->close_price,true);
 
 		$criteria->compare('volume_ratio',$this->volume_ratio,true);
 

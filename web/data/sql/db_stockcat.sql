@@ -168,15 +168,37 @@ CREATE TABLE IF NOT EXISTS `t_stock_pool`
 	`day`   int(11) NOT NULL default 0 COMMENT '关注日期',
 	`trend` tinyint(1) NOT NULL default 0 COMMENT '价格趋势: 1 下跌, 2 震荡, 3 上涨',
     `wave`	tinyint(1) NOT NULL default 0 COMMENT '所处波段: 1 下跌, 2 震荡, 3 上涨, ',
-    `current_price` decimal(6,2) NOT NULL default 0 COMMENT '当前价格',
-    `low_price`  decimal(6,2) NOT NULL default 0 COMMENT '建议购买价格的下限',
-	`high_price`  decimal(6,2) NOT NULL default 0 COMMENT '建议购买价格的上限',
-	`score` tinyint(1) NOT NULL default 0 COMMENT '评分',
+    `close_price` decimal(10,2) NOT NULL default 0 COMMENT '当前价格',
+    `volume_ratio`  decimal(6,2) NOT NULL default 0 COMMENT '当日量比',
+	`rise_factor`  decimal(6,2) NOT NULL default 0 COMMENT '上涨因子',
+	`source` smallint(4) NOT NULL default 0 COMMENT '来源, 按bitmap存储', 
+	`rank` tinyint(2) NOT NULL default 0 COMMENT '评级',
+	`create_time` int(11) NOT NULL default 0 COMMENT '推荐时间',
+	`status`	  enum('Y', 'N') default 'Y',
+	
+	PRIMARY KEY(`id`),
+	INDEX `idx_day` (`day`, `source`, `trend`),
+	INDEX `idx_sid` (`sid`)
+)ENGINE=Innodb DEFAULT CHARSET=utf8;
+
+/*
+ * 股票支撑点
+ */
+CREATE TABLE IF NOT EXISTS `t_stock_pivot`
+(
+	`id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+	`sid` 	int(11) NOT NULL default 0 COMMENT '股票id',
+	`day`   int(11) NOT NULL default 0 COMMENT '关注日期',
+	`trend` tinyint(1) NOT NULL default 0 COMMENT '价格趋势',
+    `close_price` decimal(10,2) NOT NULL default 0 COMMENT '当前价格',
+    `resist`  decimal(10,2) NOT NULL default 0 COMMENT '阻力位',
+    `resist_vary_portion` decimal(6,2) NOT NULL default 0.00 COMMENT '距离阻力位的涨跌幅',
+	`support`  decimal(10,2) NOT NULL default 0 COMMENT '支撑位',
+	`support_vary_portion` decimal(6,2) NOT NULL default 0.00 COMMENT '距离支撑位的涨跌幅',
 	`create_time` int(11) NOT NULL default 0 COMMENT '推荐时间',
     `status`	  enum('Y', 'N') default 'Y',
 	
 	PRIMARY KEY(`id`),
-	INDEX `idx_score` (`day`, `score`),
 	INDEX `idx_sid` (`sid`, `day`)
 )ENGINE=Innodb DEFAULT CHARSET=utf8;
 

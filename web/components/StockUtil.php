@@ -162,6 +162,56 @@ class StockUtil
 		
 		return json_decode($cacheValue, true);
     }
+    
+    /**
+     * @desc 把股票加入/更新股票池
+     *
+     * @param int $sid
+     * @param int $day
+     * @param int $source
+     * @param array $trendInfo array('trend', 'wave')
+     * @return bool
+     */
+    public static function addStockPool($sid, $day, $source, $trendInfo = array())
+    {
+    	$record = StockPool::model()->findByAttributes(array('sid' => $sid, 'day' => $day, 'status' => 'Y'));
+    	if (!empty($record))
+    	{
+    		return $record->updateByPk($record->id, array('source' => ($record->source | $source)));
+    	}
+    	
+   		$record = new StockPool();
+   		
+   		$record->sid = $sid;
+   		$record->day = $day;
+ 		$record->source = $source;
+ 		if (isset($trendInfo['wave']))
+ 		{
+ 			$record->wave = $trendInfo['wave'];
+ 		}
+    	if (isset($trendInfo['trend']))
+ 		{
+ 			$record->trend = $trendInfo['trend'];
+ 		}
+ 		
+ 		$hqData = DataModel::getHQData($sid, $day);
+ 		if (!empty($hqData))
+ 		{
+ 			if (!empty($hqData['daily']))
+ 			{
+ 				$record->close_price = $hqData['daily']['close_price'];
+ 			}
+ 			if (!empty($hqData['policy']))
+ 			{
+ 				$record->volume_ratio = $hqData['policy']['volume_ratio'];
+ 				$record->rise_factor = $hqData['policy']['rise_factor'];
+ 			}
+ 		}
+ 		$record->create_time = time();
+ 		$record->status = 'Y';
+ 		
+ 		return $record->save();
+    }
 }
 
 ?>

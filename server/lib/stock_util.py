@@ -132,6 +132,48 @@ def get_stock_data(db_config, day, sid=0):
         data[int(stock_data['sid'])] = stock_data
 
     return data if 0 == sid else data[sid]
+'''
+    @desc: 添加股票池记录
+    @param db_config dict
+    @param redis_config dict
+    @param sid int
+    @param day int
+    @param source int
+    @param trend_info dict
+    @return bool
+'''
+def add_stock_pool(db_config, redis_config, sid, day, source, trend_info = dict()):
+    sql = "select id, sid, day, source from t_stock_pool where sid = {sid} and day = {day} and status = 'Y'".format(sid=sid, day=day)
+    
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+
+        if count(record_list) > 0:
+            record_id = record_list[0]['id']
+            new_source = int(record_list[0]['source']) | source
+            oper_sql = "update t_stock_pool set source = {source} where id = {id}".format(source=new_source, id=record_id)
+        else:
+            fields = {'sid': sid, 'day': day, 'source': source, 'status': 'Y'}
+            fields['create_time'] = time.mktime( datetime.datetime.now().timetuple() )
+            if trend_info:
+                fields = fields.extend(trend_info)
+
+            # 获取当日行情数据
+            hqdata = get_hqdata(redis_config, sid, day)
+            if hqdata:
+                fields['close_price'] = hqdata['daily']['close_price']
+                fields['volume_ratio'] = hqdata['policy']['volume_ratio']
+                fields['rise_factor'] = hqdata['policy']['rise_factor']
+
+            oper_sql = SqlUtil.create_insert_sql("t_stock_pool", fields)
+
+        db_conn.query_sql(oper_sql, True)
+    except Exception as e:
+        print e
+        return False
+
+    return True
 
 '''
   @desc: 添加股票阶段高点/低点记录
@@ -158,7 +200,7 @@ def add_stock_price_threshold(db_config, sid, day, price, high_type, low_type):
     except Exception as e:
         print e
         return False
-
+  
     return True
 
 '''
@@ -324,6 +366,25 @@ def get_scode(code, ecode, location):
         return ecodes[ecode] + code
     elif 3 == location:
         return "us" + code
+
+'''
+    @desc: 获取股票当日行情数据
+    @param: redis_config dict
+    @param: sid int
+    @param: day int
+    @return dict('daily', 'policy')
+'''
+def get_hqdata(redis_config, sid, day):
+    hqdata = dict()
+    redis_conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
+    
+    daily_key = "daily-" + str(sid) + "-" + str(day)
+    cache_value = redis_conn.get(daily_key)
+    if cache_value:
+        hqdata['daily'] = json.loads(cache_value)
+        hqdata['policy'] = redis_conn.hgetall("daily-policy-" + str(sid) + "-" + str(day))
+
+    return hqdata
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
