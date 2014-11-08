@@ -47,13 +47,14 @@ setTimeout('refreshPage()', 120 * 1000);
 				</thead>
 				<tbody>
 					<?php foreach ($uplist as $stockData): ?>
-                    <?php $sid = $stockData['sid']; ?>
-                    <?php $dataItem = $datamap[$sid]; ?>
-                    <?php $dailyData = $dataItem['daily']; ?>
-                    <?php $dailyPolicyData = $dataItem['policy']; ?>
-                    <?php $stockInfo = isset($dataItem['daily'])? $dailyData : $dataItem['stock']; ?>
-                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
-                    <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
+                        <?php $sid = $stockData['sid']; ?>
+
+                        <?php $dataItem = $datamap[$sid]; ?>
+                        <?php $dailyData = $dataItem['daily']; ?>
+                        <?php $dailyPolicyData = $dataItem['policy']; ?>
+                        <?php $stockInfo = isset($dataItem['daily'])? $dailyData : $dataItem['stock']; ?>
+                        <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code'], $stockInfo['ecode'], $stockInfo['location']); ?>
+                        <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>

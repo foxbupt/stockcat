@@ -120,12 +120,19 @@ class TrendCommand extends CConsoleCommand
             
            	$periodData = TrendHelper::getFieldRangeData($stockData, $periodStart, $periodEnd, $fieldName, $index);
 			$index = $periodData['offset'];
+            // var_dump($periodData);
             if (0 == $periodData['count']) // 指定周期内无交易数据, 直接忽略
             {
                 continue;
             }
 			
-            $weekTrends[] = TrendHelper::getPeriodTrend($sid, $periodData, $config);
+            $trendInfo = TrendHelper::getPeriodTrend($sid, $periodData, $config);
+            if (empty($trendInfo))
+            {
+                continue;
+            }
+
+            $weekTrends[] = $trendInfo;
         }
 
         // print_r($weekTrends);
