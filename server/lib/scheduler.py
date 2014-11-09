@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from fetch_worker import FetchWorker
-from stock_util import get_stock_list, get_past_openday, time_diff, get_scode
+from stock_util import get_stock_list, get_past_openday, time_diff, get_scode, get_timenumber
 
 class Scheduler(object):
     worker_list = []
@@ -26,32 +26,36 @@ class Scheduler(object):
         self.db_config = config_info['DB']
         self.redis_config = config_info['REDIS']
 
-        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
-
     # 核心运行函数, 每隔interval秒检测当前时间是否处于开市区间内.
-    def core(self):
-        hushen_content = open(self.config_info['FETCH']['hushen']).read()
-        hushen_config = json.loads(hushen_content)
-        print hushen_config
+    def core(self, location):
+        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
+        self.location = location
+        if location == 3:
+            self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
+
+        location_key = "location_" + str(location)
+        market_content = open(self.config_info['MARKET'][location_key]).read()
+        market_config = json.loads(market_content)
+        print location_key, market_config
 
         while True:
             try:
-                cur_time = datetime.datetime.now().time()
-                cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
-                #print "scheduler timenumber=" + str(cur_timenumber)
+                cur_timenumber = get_timenumber(location)
+                print "scheduler timenumber=" + str(cur_timenumber)
                 
-                if cur_timenumber < hushen_config['am_open']:
-                    time.sleep(min(time_diff(hushen_config['am_open'], cur_timenumber), self.interval))
+                if cur_timenumber < market_config['am_open']:
+                    time.sleep(min(time_diff(market_config['am_open'], cur_timenumber), self.interval))
                     continue
 
-                if cur_timenumber > hushen_config['am_close'] + int(hushen_config['close_delay']/60) * 100 + hushen_config['close_delay']%60 and cur_timenumber < hushen_config['pm_open']:
+                # 美国市场没有午间闭市
+                if 'am_close' in market_config and 'pm_open' in market_config and cur_timenumber > market_config['am_close'] + int(market_config['close_delay']/60) * 100 + market_config['close_delay']%60 and cur_timenumber < market_config['pm_open']:
                     if self.state == 1:
                         self.pause()
-                    time.sleep( min(time_diff(hushen_config['pm_open'], cur_timenumber), self.interval) )
+                    time.sleep( min(time_diff(market_config['pm_open'], cur_timenumber), self.interval) )
                     continue
 
                 # 下午收盘后需要把抓取数据的线程结束掉
-                if cur_timenumber > hushen_config['pm_close'] + int(hushen_config['close_delay']/60) * 100 + hushen_config['close_delay']%60:
+                if cur_timenumber > market_config['pm_close'] + int(market_config['close_delay']/60) * 100 + market_config['close_delay']%60:
                     if self.state == 1:
                         self.terminate()
                         return
@@ -60,7 +64,7 @@ class Scheduler(object):
 
                 # 早上开盘, 需要初始化工作
                 if self.state == 0:
-                    self.start(hushen_config, cur_timenumber)
+                    self.start(market_config, cur_timenumber)
                 elif self.state == 2:
                    self.resume()
 
@@ -71,10 +75,10 @@ class Scheduler(object):
                 return
 
     # 启动
-    def start(self, hushen_config, cur_timenumber):
+    def start(self, market_config, cur_timenumber):
         self.prepare_data()
 
-        for worker_config in hushen_config['fetch_list']:
+        for worker_config in market_config['fetch_list']:
             worker = FetchWorker(worker_config, self.config_info, self.datamap)
             worker.start()
             self.worker_list.append(worker)
@@ -112,7 +116,7 @@ class Scheduler(object):
     # 准备公共数据集
     def prepare_data(self):
         # 获取所有的股票列表
-        stock_list = get_stock_list(self.db_config, 1)
+        stock_list = get_stock_list(self.db_config, 1, self.location)
         self.datamap['stock_list'] = stock_list
         #print len(self.datamap['stock_list'])
 
@@ -125,6 +129,7 @@ class Scheduler(object):
 
         self.datamap['code2id'] = code2id_map
         self.datamap['id2scode'] = id2scode_map
+        #print len(self.datamap['id2scode'])
 
         last_open_day = get_past_openday(str(self.day), 1)
         #print last_open_day
@@ -163,15 +168,19 @@ class Scheduler(object):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf>"
+        print "Usage: " + sys.argv[0] + " <conf> [location]"
         sys.exit(1)
 
     config_info = Util.load_config(sys.argv[1])
     config_info['DB']['port'] = int(config_info['DB']['port'])
     config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
 
+    location = 1
+    if len(sys.argv) >= 3:
+        location = int(sys.argv[2])
+
     # 初始化日志
     logging.config.fileConfig(config_info["LOG"]["conf"])
     scheduler = Scheduler(config_info)
-    scheduler.core()
+    scheduler.core(location)
     

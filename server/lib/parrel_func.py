@@ -4,7 +4,7 @@
 #desc: 抓取数据的实际逻辑
 #date: 2014-06-24
 
-import os, sys, random, json, logging
+import os, sys, random, json, logging, math
 import datetime, urllib2
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
@@ -30,8 +30,8 @@ class ParrelFunc(object):
 
     def run(self):
         self.item_list = self.get_data()
-        count = max(int(round(len(self.item_list) / self.item_per_thread)), 1)
-        self.logger.debug("desc=parrel_itemlist count=%d item_list=%s", count, '|'.join([str(v) for v in self.item_list]))
+        count = max(int(math.ceil(len(self.item_list) / self.item_per_thread)), 1)
+        self.logger.debug("desc=parrel_itemlist item_count=%d thread_count=%d item_list=%s", len(self.item_list), count, '|'.join([str(v) for v in self.item_list]))
 
         if count > 1:
             pool = ThreadPool(count)
@@ -87,7 +87,7 @@ class ParrelDaily(ParrelFunc):
     def core(self, item):
         scode = item
         url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode
-        #print scode, url
+        #print url
 
         try:
             response = urllib2.urlopen(url, timeout=1)
@@ -365,3 +365,131 @@ class ParrelTransaction(ParrelFunc):
             self.pos_map[sid] = (pno, new_id)
 
             self.conn.rpush("ts-queue", json.dumps({'sid': sid, 'day': self.day, 'items': transaction_list}))
+
+# 并行从新浪美股抓取美股当日总览数据
+class ParrelUSDaily(ParrelFunc):
+
+    def run(self):
+        super(ParrelUSDaily, self).run()
+
+    def get_callcode(self, scode):
+        return scode.replace("us", "gb_").lower()
+
+    def get_data(self):
+        item_list = []
+        scode_list = [ self.get_callcode(scode) for scode in self.datamap['id2scode'].values() ]
+        stock_count = len(scode_list)
+        #print stock_count
+
+        if "dataset" in self.worker_config:
+            scode_dataset = []
+            for sid in self.worker_config["dataset"]:
+                if sid in self.datamap['id2scode']:
+                    scode_dataset.append(self.get_callcode(self.datamap['id2scode'][sid]))
+            item_list.append(",".join(scode_dataset))
+        else:
+            offset = 0
+            percount = 50
+            while offset < stock_count:
+                item_list.append(",".join(scode_list[offset : min(offset + percount, stock_count)]))
+                offset += percount
+
+        return item_list
+
+    # 获取股票当前价格及成交量等信息
+    def core(self, item):
+        scode = item
+        url = "http://hq.sinajs.cn/?_=" + str(random.random()) + "&list=" + scode
+        #print url
+
+        try:
+            response = urllib2.urlopen(url, timeout=1)
+            content = response.read()
+        except urllib2.HTTPError as e:
+            self.logger.warning("err=get_stock_daily scode=%s code=%s", scode, str(e.code))
+            return 
+        except urllib2.URLError as e:
+            self.logger.warning("err=get_stock_daily scode=%s reason=%s", scode, str(e.reason))
+            return
+
+        if content:
+            content = safestr(content.decode('gbk'))
+            #self.logger.info("desc=daily_content content=%s", content)
+            lines = content.strip("\r\n").split(";")
+
+            for line in lines:
+                if 0 == len(line):
+                    continue
+
+                daily_item = self.parse_stock_daily(line)
+                if daily_item is None:
+                    continue
+
+                # 追加到redis队列中
+                #if self.conn:
+                #    self.conn.rpush("daily-queue", json.dumps(daily_item))
+                self.logger.info(format_log("fetch_daily", daily_item))
+                #print format_log("fetch_daily", daily_item)
+
+    # 解析单个股票行情数据
+    def parse_stock_daily(self, line):
+        line = line.strip("\r\n")
+        parts = line.split("=")
+        #print line, parts
+        stock_code = parts[0].replace("var hq_str_gb_", "").upper()
+        content = parts[1].strip('"')
+        #print content
+
+        fields = content.split(",")
+        #print fields
+        if len(fields) < 28:
+            line_str = safestr(line)
+            self.logger.error(format_log("daily_lack_fields", {'line': line_str, 'content': content}))
+            return None
+
+        # 当日停牌则不能存入
+        open_price = float(fields[5])
+        close_price = float(fields[1])
+        if open_price == 0.0 or close_price == 0.0:
+            return None
+
+        item = dict()
+
+        try:
+            item['name'] = safestr(fields[0])
+            item['code'] = stock_code
+            item['sid'] = int(self.datamap['code2id'][stock_code])
+            item['day'] = self.day
+            item['last_close_price'] = float(fields[26])
+            item['open_price'] = open_price
+            item['high_price'] = float(fields[6])
+            item['low_price'] = float(fields[7])
+            item['close_price'] = close_price
+            # 当前时刻, 格式为HHMMSS
+            time_parts = fields[3].split(" ")
+            item['time'] = time_parts[1].replace(":", "")
+            item['vary_price'] = float(fields[4])
+            item['vary_portion'] = float(fields[2])
+            # 成交量单位为股
+            item['volume'] = int(fields[10])
+            #item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
+            # 成交额转化为万元
+            item['amount'] = 0
+            # 总股本
+            item['out_capital'] = float(fields[19])
+            # 总市值
+            item['cap'] = float(fields[12])
+            # 计算换手率
+            if item['out_capital'] > 0:
+                item['exchange_portion'] = item['volume'] / item['out_capital'] * 100
+            item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 10
+        except IndexError:
+            self.logger.error(format_log("parse_daily", {'content': content}))
+            return None
+        except Exception as e:
+            return None
+
+        if item['out_capital'] > 0:
+            capital = item['out_capital'] / 10000
+            self.logger.debug("op=update_sql sql={update t_stock set capital=%.2f, out_capital=%.2f where id = %d;}", capital, capital, item['sid'])
+        return item

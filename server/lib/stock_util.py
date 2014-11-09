@@ -355,7 +355,7 @@ def market_time_diff(now_time, past_time):
         return time_diff(113000, past_time) + time_diff(now_time, 130000)
 
 '''
-    @desc: 
+    @desc: 获取股票调用代码
     @param: code string
     @param: ecode int
     @param: location int
@@ -366,6 +366,21 @@ def get_scode(code, ecode, location):
         return ecodes[ecode] + code
     elif 3 == location:
         return "us" + code
+
+'''
+    @desc: 获取当前时刻
+    @param: location int
+    @return int
+'''
+def get_timenumber(location = 1):
+    if 1 == location or 2 == location:
+        cur_time = datetime.datetime.now().time()
+    elif 3 == location:
+        # TODO: 判断是夏令时(12)还是冬令时(13)
+        us_time = datetime.datetime.now() - datetime.timedelta(hours = 13)
+        cur_time = us_time.time()
+        
+    return cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
 
 '''
     @desc: 获取股票当日行情数据

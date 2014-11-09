@@ -69,7 +69,7 @@ class FetchWorker(threading.Thread):
                 logging.getLogger("fetch").debug("desc=fetch_worker_call name=%s object=%s interval=%d day=%d run_count=%d cost_time=%.1f", self.name, self.object_name, self.interval, day, run_count, cost_time)
                 time.sleep(self.interval)
             except Exception as e:
-                logging.getLogger("fetch").exception("err=fetch_call name=%s", self.name)
+                logging.getLogger("fetch").exception("err=fetch_call name=%s exception=%s", self.name, str(e))
             except (KeyboardInterrupt, SystemExit):
                 logging.getLogger("fetch").critical("op=user_system_exit")
                 return
