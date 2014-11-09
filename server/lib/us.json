@@ -1,0 +1,9 @@
+{
+	"am_open": 43000,
+	"pm_close": 200000,
+	"close_delay": 240,
+	"fetch_list": [
+		{"name": "daily", "object": "parrel_func.ParrelUSDaily", "interval": 3600, "item_per_thread": 140} 
+	]
+} 
+
