@@ -7,7 +7,7 @@
  * @property string $id
  * @property integer $sid
  * @property integer $day
- * @property string $current_price
+ * @property string $close_price
  * @property string $volume_ratio
  * @property string $rise_factor
  * @property integer $trend
@@ -50,7 +50,7 @@ class StockPool extends CActiveRecord
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, sid, day, current_price, volume_ratio, rise_factor, trend, wave, source, rank, create_time, status', 'safe', 'on'=>'search'),
+			array('id, sid, day, close_price, volume_ratio, rise_factor, trend, wave, source, rank, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -74,7 +74,7 @@ class StockPool extends CActiveRecord
 			'id' => 'Id',
 			'sid' => 'Sid',
 			'day' => 'Day',
-			'close' => 'Close Price',
+			'close_price' => 'Close Price',
 			'volume_ratio' => 'Volume Ratio',
 			'rise_factor' => 'Rise Factor',
 			'trend' => 'Trend',
