@@ -1,4 +1,5 @@
 <?php
+Yii::import('application.components.BevaUtil');
 
 /**
  * @desc 数据层抽象: 提供访问数据的接口

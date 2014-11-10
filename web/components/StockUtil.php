@@ -210,7 +210,13 @@ class StockUtil
  		$record->create_time = time();
  		$record->status = 'Y';
  		
- 		return $record->save();
+        if (!$record->save())
+        {
+            var_dump($record->getErrors());
+            return false;
+        }
+
+        return true;
     }
 }
 

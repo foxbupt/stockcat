@@ -149,7 +149,7 @@ def add_stock_pool(db_config, redis_config, sid, day, source, trend_info = dict(
         db_conn = SqlUtil.get_db(db_config)
         record_list = db_conn.query_sql(sql)
 
-        if count(record_list) > 0:
+        if len(record_list) > 0:
             record_id = record_list[0]['id']
             new_source = int(record_list[0]['source']) | source
             oper_sql = "update t_stock_pool set source = {source} where id = {id}".format(source=new_source, id=record_id)
