@@ -64,6 +64,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
                     print format_log("add_high_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'high_type': high_type})
                     if add_result and high_type <= 2: # 年内新高/历史最高才加入股票池
                         add_stock_pool(db_config, redis_config, sid, day, 2, {'wave':1})    
+                        print format_log("add_stock_pool", {'sid': sid, 'day': day, 'close_price': close_price})
 
                 for field_name in high_field_list[high_index:]:
                     stock_info[field_name] = close_price
