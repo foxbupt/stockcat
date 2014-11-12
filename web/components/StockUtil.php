@@ -203,8 +203,8 @@ class StockUtil
  			}
  			if (!empty($hqData['policy']))
  			{
- 				$record->volume_ratio = $hqData['policy']['volume_ratio'];
- 				$record->rise_factor = $hqData['policy']['rise_factor'];
+ 				$record->volume_ratio = round($hqData['policy']['volume_ratio'], 2);
+ 				$record->rise_factor = round($hqData['policy']['rise_factor'], 2);
  			}
  		}
  		$record->create_time = time();
