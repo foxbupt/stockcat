@@ -157,14 +157,14 @@ def add_stock_pool(db_config, redis_config, sid, day, source, trend_info = dict(
             fields = {'sid': sid, 'day': day, 'source': source, 'status': 'Y'}
             fields['create_time'] = time.mktime( datetime.datetime.now().timetuple() )
             if trend_info:
-                fields = fields.extend(trend_info)
+                fields = fields.update(trend_info)
 
             # 获取当日行情数据
             hqdata = get_hqdata(redis_config, sid, day)
             if hqdata:
                 fields['close_price'] = hqdata['daily']['close_price']
-                fields['volume_ratio'] = hqdata['policy']['volume_ratio']
-                fields['rise_factor'] = hqdata['policy']['rise_factor']
+                fields['volume_ratio'] = round(hqdata['policy']['volume_ratio'], 2)
+                fields['rise_factor'] = round(hqdata['policy']['rise_factor'], 2)
 
             oper_sql = SqlUtil.create_insert_sql("t_stock_pool", fields)
 
