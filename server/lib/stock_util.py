@@ -7,6 +7,7 @@
 import datetime, sys, time, json
 #sys.path.append('../../../server')  
 sys.path.append('../../../../server')  
+from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 
@@ -157,14 +158,15 @@ def add_stock_pool(db_config, redis_config, sid, day, source, trend_info = dict(
             fields = {'sid': sid, 'day': day, 'source': source, 'status': 'Y'}
             fields['create_time'] = time.mktime( datetime.datetime.now().timetuple() )
             if trend_info:
-                fields = fields.update(trend_info)
+                fields.update(trend_info)
 
             # 获取当日行情数据
             hqdata = get_hqdata(redis_config, sid, day)
             if hqdata:
                 fields['close_price'] = hqdata['daily']['close_price']
-                fields['volume_ratio'] = round(hqdata['policy']['volume_ratio'], 2)
-                fields['rise_factor'] = round(hqdata['policy']['rise_factor'], 2)
+                fields['volume_ratio'] = round(float(hqdata['policy']['volume_ratio']), 2)
+                fields['rise_factor'] = round(float(hqdata['policy']['rise_factor']), 2)
+            #print fields
 
             oper_sql = SqlUtil.create_insert_sql("t_stock_pool", fields)
 
@@ -415,3 +417,20 @@ if __name__ == "__main__":
     print market_time_diff(931, 925)
 
     print time.time()
+
+    config_info = Util.load_config(sys.argv[2])        
+    db_config = config_info['DB']
+    db_config['port'] = int(db_config['port'])
+
+    redis_config = config_info['REDIS']
+    redis_config['port'] = int(redis_config['port'])
+    print db_config, redis_config
+
+    day = int(day)
+    hqdata = get_hqdata(redis_config, 116, day)
+    print hqdata
+
+    try:
+        add_stock_pool(db_config, redis_config, 116, day, 2, {'trend':3, 'wave':3}) 
+    except Exception as e:
+        print e
