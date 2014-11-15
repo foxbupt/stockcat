@@ -1,5 +1,5 @@
 <head>
-	<script src="http://s1.bdstatic.com/r/www/cache/ecom/esl/1-6-10/esl.js"></script>
+	<script src="http://echarts.baidu.com/build/dist/echarts.js"></script>
 </head>
 
 <body>
@@ -12,8 +12,7 @@
         // 路径配置
         require.config({
             paths:{ 
-                'echarts' : 'http://echarts.baidu.com/build/echarts',
-                'echarts/chart/bar' : 'http://echarts.baidu.com/build/echarts'
+                echarts: 'http://echarts.baidu.com/build/dist'
             }
         });
 
@@ -76,7 +75,6 @@
                         {
                             // name: '价格',
                             type: 'value',
-                            // scale: true,
                             precision: 1,
                          	min: <?php echo $minValue; ?>,
                             max: <?php echo $maxValue; ?>

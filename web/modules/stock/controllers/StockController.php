@@ -122,7 +122,7 @@ class StockController extends Controller
 			if (!in_array($record->start_day, $days))
 			{								
 				$days[] = $record->start_day;
-				$values[] = $record->start_value;
+				$values[] = (float)($record->start_value);
 			}
 			
 			if ($highBeforeLow)
@@ -130,14 +130,14 @@ class StockController extends Controller
 				if (!in_array($record->high_day, $days))
 				{
 					$days[] = $record->high_day;
-					$values[] = $record->high;
+					$values[] = (float)($record->high);
 					$highPoints[] = array('day' => $record->high_day, 'value' => $record->high);
 				}
 				
 				if (!in_array($record->low_day, $days))
 				{
 					$days[] = $record->low_day;
-					$values[] = $record->low;
+					$values[] = (float)($record->low);
 					$highPoints[] = array('day' => $record->low_day, 'value' => $record->low);
 				}
 			}
@@ -146,14 +146,14 @@ class StockController extends Controller
 				if (!in_array($record->low_day, $days))
 				{
 					$days[] = $record->low_day;
-					$values[] = $record->low;
+					$values[] = (float)($record->low);
 					$highPoints[] = array('day' => $record->low_day, 'value' => $record->low);
 				}
 				
 				if (!in_array($record->high_day, $days))
 				{
 					$days[] = $record->high_day;
-					$values[] = $record->high;
+					$values[] = (float)($record->high);
 					$highPoints[] = array('day' => $record->high_day, 'value' => $record->high);
 				}				
 			}
@@ -161,7 +161,7 @@ class StockController extends Controller
 			if (!in_array($record->end_day, $days))
 			{								
 				$days[] = $record->end_day;
-				$values[] = $record->end_value;
+				$values[] = (float)($record->end_value);
 			}
 			
 			$directionConfig = CommonUtil::getConfigObject("stock.direction");
