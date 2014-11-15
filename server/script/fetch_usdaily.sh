@@ -38,9 +38,10 @@ main()
     # 用scrapy抓取总览信息
     if [ "stock" == $stype ]
     then
-        $SCRAPY_BIN crawl qqusdaily -a filename=$US_STOCK_LIST -a request_count=20 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_usdaily.log >> $result_path/$log
+        #$SCRAPY_BIN crawl qqusdaily -a filename=$US_STOCK_LIST -a request_count=20 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_usdaily.log >> $result_path/$log
+        $SCRAPY_BIN crawl sinausdaily -a filename=$US_STOCK_LIST -a request_count=20 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_usdaily.log >> $result_path/$log
     else
-        $SCRAPY_BIN crawl qqusdaily -a filename=$US_INDEX_LIST -a request_count=9 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_usdaily.log >> $result_path/$log
+        $SCRAPY_BIN crawl sinausdaily -a filename=$US_INDEX_LIST -a request_count=9 -a day=$day -o $result_path/$filename --logfile=$result_path/fetch_usdaily.log >> $result_path/$log
     fi
 
     # 导入数据
