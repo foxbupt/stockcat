@@ -4,7 +4,7 @@
  * @desc 股票趋势图组件
  * @date 2014/09/13
  */
-class StockTrendWidget
+class StockTrendWidget extends CWidget 
 {
 	public $sid;
 	public $trendType;
