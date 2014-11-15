@@ -205,6 +205,8 @@ class DataModel
     public static function getHQData($sid, $day)
     {
     	$dataItem = array('sid' => $sid);
+       	$dataItem['stock'] = StockUtil::getStockInfo($sid);
+       	
     	$dailyKey = BevaUtil::genCacheKey("daily", array($sid, $day));
        	$cacheValue = Yii::app()->redis->get($dailyKey);
 
@@ -213,7 +215,14 @@ class DataModel
        		$dataItem['daily'] = json_decode($cacheValue, true);	            
        		$dataItem['policy'] = Yii::app()->redis->getInstance()->hGetAll(BevaUtil::genCacheKey("daily-policy", array($sid, $day)));
        	}
-       	$dataItem['stock'] = StockUtil::getStockInfo($sid);
+       	else if ($dataItem['stock']['location'] == CommonUtil::LOCATION_US)
+       	{
+       		$datalist = StockUtil::getStockData($sid, $day, $day);
+       		if (1 == count($datalist))
+       		{
+       			$dataItem['daily'] = $datalist[0];
+       		}
+       	}
        	
        	return $dataItem;
     }
