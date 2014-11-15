@@ -86,6 +86,10 @@ class AnalyzeCommand extends CConsoleCommand
         // 流通市值 = 流通股(亿股) * close_price > 10 亿元
         $close = floatval($stockDataList[$count-1]['close_price']);
         $out_capitalisation = $close * floatval($stockInfo['out_capital']); 
+        if (CommonUtil::LOCATION_US == $stockInfo['location'])	// 美股股本单位为万股, 需要转换为亿
+        {
+        	$out_capitalisation = $out_capitalisation / 10000;
+        }
         // var_dump($close, $out_capitalisation);
         
         // A股>10亿, 美股 > 5亿刀(部分股票获取不到市值)

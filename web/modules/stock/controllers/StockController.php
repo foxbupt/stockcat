@@ -109,82 +109,11 @@ class StockController extends Controller
 		$startDay = intval($_GET['start_day']);
 		$endDay = isset($_GET['end_day'])? intval($_GET['end_day']) : intval(date('Ymd'));
 		
-		$days = $values = $highPoints = array();
-		$trendList = array();
-		$recordList = StockTrend::model()->findAll(array(
-						'condition' => "sid = $sid and type = $type and start_day >= $startDay  and end_day <= $endDay and status = 'Y'",
-						'order' => 'start_day asc',
-					));
-					
-		foreach ($recordList as $record)
-		{	
-			$highBeforeLow = ($record->high_day <= $record->low_day);
-			if (!in_array($record->start_day, $days))
-			{								
-				$days[] = $record->start_day;
-				$values[] = (float)($record->start_value);
-			}
-			
-			if ($highBeforeLow)
-			{
-				if (!in_array($record->high_day, $days))
-				{
-					$days[] = $record->high_day;
-					$values[] = (float)($record->high);
-					$highPoints[] = array('day' => $record->high_day, 'value' => $record->high);
-				}
-				
-				if (!in_array($record->low_day, $days))
-				{
-					$days[] = $record->low_day;
-					$values[] = (float)($record->low);
-					$highPoints[] = array('day' => $record->low_day, 'value' => $record->low);
-				}
-			}
-			else 
-			{			
-				if (!in_array($record->low_day, $days))
-				{
-					$days[] = $record->low_day;
-					$values[] = (float)($record->low);
-					$highPoints[] = array('day' => $record->low_day, 'value' => $record->low);
-				}
-				
-				if (!in_array($record->high_day, $days))
-				{
-					$days[] = $record->high_day;
-					$values[] = (float)($record->high);
-					$highPoints[] = array('day' => $record->high_day, 'value' => $record->high);
-				}				
-			}
-			
-			if (!in_array($record->end_day, $days))
-			{								
-				$days[] = $record->end_day;
-				$values[] = (float)($record->end_value);
-			}
-			
-			$directionConfig = CommonUtil::getConfigObject("stock.direction");
-			$trendText = (($record->shave && ($record->trend != CommonUtil::DIRECTION_SHAVE))? "震荡" : "") . $directionConfig[$record->trend];
-			$trendList[$record->end_day] = array(
-										'start_day' => $record->start_day,
-										'end_day' => $record->end_day,
-										'trend' => $record->trend,
-										'shave' => $record->shave,
-										'trend_text' => $trendText,
-									);
-		}
-		
-		// var_dump($days, $values, $highPoints);		
 		$this->render('trend', array(
-				'days' => $days,
-				'values' => $values,
-				'minValue' => floor(min($values)),
-				'maxValue' => ceil(max($values)),
-				'stockInfo' => StockUtil::getStockInfo($sid),
+				'sid' => $sid,
+				'type' => $type,
 				'startDay' => $startDay,
 				'endDay' => $endDay,
-				'trendList' => $trendList,
 			));
 	}
 }
