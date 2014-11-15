@@ -42,7 +42,7 @@ class SinaUsDailySpider(BaseSpider):
             offset = end
 
             url = "http://hq.sinajs.cn/?_=" + str(random.random()) + "&list=" + code_str
-            print url
+            #print url
             self.start_urls.append(url)
 
     def parse(self, response):
@@ -57,9 +57,10 @@ class SinaUsDailySpider(BaseSpider):
             parts = line.split("=")
             #print line, parts
             stock_code = parts[0].replace("var hq_str_gb_", "").upper()  
+            codeset.remove(stock_code)
             sid = self.code2id[stock_code]
             content = parts[1].strip('"')
-            print stock_code, sid, content
+            #print stock_code, sid, content
 
             fields = content.split(",")
             #print fields
@@ -68,7 +69,7 @@ class SinaUsDailySpider(BaseSpider):
                 print "err=daily_lack_fields sid=" + str(sid) + " code=" + stock_code + " line={" + line + "}"
                 continue
 
-            # 当日停牌则不能存入
+            # 当日停牌则不能存入, 里面存在部分已退市的股票(TODO:  后续需要区分出来)
             open_price = float(fields[5])
             close_price = float(fields[1])
             if open_price == 0.0 or close_price == 0.0:
@@ -100,13 +101,21 @@ class SinaUsDailySpider(BaseSpider):
                 # 计算换手率
                 if capital > 0:
                     item['exchange_portion'] = item['volume'] / capital * 100
+                else:
+                    item['exchange_portion'] = 0.00
                 item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 10
             except Exception as e:
+                print "err=exception code=" + stock_code + " sid=" + str(sid) + " msg=" + e
                 continue
 
-            if capital > 0:
-                capital = capital / 10000
-                print 'op=update_sql sql=[update t_stock set capital={0:.2f}, out_capital={1:.2f} where id = {2:d};]'.format(capital, capital, item['sid'])
+            # 更新市值
+            #if capital > 0:
+            #    capital = capital / 10000
+            #    print 'op=update_sql sql=[update t_stock set capital={0:.2f}, out_capital={1:.2f} where id = {2:d};]'.format(capital, capital, item['sid'])
 
-            print item
+            #print item
             yield item
+
+        #for scode in codeset:
+        #    sid = self.code2id[scode]
+        #    print "update t_stock set status = 'N' where id={sid};".format(sid=sid)
