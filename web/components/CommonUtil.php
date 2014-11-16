@@ -402,6 +402,26 @@ class CommonUtil
    			}
     	}
     }
+    
+    /**
+     * @desc 返回展示的code
+     *
+     * @param string $code
+     * @param int $ecode
+     * @return string
+     */
+    public static function getShowCode($code, $ecode)
+    {
+    	if ((CommonUtil::ECODE_SH == $ecode) || (CommonUtil::ECODE_SZ == $ecode)
+    		|| (CommonUtil::ECODE_HK == $ecode))	
+    	{
+    		return self::$ecodeMaps[$ecode] . $code;	
+    	}
+    	else 
+    	{
+    		return self::$ecodeMaps[$ecode] . "." . $code;
+    	}
+    }
 }
 	
 ?>

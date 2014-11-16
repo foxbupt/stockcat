@@ -9,9 +9,31 @@
 class StockController extends Controller 
 {
 	/**
+	 * @desc 从参数中解析sid
+	 *
+	 * @param array $params
+	 * @param int $location 可选
+	 * @return int
+	 */
+	public static function getParamSid($params, $location = CommonUtil::LOCATION_ALL)
+	{
+        if (isset($params['sid']))
+        {
+            $sid = intval($params['sid']);
+        }
+        else
+        {
+            $stockMap = StockUtil::getStockMap($location);
+            $sid = $stockMap[trim($params['code'])];
+        }
+
+        return $sid;
+	}
+	
+	/**
 	 * @desc 展示股票的详细信息
-	 * @param $_GET['code']
-	 * @param $_GET['sid']
+	 * @param $_GET['sid']/$_GET['code']
+	 * @param $_GET['day'] 可选, 缺省为当前日期
 	 *
 	 */
 	public function actionIndex()
@@ -21,47 +43,44 @@ class StockController extends Controller
             throw new CHttpException(404);
         }
 
-        $sid = isset($_GET['sid'])? intval($_GET['sid']) : 0;
-        if ((0 == $sid) && isset($_GET['code']))
+        $sid = self::getParamSid($_GET);
+        if (empty($sid)) 
         {
-            $stockMap = StockUtil::getStockMap(CommonUtil::LOCATION_ALL);
-            $sid = $stockMap[trim($_GET['code'])];
+        	throw new CHttpException(404);
         }
 
-        $day = intval(date('Ymd'));
-        $openDay = CommonUtil::isMarketOpen($day)? $day : CommonUtil::getPastOpenDay($day, -1);
-        $hourmin = intval(date('Hi'));
+        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $marketOpen = CommonUtil::isMarketOpen($day);
+        $openDay = $marketOpen? $day : CommonUtil::getPastOpenDay($day, -1);
+        $curTime = intval(date('His'));
 
         $stockInfo = StockUtil::getStockInfo($sid);
-        $stockData = $dailyPolicyInfo = array();
-
-        // TODO: 从daily-sid-day里拉取数据
-        if (($openDay == $day) && ($hourmin >= 930))
-        {
-            $key = "daily-" . $sid . "-" . $openDay;
-            $cacheValue = Yii::app()->redis->get($key);
-            if ($cacheValue)
-            {
-                $stockData = json_decode($cacheValue, true);
-            }
-
-            $dailyPolicyInfo = Yii::app()->redis->getInstance()->hGetAll("daily-policy-" . $sid . "-" . $openDay);
-        }
-        else // 从t_stock_data查询openDay的交易数据
-        {
-            $record = StockData::model()->findAllByAttributes(array('sid' => $sid, 'day' => $openDay, 'status' => 'Y'));
-            if ($record)
-            {
-                $stockData = $record->getAttributes();
-            }
-        }
-
-        $this->render('index', array(
+        $hqData = DataModel::getHQData($sid, $openDay);
+		$prefix = "";
+		if ($hqData['daily']['vary_price'] > 0.00)
+		{
+			$prefix = "+";
+		}
+		else if ($hqData['daily']['vary_price'] < 0.00)
+		{
+			$prefix = "-";
+		}
+		
+        /**
+         * 页面展示内容包括:
+         * 1、股票基本信息: 昨收/今开/当前价格/涨跌幅/换手率/成交量/量比/上涨因子/市值
+         * 2、近2周内股票池记录列表: 连续上涨/价格突破/趋势突破
+         * 3、多tab曲线图: 当日分时K线/趋势图 /日K线图
+         * 4、
+         */
+        $this->render('index', array(       
                     'day' => $day,
+        			'curTime' => $curTime,
+        			'marketOpen' => $marketOpen,
                     'openDay' => $openDay,
                     'stockInfo' => $stockInfo,
-                    'stockData' => $stockData,
-                    'dailyPolicyInfo' => $dailyPolicyInfo,
+                    'hqData' => $hqData,
+        			'prefix' => $prefix,
                 ));
 	}
 	
@@ -77,8 +96,7 @@ class StockController extends Controller
 	
 	/**
 	 * @desc 描绘股票近段趋势图
-	 * @param $_GET['sid'] 股票id
-	 * @param $_GET['code'] 股票代码, 可选
+	 * @param $_GET['sid']/$_GET['code'] 股票id/股票代码
 	 * @param $_GET['type']	趋势类型, 可选缺省为1, 取值: 1 价格 2 成交量
 	 * @param $_GET['start_day'] 起始日期
 	 * @param $_GET['end_day']	结束日期, 缺省为当前日期
@@ -90,16 +108,7 @@ class StockController extends Controller
 			throw new CHttpException(404);
 		}
 		
-        $sid = 0;
-        if (isset($_GET['sid']))
-        {
-            $sid = intval($_GET['sid']);
-        }
-        else
-        {
-            $stockMap = StockUtil::getStockMap(CommonUtil::LOCATION_ALL);
-            $sid = $stockMap[trim($_GET['code'])];
-        }
+        $sid = self::getParamSid($_GET);
         if (empty($sid))
         {
             throw new CHttpException(404);
