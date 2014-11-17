@@ -37,15 +37,16 @@ class DailyPolicy(BasePolicy):
         past_data = json.loads(past_data_value)
 
         open_vary_portion = (item['open_price'] - item['last_close_price']) / item['last_close_price'] * 100
+        day_vary_portion = (item['close_price'] - item['open_price']) / item['open_price'] * 100
         volume_ratio = item['predict_volume'] / past_data['avg_volume']
         if abs(item['open_price'] - item['high_price']) < 0.01:
             high_portion = item['close_price'] / item['high_price']
         else:
             high_portion = (item['close_price'] - item['open_price']) / (item['high_price'] - item['open_price'])
-        rise_factor = round(open_vary_portion * volume_ratio * high_portion, 1)
+        rise_factor = round(day_vary_portion * volume_ratio * high_portion, 1)
 
         daily_policy_key = "daily-policy-" + str(sid) + "-" + str(item['day'])
-        stock_rise_map = {'open_vary_portion': open_vary_portion, 'volume_ratio': volume_ratio, 'high_portion': high_portion, 'rise_factor': rise_factor}
+        stock_rise_map = {'open_vary_portion': open_vary_portion, 'day_vary_portion': day_vary_portion, 'volume_ratio': volume_ratio, 'high_portion': high_portion, 'rise_factor': rise_factor}
         self.redis_conn.hmset(daily_policy_key, stock_rise_map)
 
         stock_rise_map['sid'] = sid
@@ -72,7 +73,7 @@ class DailyPolicy(BasePolicy):
     # 趋势/波段方向(trend): 1 下跌 2 震荡 3 上涨
     def day_trend(self, item):
         trend = op = 0
-        open_vary_portion = (item['close_price'] - item['open_price']) / item['open_price'] * 100
+        day_vary_portion = (item['close_price'] - item['open_price']) / item['open_price'] * 100
         max_vary = item['high_price'] - item['close_price']
         min_vary = item['close_price'] - item['low_price']
 
@@ -80,7 +81,7 @@ class DailyPolicy(BasePolicy):
         if item['close_price'] == item['open_price'] and item['vary_portion'] >= 9.6:
             trend = 3
         # 涨跌幅在1%以内, 认为是震荡
-        elif abs(open_vary_portion) <= 1:
+        elif abs(day_vary_portion) <= 1:
             trend = 2
             op = 2
         elif item['vary_price'] > 0.0:
