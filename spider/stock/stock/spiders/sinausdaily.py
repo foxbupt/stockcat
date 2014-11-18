@@ -57,7 +57,6 @@ class SinaUsDailySpider(BaseSpider):
             parts = line.split("=")
             #print line, parts
             stock_code = parts[0].replace("var hq_str_gb_", "").upper()  
-            codeset.remove(stock_code)
             sid = self.code2id[stock_code]
             content = parts[1].strip('"')
             #print stock_code, sid, content
