@@ -71,7 +71,7 @@ setTimeout('refreshPage()', 120 * 1000);
 						<td><?php echo $dailyData['predict_volume']; ?></td>
 						<td><?php echo round($dailyPolicyData['volume_ratio'], 2); ?></td>
 
-                        <td><?php echo CommonUtil::formatNumber($dailyPolicyData['open_vary_portion']); ?> </td>
+                        <td><?php echo CommonUtil::formatNumber($dailyPolicyData['day_vary_portion']); ?> </td>
                         <td><?php echo CommonUtil::formatNumber($dailyPolicyData['high_portion']); ?> </td>
 					</tr>	
 					<?php endforeach; ?>
