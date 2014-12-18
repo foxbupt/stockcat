@@ -2,7 +2,7 @@
 	"am_open": 92500,
 	"am_close": 113000,
 	"pm_open": 130000,
-	"pm_close": 203000,
+	"pm_close": 150000,
 	"close_delay": 240,
 	"fetch_list": [
 		{"name": "daily", "object": "parrel_func.ParrelDaily", "interval": 120, "item_per_thread": 10}, 

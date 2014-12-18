@@ -25,7 +25,7 @@ class SortHelper
 				$unit = array();
 				foreach ($fields as $name)
 				{
-					$unit[] = $valueMap[$name];
+					$unit[] = self::getFieldValue($valueMap, $name);
 				}
 				$values[$key] = $unit;
 			}
