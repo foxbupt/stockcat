@@ -46,15 +46,16 @@ td {
                     <?php $sid = $dataItem['sid']; ?>
                     <?php $dailyData = $dataItem['daily']; ?>
                     <?php $dailyPolicyData = $dataItem['policy']; ?>
-                    <?php $stockInfo = isset($dataItem['daily'])? $dailyData : $dataItem['stock']; ?>
+                    <?php $stockInfo = $dataItem['stock']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
-                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
+                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code'], $stockInfo['ecode'], $stockInfo['location']); ?>
                     <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
+
                         <?php if (isset($dataItem['cont_days'])): ?>
                             <td><?php echo $dataItem['cont_days'] . "天"; ?></td>
                             <td><?php echo $dataItem['sum_price_vary_portion'] . "%"; ?></td>
