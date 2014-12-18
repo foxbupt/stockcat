@@ -173,7 +173,7 @@ class PoolController extends Controller
         $thresholdMap = $thresholdInfo['threshold_map'];
 		// var_dump($thresholdMap);
         
-        $hqDataMap = $thresholdInfo['datamap'];
+        $hqDataMap = array();
         $sidList = StockUtil::getStockList($location);
         foreach ($thresholdMap as $sid => $thresholdItem)
         {
@@ -182,8 +182,11 @@ class PoolController extends Controller
         		continue;
         	}
         	
-            $hqDataMap[$sid]['high_type'] = $thresholdItem['high_type'];
-            $hqDataMap[$sid]['low_type'] = $thresholdItem['low_type'];
+        	$dataItem = $thresholdInfo['datamap'][$sid];
+        	print_r($dataItem);
+            $dataItem['high_type'] = $thresholdItem['high_type'];
+            $dataItem['low_type'] = $thresholdItem['low_type'];
+            $hqDataMap[$sid] = $dataItem;
         }
         
         $this->render('threshold', array(                   
