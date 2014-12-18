@@ -53,8 +53,8 @@ td {
 
 					<tr class="pull-center">
                         <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
-                        <td><?php echo isset($hqData['name'])? $hqData['name'] : $stockInfo['name']; ?></td>
-						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo isset($hqData['code'])? $hqData['code'] : $stockInfo['code']; ?></a></td>
+                        <td><?php echo $stockInfo['name']; ?></td>
+						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
                         <?php if (isset($dataItem['cont_days'])): ?>
                             <td><?php echo $dataItem['cont_days'] . "天"; ?></td>
                             <td><?php echo $dataItem['sum_price_vary_portion'] . "%"; ?></td>

@@ -154,5 +154,47 @@ class PoolController extends Controller
     	$startDay = strval(intval(intval($day) / 10000)) . "0101";
     	return $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => $type, 'start_day' => $startDay));
     }
+    
+    /**
+     * @desc 展现价格突破列表
+     * @param $_GET['day'] 可选
+     * @param $_GET['location'] 可选, 缺省为1
+     *
+     */
+    public function actionThreshold()
+    {
+     	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+        
+        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        // var_dump($day, $lastDay);
+
+		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(3, 4), array(1, 2, 3, 4));	
+        $thresholdMap = $thresholdInfo['threshold_map'];
+		// var_dump($thresholdMap);
+        
+        $hqDataMap = array();
+        $sidList = StockUtil::getStockList($location);
+        foreach ($thresholdInfo['datamap'] as $sid => $dataItem)
+        {
+        	if (!in_array($sid, $sidList))
+        	{
+        		continue;
+        	}
+        	
+        	if (!isset($hqDataMap[$sid]))
+        	{
+            	$dataItem['high_type'] = $thresholdMap[$sid]['high_type'];
+            	$dataItem['low_type'] = $thresholdMap[$sid]['low_type'];
+            	$hqDataMap[$sid] = $dataItem;
+        	}
+        }
+        
+        $this->render('threshold', array(                   
+                    'hqMap' => $hqDataMap,
+                    'day' => $day,
+                    'lastDay' => $lastDay,
+                ));
+    }
 }
 ?>
