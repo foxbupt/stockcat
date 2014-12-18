@@ -51,16 +51,14 @@ td {
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
-						<td><?php echo ($dataItem["high_type"] > 0)? $highTypeValues[$dataItem['high_type']] : $highTypeValues[$dataItem['low_type']]; ?></td>
-						<td><?php echo CommonUtil::formatNumber($dailyData['last_close_price']); ?></td>
+						<td class="<?php echo $isHighThreshold? 'red': 'green'; ?>"><?php echo ($dataItem["high_type"] > 0)? $highTypeValues[$dataItem['high_type']] : $highTypeValues[$dataItem['low_type']]; ?></td>
 
                         <?php if (empty($dailyData)): ?>  
 						<td><?php echo "0.00"; ?></td>
 						<td><?php echo "0.00"; ?></td>
 						<td><?php echo "0.00"; ?></td>
 						<td><?php echo "0.00"; ?></td>
-						<td><?php echo "-"; ?></td>
-						<td><?php echo "-"; ?></td>
+						<td><?php echo "0.00"; ?></td>
 						
                         <?php else: ?>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
