@@ -215,7 +215,7 @@ class DataModel
        		$dataItem['daily'] = json_decode($cacheValue, true);	            
        		$dataItem['policy'] = Yii::app()->redis->getInstance()->hGetAll(BevaUtil::genCacheKey("daily-policy", array($sid, $day)));
        	}
-       	else // if ($dataItem['stock']['location'] == CommonUtil::LOCATION_US)
+       	else if ($dataItem['stock']['location'] == CommonUtil::LOCATION_US)
        	{
        		$datalist = StockUtil::getStockData($sid, $day, $day);
        		if (1 == count($datalist))
