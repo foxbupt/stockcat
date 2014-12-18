@@ -43,6 +43,7 @@ td {
                     <?php $dailyPolicyData = $dataItem['policy']; ?>
                     <?php $stockInfo = $dataItem['stock']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
+                    <?php $lowTypeValues = CommonUtil::getConfigObject("price.low_type"); ?>
                     <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
                     <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
 
@@ -51,7 +52,7 @@ td {
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
-						<td class="<?php echo $isHighThreshold? 'red': 'green'; ?>"><?php echo ($dataItem["high_type"] > 0)? $highTypeValues[$dataItem['high_type']] : $highTypeValues[$dataItem['low_type']]; ?></td>
+						<td class="<?php echo $isHighThreshold? 'red': 'green'; ?>"><?php echo ($dataItem["high_type"] > 0)? $highTypeValues[$dataItem['high_type']] : $lowTypeValues[$dataItem['low_type']]; ?></td>
 
                         <?php if (empty($dailyData)): ?>  
 						<td><?php echo "0.00"; ?></td>

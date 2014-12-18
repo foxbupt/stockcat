@@ -165,7 +165,7 @@ class PoolController extends Controller
     {
      	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
-        
+
         $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
         // var_dump($day, $lastDay);
 
@@ -183,7 +183,7 @@ class PoolController extends Controller
         	}
         	
         	$dataItem = $thresholdInfo['datamap'][$sid];
-        	print_r($dataItem);
+        	// print_r($dataItem);
             $dataItem['high_type'] = $thresholdItem['high_type'];
             $dataItem['low_type'] = $thresholdItem['low_type'];
             $hqDataMap[$sid] = $dataItem;

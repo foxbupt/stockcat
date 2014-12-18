@@ -217,7 +217,9 @@ class DataModel
        	}
        	else if ($dataItem['stock']['location'] == CommonUtil::LOCATION_US)
        	{
-       		$datalist = StockUtil::getStockData($sid, $day, $day);
+            $lastday = CommonUtil::getPastOpenDay($day, 1, CommonUtil::LOCATION_US);
+       		$datalist = StockUtil::getStockData($sid, $lastday, $lastday);
+            // var_dump($sid, $day, count($datalist));
        		if (1 == count($datalist))
        		{
        			$dataItem['daily'] = $datalist[0];
