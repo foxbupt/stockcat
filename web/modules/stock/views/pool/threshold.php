@@ -44,7 +44,7 @@ td {
                     <?php $stockInfo = $dataItem['stock']; ?>
                     <?php $highTypeValues = CommonUtil::getConfigObject("price.high_type"); ?>
                     <?php $lowTypeValues = CommonUtil::getConfigObject("price.low_type"); ?>
-                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
+                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code'], $stockInfo['ecode'], $stockInfo['location']); ?>
                     <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $lastDay); ?>
 
 					<tr class="pull-center">
