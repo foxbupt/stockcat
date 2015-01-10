@@ -151,7 +151,11 @@ class PoolController extends Controller
     // 获取股票趋势url
     public function getTrendUrl($sid, $type, $day)
     {
+    	$pastDay = date("Ymd", strtotime("-6 month", strtotime($day)));
     	$startDay = strval(intval(intval($day) / 10000)) . "0101";
+    	if ($startDay >= $pastDay) {
+    		$startDay = $pastDay;
+    	}
     	return $this->createUrl('/stock/stock/trend', array('sid' => $sid, 'type' => $type, 'start_day' => $startDay));
     }
     
