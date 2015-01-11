@@ -177,7 +177,9 @@ class StockUtil
     	$record = StockPool::model()->findByAttributes(array('sid' => $sid, 'day' => $day, 'status' => 'Y'));
     	if (!empty($record))
     	{
-    		return $record->updateByPk($record->id, array('source' => ($record->source | $source)));
+    		$attrs = $trendInfo;
+    		$attrs['source'] = $record->source | $source;
+    		return $record->updateByPk($record->id, $attrs);
     	}
     	
    		$record = new StockPool();
