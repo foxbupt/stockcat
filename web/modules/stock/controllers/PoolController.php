@@ -199,5 +199,28 @@ class PoolController extends Controller
                     'lastDay' => $lastDay,
                 ));
     }
+    
+    public function actionUpresist()
+    {
+    	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+
+        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        // var_dump($day, $lastDay);
+
+		$recordList = StockPivot::model()->findAllByAttributes(array('day' => $lastDay, 'status' => 'Y'));
+        $datamap = array();
+		foreach ($recordList as $record)
+        {
+        	$datamap[$record->sid] = DataModel::getHQData($record->sid, $day);	
+        }
+        
+        $this->render('upresist', array(                   
+                    'recordList' => $recordList,
+        			'datamap' => $datamap,
+                    'day' => $day,
+                    'lastDay' => $lastDay,
+                ));
+    }
 }
 ?>
