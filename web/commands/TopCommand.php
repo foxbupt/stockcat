@@ -98,6 +98,15 @@ class TopCommand extends CConsoleCommand
 			}
 			
 			$stockDataList = StockUtil::getStockData($sid, $day, $day);
+			if (0 == count($stockDataList))
+			{
+				$pastCount = CommonUtil::getOpenDayCount($latestTrendRecord->end_day, $day, $location);
+				if ($pastCount >= 5)
+				{
+					echo "op=ignore_trend_stop sid=$sid day=$day past_count=$pastCount end_day=" . $latestTrendRecord->end_day . "\n";
+					continue;
+				}
+			}
 			$closePrice = (1 == count($stockDataList))? $stockDataList[0]['close_price'] : $latestTrendRecord->end_value;
 			
 			$pivotInfo = TrendHelper::getPivot($sid, $closePrice, $trendList);	
@@ -135,9 +144,9 @@ class TopCommand extends CConsoleCommand
 		$record->trend = $trendItem['trend'];
 		$record->close_price = $trendItem['current_price'];
 		$record->resist = $trendItem['pivot']['resist'];
-		$record->resist_vary_portion = $trendItem['resist_vary_portion'];
+		$record->resist_vary_portion = CommonUtil::formatNumber($trendItem['resist_vary_portion']);
 		$record->support = $trendItem['pivot']['support'];
-		$record->support_vary_portion = $trendItem['support_vary_portion'];
+		$record->support_vary_portion = CommonUtil::formatNumber($trendItem['support_vary_portion']);
 		$record->create_time = time();
 		$record->status = 'Y';
 		
