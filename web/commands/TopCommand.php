@@ -28,6 +28,27 @@ class TopCommand extends CConsoleCommand
 		if (("trend" == $type) || ($type == "all"))
 		{
 			$trendRecommendList = self::recommendTrend($sidList, $day, $location);
+			foreach ($trendRecommendList as $recommendItem)
+			{
+				$sid = $recommendItem['sid'];
+				$result = self::addStockPivot($sid, $day, $recommendItem);
+				if ($result)
+				{
+					// 添加到股票池
+                	$poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_UP_RESIST, array('trend' => $recommendItem['near']['trend']));
+                	$logInfo = array(
+                					'result' => $poolResult? 1 : 0,
+                					'sid' => $sid,
+                					'day' => $day, 
+                					'close_price' => $recommendItem['current_price'],
+                					'pivot' => $recommendItem['pivot'],
+                					'near' => $recommendItem['near'],
+                					'total' => $recommendItem['total'],
+                				);
+                				
+                	echo "op=add_pivot_pool_succ ". StatLogUtil::array2log($logInfo) . "\n";
+				}
+			}
 		}
 	}
 	
@@ -47,7 +68,7 @@ class TopCommand extends CConsoleCommand
 	 */
 	public static function recommendTrend($sidList, $day, $location)
 	{
-		$pastDay = intval(date('Ymd', strtotime("-3 months", strtotime($day))));
+		$pastDay = intval(date('Ymd', strtotime("-4 months", strtotime($day))));
 		$startDay = intval(substr($day, 0, 4) . "0101");
 		if ($startDay >= $pastDay)
 		{
@@ -105,5 +126,30 @@ class TopCommand extends CConsoleCommand
 		return $recommendList;
 	}
 	
+	public static function addStockPivot($sid, $day, $trendItem)
+	{
+		$record = new StockPivot();
+		
+		$record->sid = $sid;
+		$record->day = $day;
+		$record->trend = $trendItem['trend'];
+		$record->close_price = $trendItem['current_price'];
+		$record->resist = $trendItem['pivot']['resist'];
+		$record->resist_vary_portion = $trendItem['resist_vary_portion'];
+		$record->support = $trendItem['pivot']['support'];
+		$record->support_vary_portion = $trendItem['support_vary_portion'];
+		$record->create_time = time();
+		$record->status = 'Y';
+		
+		if ($record->save())
+		{
+			return true;
+		}
+		else
+		{
+			echo "err=add_pivot_record_failed " . StatLogUtil::array2log($record->getErrors()) . "\n";	
+			return false;
+		}
+	}
 }
 ?>
