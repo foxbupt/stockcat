@@ -205,10 +205,14 @@ class PoolController extends Controller
     	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 
-        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        // $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        $lastDay = CommonUtil::getParamDay($day, $location);
         // var_dump($day, $lastDay);
 
-		$recordList = StockPivot::model()->findAllByAttributes(array('day' => $lastDay, 'status' => 'Y'));
+        $recordList = StockPivot::model()->findAll(array(
+                    'condition' => "day = $lastDay and status = 'Y'",
+                    'order' => 'resist_vary_portion asc'
+                ));
         $datamap = array();
 		foreach ($recordList as $record)
         {
