@@ -135,8 +135,37 @@ class TopCommand extends CConsoleCommand
 		return $recommendList;
 	}
 	
+	/**
+	 * @desc 添加股票超越趋势记录
+	 *
+	 * @param int $sid
+	 * @param int $day
+	 * @param array $trendItem
+	 * @return bool
+	 */
 	public static function addStockPivot($sid, $day, $trendItem)
 	{
+		$lastDay = date("Ymd", strtotime("-2 week", strtotime($day)));
+		$recordList = StockPivot::model()->findAll(array(
+										'condition' => "sid = ${sid} and day > ${lastDay} and status = 'Y'",
+										'order' => 'day desc'											
+									));
+		foreach ($recordList as $record)
+		{
+			// 两周内存在重复超越相同阻力位, 表明一直在上涨, 不插入记录
+			if ($record->resist == $trendItem['pivot']['resist'])
+			{
+				$logInfo = array(
+						'lastday' => $record->day,
+						'last_price' => $record->close_price,
+						'resist' => $record->resist,
+						'close_price' => $trendItem['current_price'],
+					);
+				echo "op=ignore_duplicate_record " . StatLogUtil::array2log($logInfo) . "\n";	
+				return false;
+			}	
+		}
+		
 		$record = new StockPivot();
 		
 		$record->sid = $sid;
