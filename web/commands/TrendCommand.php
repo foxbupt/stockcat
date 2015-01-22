@@ -127,6 +127,7 @@ class TrendCommand extends CConsoleCommand
             }
 			
             $trendInfo = TrendHelper::getPeriodTrend($sid, $periodData, $config);
+            // var_dump($trendInfo);
             if (empty($trendInfo))
             {
                 continue;
