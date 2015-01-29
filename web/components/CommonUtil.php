@@ -41,6 +41,7 @@ class CommonUtil
     const FORMAT_TYPE_NUMBER = 3;
 	
     // 股票池来源(source): 1 连续上涨, 2 价格突破, 4 趋势突破阻力位
+    const SOURCE_BITMAP = 3;
     const SOURCE_CONT = 1;
     const SOURCE_PRICE_THRESHOLD = 2;
     const SOURCE_UP_RESIST = 4;
