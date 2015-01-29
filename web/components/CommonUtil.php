@@ -79,7 +79,6 @@ class CommonUtil
 			),
 			self::LOCATION_US => array(
 				20150101,
-				20150112,
 				20150216,
 				20150403,
 				20150525,
