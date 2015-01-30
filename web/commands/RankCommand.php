@@ -53,9 +53,10 @@ class RankCommand extends CConsoleCommand
 				$rank = self::evalute($sid, $day, $poolItem);
 			}
 			
+            $poolItem['rank'] = $rank;
 			// $result = $record->updateByPk($record->id, array('rank' => $rank));
 			$result = 1;
-			echo "op=add_rank result=${result} rank=${rank} . " . StockUtil::array2log($poolItem) . "\n";
+			echo "op=add_rank result=${result} rank=${rank} " . StatLogUtil::array2log($poolItem) . "\n";
 		}		
 		
 	}
