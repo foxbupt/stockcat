@@ -73,6 +73,7 @@ class RankCommand extends CConsoleCommand
 			if (($pivotInfo['resist_vary_portion'] > 15) || ($pivotInfo['resist_vary_portion'] < 5))
 			{
 				$initialRank -= 2;
+				echo "desc=resist_decr_rank rank=${initialRank} " . StatLogUtil::array2log($pivotInfo) . "\n";
 			}
 		}
 		
@@ -88,6 +89,7 @@ class RankCommand extends CConsoleCommand
 			{
 				$initialRank -= 2;
 			}
+			echo "desc=cont_decr_rank rank=${initialRank} day_portion=${dayPortion} " . StatLogUtil::array2log($contInfo) . "\n";
 		}
 		
 		/*
@@ -100,29 +102,37 @@ class RankCommand extends CConsoleCommand
 		if (($volumeRatio < 1) || ($volumeRatio > 5))
 		{
 			$initialRank -= 2;
+			echo "desc=volume_ratio_decr_rank rank=${initialRank} sid=${sid} volume_ratio=${volumeRatio}\n";			
 		}
 		
-		$dailyData = $hqdata['daily'];
-		$policyData = $hqdata['policy'];
-		if (($dailyData['exchange_portion'] >= 10) || ($dailyData['exchange_portion'] <= 1))
-		{
-			$initialRank -= 5;
-		}
-
-		// TODO: 判断是否存在十字星/长上影线
-		if ($policyData['high_portion'] <= 0.5) 
+		if (($poolItem['close_price'] <= 3) || ($poolItem['close_price'] >= 50))
 		{
 			$initialRank -= 2;
-		}
-
-		if ($policyData['trend'] != CommonUtil::DIRECTION_UP)
-		{
-			$initialRank -= 2;
+			echo "desc=close_price_decr_rank rank=${initialRank} close_price=" . $poolItem['close_price'] ."\n";
 		}
 		
-		if (($dailyData['close_price'] <= 3) || ($dailyData['close_price'] >= 50))
+		if (isset($hqdata['daily']) && isset($hqdata['policy']))
 		{
-			$initialRank -= 2;
+			$dailyData = $hqdata['daily'];
+			$policyData = $hqdata['policy'];
+			if (($dailyData['exchange_portion'] >= 10) || ($dailyData['exchange_portion'] <= 1))
+			{
+				$initialRank -= 5;
+				echo "desc=exchange_portion_decr_rank rank=${initialRank} sid=${sid} exchange_portion=" . $dailyData['exchange_portion'] . "\n";			
+			}
+	
+			// TODO: 判断是否存在十字星/长上影线
+			if ($policyData['high_portion'] <= 0.5) 
+			{
+				$initialRank -= 2;
+				echo "desc=high_portion_decr_rank rank=${initialRank} sid=${sid} high_portion=" . $dailyData['high_portion'] . "\n";						
+			}
+	
+			if ($policyData['trend'] != CommonUtil::DIRECTION_UP)
+			{
+				$initialRank -= 2;
+				echo "desc=trend_decr_rank rank=${initialRank} sid=${sid} " . StatLogUtil::array2log($policyData) . "\n";						
+			}		
 		}
 		
 		// TODO: 判断最近一段上涨趋势累计涨幅, 趋势为合并后的趋势
@@ -140,6 +150,7 @@ class RankCommand extends CConsoleCommand
 			if (($latestTrendRecord->vary_portion >= 30) || ($latestTrendRecord->vary_portion <= 5))
 			{
 				$initialRank -= 2;
+				echo "desc=latest_trend_decr_rank rank=${initialRank} sid=${sid} " . "vary_portion=" . $latestTrendRecord->vary_portion . "\n";
 			}
 		}
 		

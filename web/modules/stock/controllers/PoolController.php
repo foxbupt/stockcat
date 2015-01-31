@@ -200,6 +200,12 @@ class PoolController extends Controller
                 ));
     }
     
+    /**
+     * @desc 展现趋势突破列表
+     * @param $_GET['day'] 可选
+     * @param $_GET['location'] 可选, 缺省为1
+     *
+     */
     public function actionUpresist()
     {
     	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
@@ -231,6 +237,64 @@ class PoolController extends Controller
         
         $this->render('upresist', array(                   
                     'recordList' => $resistList,
+        			'datamap' => $datamap,
+                    'day' => $day,
+                    'lastDay' => $lastDay,
+                ));
+    }
+    
+    /**
+     * @desc 展现趋势突破列表
+     * @param $_GET['day'] 可选
+     * @param $_GET['location'] 可选, 缺省为1
+     * @param $_GET['count'] 可选, 缺省为10条
+     *
+     */
+    public function actionRankList()
+    {
+    	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+		$count = isset($_GET['count'])? intval($_GET['count']) : 20;
+        
+        $day = CommonUtil::getParamDay($day, $location);
+        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        
+        $recordList = StockPool::model()->findAll(array(
+                    'condition' => "day = $lastDay and status = 'Y'",
+                    'order' => 'rank desc',
+        			'limit' => $count,
+                ));
+        $sidList = StockUtil::getStockList($location);
+
+        $rankList = array();
+        $datamap = array();
+		foreach ($recordList as $record)
+        {
+            $sid = $record->sid;
+        	if (!in_array($sid, $sidList))
+        	{
+        		continue;
+        	}
+
+            $rankInfo = $record->getAttributes();
+            
+            $source = $rankInfo['source'];            
+            $sourceList = array();
+            foreach (CommonUtil::$sourceMaps as $sourceValue => $sourceStr)
+            {
+            	if (($source & $sourceValue) == $sourceValue)
+            	{
+            		$sourceList[] = $sourceStr;	
+            	}
+            }
+            
+            $rankInfo['source_label'] = implode("|", $sourceList);
+            $rankList[] = $rankInfo; 
+        	$datamap[$sid] = DataModel::getHQData($sid, $day);	
+        }
+        
+        $this->render('rank', array(                   
+                    'rankList' => $rankList,
         			'datamap' => $datamap,
                     'day' => $day,
                     'lastDay' => $lastDay,

@@ -45,6 +45,11 @@ class CommonUtil
     const SOURCE_CONT = 1;
     const SOURCE_PRICE_THRESHOLD = 2;
     const SOURCE_UP_RESIST = 4;
+    static $sourceMaps = array(
+    		self::SOURCE_CONT => '连续上涨',
+    		self::SOURCE_PRICE_THRESHOLD => '价格突破',
+    		self::SOURCE_UP_RESIST => '趋势突破',
+    	);
     
     // 股票所属国家(location): 0 全部 1 中国 2 香港(hk) 3 美国(us)
     const LOCATION_ALL = 0;
