@@ -54,8 +54,8 @@ class RankCommand extends CConsoleCommand
 			}
 			
             $poolItem['rank'] = $rank;
-			// $result = $record->updateByPk($record->id, array('rank' => $rank));
-			$result = 1;
+			$result = $record->updateByPk($record->id, array('rank' => $rank));
+			// $result = 1;
 			echo "op=add_rank result=${result} rank=${rank} " . StatLogUtil::array2log($poolItem) . "\n";
 		}		
 		
@@ -65,8 +65,9 @@ class RankCommand extends CConsoleCommand
 	{
 		$initialRank = self::MAX_RANK - (CommonUtil::SOURCE_BITMAP - $poolItem['bitcount']) * 20;
 		$poolInfo = self::getStockPoolItem($sid, $day, $poolItem['source']);
-		$hqdata = $poolInfo['hq'];
+		echo "desc=evalute_rank sid=${sid} initial_rank=${initialRank} " .  StatLogUtil::array2log($poolItem) . " " . StatLogUtil::array2log($poolInfo) . "\n";
 		
+		$hqdata = $poolInfo['hq'];		
 		if (isset($poolInfo['pivot']))
 		{
 			$pivotInfo = $poolInfo['pivot'];
