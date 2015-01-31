@@ -208,11 +208,11 @@ class PoolController extends Controller
      */
     public function actionUpresist()
     {
-    	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+    	$dayParam = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 
-        $day = CommonUtil::getParamDay($day, $location);
-        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        $day = CommonUtil::getParamDay($dayParam, $location);
+        $lastDay = ($day == $dayParam)? CommonUtil::getPastOpenDay($day, 1, $location) : $day;
         // var_dump($day, $lastDay);
 
         $recordList = StockPivot::model()->findAll(array(
@@ -252,13 +252,13 @@ class PoolController extends Controller
      */
     public function actionRankList()
     {
-    	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+    	$dayParam = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 		$count = isset($_GET['count'])? intval($_GET['count']) : 20;
         
-        $day = CommonUtil::getParamDay($day, $location);
-        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
-        
+        $day = CommonUtil::getParamDay($dayParam, $location);
+        $lastDay = ($day == $dayParam)? CommonUtil::getPastOpenDay($day, 1, $location) : $day;
+                
         $recordList = StockPool::model()->findAll(array(
                     'condition' => "day = $lastDay and status = 'Y'",
                     'order' => 'rank desc',
