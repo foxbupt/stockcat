@@ -262,12 +262,10 @@ class PoolController extends Controller
         $recordList = StockPool::model()->findAll(array(
                     'condition' => "day = $lastDay and status = 'Y'",
                     'order' => 'rank desc',
-        			'limit' => $count,
                 ));
         $sidList = StockUtil::getStockList($location);
 
-        $rankList = array();
-        $datamap = array();
+        $rankList = $datamap = array();
 		foreach ($recordList as $record)
         {
             $sid = $record->sid;
@@ -291,6 +289,11 @@ class PoolController extends Controller
             $rankInfo['source_label'] = implode("|", $sourceList);
             $rankList[] = $rankInfo; 
         	$datamap[$sid] = DataModel::getHQData($sid, $day);	
+        	
+            if (count($rankList) >= $count)
+            {
+            	break;
+            }
         }
         
         var_dump(count($rankList));
