@@ -293,6 +293,7 @@ class PoolController extends Controller
         	$datamap[$sid] = DataModel::getHQData($sid, $day);	
         }
         
+        var_dump(count($rankList));
         $this->render('rank', array(                   
                     'rankList' => $rankList,
         			'datamap' => $datamap,
