@@ -296,7 +296,6 @@ class PoolController extends Controller
             }
         }
         
-        var_dump(count($rankList));
         $this->render('rank', array(                   
                     'rankList' => $rankList,
         			'datamap' => $datamap,

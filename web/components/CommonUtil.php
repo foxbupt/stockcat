@@ -328,7 +328,10 @@ class CommonUtil
 
     /**
      * @desc 获取最近开盘的日期
-     *
+     * TODO: 根据当前时间的市场交易状态(是否闭市), 灵活判断返回日期, 需要返回2个日期:
+     * data_day: 离线数据返回昨天, 实时数据返回当天
+     * hq_day: 行情数据返回当天
+     * 
      * @param int $day
      * @param int $location
      * @return int

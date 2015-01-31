@@ -44,7 +44,7 @@ class AnalyzeCommand extends CConsoleCommand
                 echo "op=stock_match_succ day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($result) . "\n";
 				
                 // 添加到股票池
-                $poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_CONT, array('wave' => CommonUtil::DIRECTION_UP));
+                $poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_CONT, array('trend' => CommonUtil::DIRECTION_UP));
                 echo "op=add_pool_succ result=" . ($poolResult? 1:0) . " day=$day sid=$sid code=$scode name=" . $stockInfo['name'] . "\n";
             }
         }
