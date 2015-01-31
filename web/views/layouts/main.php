@@ -41,11 +41,11 @@
 								
 								<li class="dropdown">
 								  <a class="dropdown-toggle" data-toggle="dropdown">
-								    	昨日涨停列表 <span class="caret"></span>
+								    	评级列表 <span class="caret"></span>
 								  </a>
 								  <ul class="dropdown-menu" role="menu" >
-								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">A股</a></li>
-								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit', array('location' => CommonUtil::LOCATION_US)); ?>">美股</a></li>
+								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/rankList'); ?>">A股</a></li>
+								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/rankList', array('location' => CommonUtil::LOCATION_US)); ?>">美股</a></li>
 								  </ul>
 								</li>
 								
@@ -66,6 +66,16 @@
 								  <ul class="dropdown-menu" role="menu" >
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/upresist'); ?>">A股</a></li>
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/upresist', array('location' => CommonUtil::LOCATION_US)); ?>">美股</a></li>
+								  </ul>
+								</li>
+								
+								<li class="dropdown">
+								  <a class="dropdown-toggle" data-toggle="dropdown">
+								    	昨日涨停列表 <span class="caret"></span>
+								  </a>
+								  <ul class="dropdown-menu" role="menu" >
+								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">A股</a></li>
+								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit', array('location' => CommonUtil::LOCATION_US)); ?>">美股</a></li>
 								  </ul>
 								</li>
 								
