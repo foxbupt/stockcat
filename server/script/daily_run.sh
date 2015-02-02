@@ -27,6 +27,12 @@ main()
     # 分析出连续上涨的股票
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $location $day 10 >> $result_path/$log
 
+    # 每天更新突破趋势阻力位的股票列表
+    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php top $location >> $result_path/uptrend_${location}_${day}.log
+
+    # 更新rank
+    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php rank ${day} $location >> $result_path/rank_${location}.log
+
     echo "finish"
 }
 
