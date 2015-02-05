@@ -33,18 +33,12 @@
 					<p>最低:<?php echo CommonUtil::formatNumber($dailyData['low_price']); ?></p>
 				</div>
 			</div>
-			<div class="row">
-				<div class="navbar">
-					<div class="navbar-inner">
-						<div class="container">
-							<ul class="nav">
-								<li>成交量: <?php echo CommonUtil::formatNumber($dailyData['volume']/10000) . "万手"; ?></li>
-								<li>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
-								<li>上涨因子: <?php echo CommonUtil::formatNumber($dailyPolicy['rise_factor'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
-							</ul>
-						</div>
-					</div>
-				</div>
+			<div class="row">			
+				<ul class="nav">
+					<li>成交量: <?php echo CommonUtil::formatNumber($dailyData['volume']/10000) . "万手"; ?></li>
+					<li>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
+					<li>上涨因子: <?php echo CommonUtil::formatNumber($dailyPolicy['rise_factor'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
+				</ul>
 			</div>			
 		</div>
 	</div>
