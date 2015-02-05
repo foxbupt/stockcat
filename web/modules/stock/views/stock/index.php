@@ -15,7 +15,7 @@
                 </p>
 			</div>
 		</div>
-		<div class="span8">
+		<div class="offset1 span8">
 			<div class="row">
 				<p class="text-center" style="font-size:16px;">当前时间: <?php echo $curTime; ?></p>
 			</div>
@@ -35,9 +35,9 @@
 			</div>
 			<div class="row">
 				<ul class="nav nav-pills">
-					<li>成交量: <?php echo $dailyData['volume']; ?></li>
-					<li>量比: <?php echo $dailyPolicy['volume_ratio']; ?></li>
-					<li>上涨因子: <?php echo $dailyPolicy['rise_factor']; ?></li>
+					<li>成交量: <?php echo CommonUtil::formatNumber($dailyData['volume']/10000) . "万手"; ?></li>
+					<li>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
+					<li>上涨因子: <?php echo CommonUtil::formatNumber($dailyPolicy['rise_factor'], CommonUtil::FORMAT_TYPE_PORTION); ?></li>
 				</ul>
 			</div>			
 		</div>
