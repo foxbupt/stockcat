@@ -6,10 +6,13 @@
 				<p class="text-center"><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
 			</div>
 			<div class="row">
-				<h1 class="text-center" style="color:#fe0002;"><?php echo $hqData['daily']['close_price']; ?></h1>
+				<h1 class="text-center" style="color:#fe0002;"><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></h1>
 			</div>
 			<div class="row">
-                <p class="text-center" style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?> <?php echo $prefix . $hqData['daily']['vary_portion']; ?></p>
+                <p class="text-center" style="color:#fe0002">
+                	<?php echo $prefix . CommonUtil::formatNumber($hqData['daily']['vary_price']); ?> 
+                	<?php echo $prefix . CommonUtil::formatNumber($hqData['daily']['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>
+                </p>
 			</div>
 		</div>
 		<div class="span8">
@@ -18,17 +21,24 @@
 			</div>
 			<div class="row">
 				<div class="span2">
-					<p>昨收:  <?php echo $dailyData['last_close_price']; ?></p>
+					<p>昨收:  <?php echo CommonUtil::formatNumber($dailyData['last_close_price']); ?></p>
 				</div>
 				<div class="span2">
-					<p>今开:  <?php echo $dailyData['open_price']; ?></p>
+					<p>今开:  <?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></p>
 				</div>
 				<div class="span2">
-					<p>最高: <?php echo $dailyData['high_price']; ?></p>
+					<p>最高: <?php echo CommonUtil::formatNumber($dailyData['high_price']); ?></p>
 				</div>
 				<div class="span2">
-					<p>最低:<?php echo $dailyData['low_price']; ?></p>
+					<p>最低:<?php echo CommonUtil::formatNumber($dailyData['low_price']); ?></p>
 				</div>
+			</div>
+			<div class="row">
+				<ul class="nav nav-pills">
+					<li>成交量: <?php echo $dailyData['volume']; ?></li>
+					<li>量比: <?php echo $dailyPolicy['volume_ratio']; ?></li>
+					<li>上涨因子: <?php echo $dailyPolicy['rise_factor']; ?></li>
+				</ul>
 			</div>			
 		</div>
 	</div>

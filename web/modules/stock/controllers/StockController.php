@@ -52,12 +52,12 @@ class StockController extends Controller
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $marketOpen = CommonUtil::isMarketOpen($day);
         $openDay = CommonUtil::getParamDay($day);
-        var_dump($day, $marketOpen, $openDay);
+        // var_dump($day, $marketOpen, $openDay);
         $curTime = intval(date('His'));
 
         $stockInfo = StockUtil::getStockInfo($sid);
         $hqData = DataModel::getHQData($sid, $openDay);
-        var_dump($hqData);
+        // var_dump($hqData);
 		$prefix = "";
 		if ($hqData['daily']['vary_price'] > 0.00)
 		{
@@ -100,6 +100,7 @@ class StockController extends Controller
                     'stockInfo' => $stockInfo,
                     'hqData' => $hqData,
         			'dailyData' => $hqData['daily'],
+        			'dailyPolicy' => $hqData['policy'],
         			'prefix' => $prefix,
         			'poolList' => $poolRecordList,
         			'poolMap' => $poolInfoMap,
