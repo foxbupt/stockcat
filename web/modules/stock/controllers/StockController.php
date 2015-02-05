@@ -99,6 +99,7 @@ class StockController extends Controller
                     'openDay' => $openDay,
                     'stockInfo' => $stockInfo,
                     'hqData' => $hqData,
+        			'dailyData' => $hqData['daily'],
         			'prefix' => $prefix,
         			'poolList' => $poolRecordList,
         			'poolMap' => $poolInfoMap,
