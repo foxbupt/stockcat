@@ -46,12 +46,12 @@
 		</table>	
 	</div>
 	
-	<div class="row">
+	<div>
 	<?php $this->widget('application.extensions.StockTrendWidget', array(
          'sid' => $sid,
          'trendType' => CommonUtil::TREND_FIELD_PRICE,
          'startDay' => $trendStartDay,
-         'endDay' => $day,
+         'endDay' => $openDay,
 	));?>
 	</div>
 </div>
