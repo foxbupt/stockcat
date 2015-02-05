@@ -23,7 +23,7 @@ td {
 				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/stock/stock/add');?>">添加股票</a>
 			</p>
 			<table class="table table-bordered">
-            <caption>当前日期为<?php echo $lastDay;?>, 当前共有<strong><?php echo count($orderList); ?></strong>支关注股票</caption>
+            <caption>当前日期为<?php echo $day;?>, 当前共有<strong><?php echo count($orderList); ?></strong>支关注股票</caption>
 				<thead>
 					<tr>
 						<th>股票id</th>
