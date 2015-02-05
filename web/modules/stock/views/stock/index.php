@@ -64,7 +64,14 @@
 					<td><?php echo $poolRecord->volume_ratio; ?></td>
 					<td><?php echo $poolRecord->rise_factor; ?></td>
 					<td><?php echo CommonUtil::formatSource($poolRecord->source); ?></td>
-					<td><button class="btn btn-primary" id="op-<?php echo $poolRecord->day; ?>">展开</button></td>
+					<td><a class="btn btn-primary" id="op-<?php echo $poolRecord->day; ?>">展开</a></td>
+					
+					<a class="btn btn-primary" data-toggle="collapse" href="#collapseExample-<?php echo $poolRecord->day;?>" aria-expanded="false"></a>
+					<div class="collapse" id="collapseExample-<?php echo $poolRecord->day;?>">
+					  <div class="well">
+					    	<?php echo $poolRecord->day;?> -12345
+					  </div>
+					</div>
 				</tr>
 				<?php endforeach; ?>
 			</tbody>
