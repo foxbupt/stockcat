@@ -1,6 +1,6 @@
 <script src="http://echarts.baidu.com/build/dist/echarts.js"></script>
 <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
-<div id="main" style="height:600px"></div>
+<div id="main" style="height:<?php echo $height; ?>px"></div>
 
 <script type="text/javascript">
 	var trendList =  eval ("(" + '<?php echo json_encode($trendList); ?>' + ")");

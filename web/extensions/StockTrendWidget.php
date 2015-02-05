@@ -7,9 +7,11 @@
 class StockTrendWidget extends CWidget 
 {
 	public $sid;
-	public $trendType;
+	public $trendType = CommonUtil::TREND_FIELD_PRICE;
 	public $startDay;
 	public $endDay;
+	// 趋势图高度, 缺省为600
+	public $height = 600;
 	
 	public function run()
 	{
@@ -25,6 +27,7 @@ class StockTrendWidget extends CWidget
 				'startDay' => $this->startDay,
 				'endDay' => $this->endDay,
 				'trendList' => $data['trendList'],
+				'height' => $this->height,
 		));
 	}
 	

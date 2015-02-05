@@ -51,8 +51,8 @@
 <div>
 <?php $this->widget('application.extensions.StockTrendWidget', array(
         'sid' => $sid,
-        'trendType' => CommonUtil::TREND_FIELD_PRICE,
         'startDay' => $trendStartDay,
         'endDay' => $openDay,
+		'height' => 400,
 ));?>
 </div>
