@@ -12,9 +12,37 @@
 	</div>
 	<div class="row">
 		<div class="span4">
-			<span style="color:#fe0002"><?php echo $hqData['daily']['close_price']; ?></span>
-			<span style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?></span>
-			<span style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_portion'] . "%"; ?></span>
+			<i style="color:#fe0002"><?php echo $hqData['daily']['close_price']; ?></i>
+			<i style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?></i>
+			<i style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_portion'] . "%"; ?></i>
 		</div>
+	</div>
+	
+	<div class="row">
+		<table class="table table-bordered">
+            <caption>共有<strong><?php echo count($poolList); ?></strong>条关注记录</caption>
+			<thead>
+				<tr>
+					<th>日期</th>
+					<th>价格</th>
+					<th>成交量放大</th>
+					<th>上涨因子</th>
+					<th>关注原因</th>	
+					<th>操作</th>					
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($poolList as $poolRecord): ?>
+				<tr class="pull-center">
+					<td><?php echo $poolRecord->day; ?></td>
+					<td><?php echo CommonUtil::formatNumber($poolRecord->close_price); ?></td>
+					<td><?php echo $poolRecord->volume_ratio; ?></td>
+					<td><?php echo $poolRecord->rise_factor; ?></td>
+					<td><?php echo CommonUtil::formatSource($poolRecord->source); ?></td>
+					<td><button class="primary" id="op-<?php echo $poolRecord->day; ?>">展开</button></td>
+				</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>	
 	</div>
 </div>

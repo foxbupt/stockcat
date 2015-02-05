@@ -94,8 +94,23 @@ class CommonUtil
 				20151225
 			));
 
-	static $timestones = array(
+	// 市场交易状态: 0 未开盘 1 开盘交易中  2 午间休盘 3 闭市
+	const MSTATE_NOT_OPEN = 0;
+	const MSTATE_OPENED = 1;
+	const MSTATE_PAUSED = 2;
+	const MSTATE_CLOSED = 3;
 	
+	static $mstateMaps = array(
+			self::MSTATE_NOT_OPEN => '未开盘',
+			self::MSTATE_OPENED => '交易中',
+			self::MSTATE_PAUSED => '午间休盘',
+			self::MSTATE_CLOSED => '闭市',
+		);
+	
+	// 市场的开市时间段
+	static $timestones = array(
+			self::LOCATION_CHINA =>	
+                array('start' => 92500, 'end' => 150000),
 		);
 					
 	/**
@@ -342,24 +357,30 @@ class CommonUtil
     }
     
     /**
-     * @desc 获取当前时刻的市场交易状态
-     * @param int $timestamp
-     * @return int 0 未开市 1 交易中 2 中间休息 3 已毕市
+     * @desc 获取当前时刻的市场交易状态(暂时不支持中间休息的状态)
+     * @param int $location
+     * @param int $timevalue 格式为HHMMSS, 缺省null表示采用当前时间
+     * @return int self::MSTATE_xxx
      */
-    public static function getMarketState($timestamp = null)
+    public static function getMarketState($location = self::LOCATION_CHINA, $timevalue = null)
     {
-        $stones = array(92500, 113000, 130000, 150000);
-        $timenumber = intval(date('His', empty($timestamp)? time() : $timestamp));
-
-        foreach ($stones as $index => $point)
+        $timenumber = empty($timevalue)? intval(date('His', time())) : intval($timevalue);
+		if (!isset(self::$timestones[$location])) 
+		{
+			return self::MSTATE_NOT_OPEN;
+		}
+		
+        $stones = self::$timestones[$location];
+        if ($timenumber < $stones['start'])
         {
-            if ($timenumber <= $point)
-            {
-                return $index;
-            }
+        	return self::MSTATE_NOT_OPEN;
+        }
+        else if ($timenumber > $stones['end'])
+        {
+        	return self::MSTATE_CLOSED;
         }
         
-        return 0; 
+        return self::MSTATE_OPENED; 
     }
 
     /**
@@ -426,6 +447,27 @@ class CommonUtil
     	{
     		return self::$ecodeMaps[$ecode] . "." . $code;
     	}
+    }
+    
+    /**
+     * @desc 返回展示的source字符串
+     *
+     * @param int $source
+     * @param string $delim 分割符
+     * @return string
+     */
+    public static function formatSource($source, $delim = "|")
+    {
+		$values = array();
+		foreach (self::$sourceMaps as $key => $label)
+		{
+			if ($source & $key)
+			{
+				$values[] = $label;
+			}	
+		}
+		
+		return implode($delim, $values);
     }
 }
 	

@@ -51,7 +51,7 @@ class StockController extends Controller
 
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $marketOpen = CommonUtil::isMarketOpen($day);
-        $openDay = $marketOpen? $day : CommonUtil::getPastOpenDay($day, 1);
+        $openDay = CommonUtil::getParamDay($day);
         var_dump($day, $marketOpen, $openDay);
         $curTime = intval(date('His'));
 
@@ -71,10 +71,26 @@ class StockController extends Controller
         /**
          * 页面展示内容包括:
          * 1、股票基本信息: 昨收/今开/当前价格/涨跌幅/换手率/成交量/量比/上涨因子/市值
-         * 2、近2周内股票池记录列表: 连续上涨/价格突破/趋势突破
+         * 2、近1月内股票池记录列表: 连续上涨/价格突破/趋势突破 (TODO: 优先以表格展示)
          * 3、多tab曲线图: 当日分时K线/趋势图 /日K线图
          * 4、
          */
+		$startDay = intval(date('Ymd', strtotime("1 month ago", strtotime($day))));
+		$poolInfoMap = array();
+		$poolRecordList = StockPool::model()->findAll(array(
+							'condition' => "sid = :sid and day >= :start and day <= :end and status = 'Y'",
+							'params' => array(
+								'sid' => $sid,
+								'start' => $startDay,
+								'end' => $day,
+							),
+							'order' => 'day desc'	
+						));
+		foreach ($poolRecordList as $record)
+		{
+			$poolInfoMap[$record->day] = DataModel::getPoolInfo($sid, $record->day, $record->source);					
+		}
+		
         $this->render('index', array(       
                     'day' => $day,
         			'curTime' => $curTime,
@@ -83,6 +99,8 @@ class StockController extends Controller
                     'stockInfo' => $stockInfo,
                     'hqData' => $hqData,
         			'prefix' => $prefix,
+        			'poolList' => $poolRecordList,
+        			'poolMap' => $poolInfoMap,
                 ));
 	}
 	

@@ -39,10 +39,9 @@ td {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($rankList as $rankInfo): ?>
-                        <?php $sid = $rankInfo['sid']; ?>
-
-                        <?php $dataItem = $datamap[$sid]; ?>
+        			<?php foreach ($orderList as $sid): ?>
+       					<?php $rankInfo = $rankmap[$sid]; ?>
+       					<?php $dataItem = $datamap[$sid]; ?>       					
                         <?php $dailyData = $dataItem['daily']; ?>
                         <?php $dailyPolicyData = $dataItem['policy']; ?>
                         <?php $stockInfo = $dataItem['stock']; ?>
@@ -55,14 +54,14 @@ td {
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
 						<td><?php echo $rankInfo['rank']; ?></td>
-						<td><?php echo $rankInfo['source_label']; ?></td>
+						<td><?php echo CommonUtil::formatSource($rankInfo['source']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($rankInfo['volume_ratio']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($rankInfo['close_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
-						<td><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+						<td class="<?php echo ($dailyData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 					</tr>	
-					<?php endforeach; ?>
+        			<?php endforeach; ?>   		
 				</tbody>
 			</table>
 		</div>

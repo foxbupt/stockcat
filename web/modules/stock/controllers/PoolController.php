@@ -67,9 +67,8 @@ class PoolController extends Controller
         $dataMap = array_values($hqDataMap);
         // var_dump($dataMap);
         $curTime = isset($dataMap[0]['daily'])? $dataMap[0]['daily']['time'] : date('His');
-        $curHour = intval(substr($curTime, 0, 2));
-        $curMin = intval(substr($curTime, 2, 2));
-        if (($curHour == 9 && $curMin >= 25) || ($curHour > 9 && $curHour < 15) || ($curHour == 15 && $curMin == 0))
+        $marketState = CommonUtil::getMarketState($location);
+        if ($marketState >= CommonUtil::MSTATE_OPENED)
         {
 		    $dataMap = SortHelper::sort($dataMap, array("daily.vary_portion", "daily.open_vary_portion"), false);
         }
@@ -265,7 +264,7 @@ class PoolController extends Controller
                 ));
         $sidList = StockUtil::getStockList($location);
 
-        $rankList = $datamap = array();
+        $rankmap = $datamap = $orderList = array(); 		
 		foreach ($recordList as $record)
         {
             $sid = $record->sid;
@@ -275,30 +274,30 @@ class PoolController extends Controller
         	}
 
             $rankInfo = $record->getAttributes();
-            
-            $source = $rankInfo['source'];            
-            $sourceList = array();
-            foreach (CommonUtil::$sourceMaps as $sourceValue => $sourceStr)
-            {
-            	if (($source & $sourceValue) == $sourceValue)
-            	{
-            		$sourceList[] = $sourceStr;	
-            	}
-            }
-            
-            $rankInfo['source_label'] = implode("|", $sourceList);
-            $rankList[] = $rankInfo; 
+            $rankmap[$sid] = $rankInfo; 
         	$datamap[$sid] = DataModel::getHQData($sid, $day);	
+        	$orderList[] = $sid;
         	
-            if (count($rankList) >= $count)
+            if (count($rankmap) >= $count)
             {
             	break;
             }
         }
         
+        if (CommonUtil::getMarketState($location) >= CommonUtil::MSTATE_OPENED)
+        {
+        	$datamap = SortHelper::sort($datamap, array("daily.vary_portion", "daily.open_vary_portion"), false);
+        	foreach ($datamap as $dataItem)
+        	{
+        		$datamap[$dataItem['sid']] = $dataItem;
+        		$orderList[] = $dataItem['sid'];
+        	}
+		}
+		
         $this->render('rank', array(                   
-                    'rankList' => $rankList,
+                    'rankmap' => $rankmap,
         			'datamap' => $datamap,
+        			'orderList' => $orderList,	
                     'day' => $day,
                     'lastDay' => $lastDay,
                 ));

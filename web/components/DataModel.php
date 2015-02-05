@@ -228,5 +228,53 @@ class DataModel
        	
        	return $dataItem;
     }
+    
+    /**
+     * @desc 获取股票池的相关信息
+     *
+     * @param int $sid
+     * @param int $day
+     * @param int $source
+     * @return array('cont', 'threshold', 'pivot')
+     */
+    public static function getPoolInfo($sid, $day, $source)
+    {
+    	$poolInfo = array();
+    	
+    	if ($source & CommonUtil::SOURCE_CONT)	
+    	{
+    		$contRecord = StockCont::model()->findByAttributes(array(
+    							'sid' => $sid, 'day' => $day, 'status' => 'Y')
+    					);
+    		if ($contRecord)
+    		{
+    			$poolInfo['cont'] = $contRecord->getAttributes();
+    		}
+    	}
+    	
+    	if ($source & CommonUtil::SOURCE_PRICE_THRESHOLD)	
+    	{
+    		$thresholdRecord = StockPriceThreshold::model()->findByAttributes(array(
+    							'sid' => $sid, 'day' => $day, 'status' => 'Y')
+    					);
+    		if ($thresholdRecord)
+    		{
+    			$poolInfo['threshold'] = $thresholdRecord->getAttributes();
+    		}
+    	}
+    	
+    	if ($source & CommonUtil::SOURCE_UP_RESIST)	
+    	{
+    		$pivotRecord = StockPivot::model()->findByAttributes(array(
+    							'sid' => $sid, 'day' => $day, 'status' => 'Y')
+    					);
+    		if ($pivotRecord)
+    		{
+    			$poolInfo['pivot'] = $pivotRecord->getAttributes();
+    		}
+    	}
+    	
+    	return $poolInfo;
+    }
 }
 ?>

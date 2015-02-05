@@ -121,7 +121,7 @@ class TopCommand extends CConsoleCommand
 			$trendData['current_price'] = $closePrice;
 				
 			// TODO: 需要判断shave
-			if ((CommonUtil::DIRECTION_UP == $trendData['trend']) && ($resistVaryPortion >= 2.0))
+			if ((CommonUtil::DIRECTION_UP == $trendData['trend']) && ($resistVaryPortion >= -1.0))
 			{								
 				echo "op=recommend_trend_above_resist " . StatLogUtil::array2log($trendData) . "\n";	
 				$recommendList[] = $trendData;
