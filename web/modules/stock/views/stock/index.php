@@ -1,20 +1,40 @@
 <div class="container-fluid">
 	<div class="row container-fluid">
 		<div class="span4">
-			<div style="float:left;overflow:hidden;background:url(http://mat1.gtimg.com/finance/images/stock/p/hqhk_gg/hqpanel_v1.1/sprite-repeat.png) 0 0 repeat-x;">
-				<h1 style="background: transparent; line-height: 26px; font-size: 14px; text-align: center; width: 120px; padding: 0; height: 26px; "><?php echo $stockInfo['name']; ?></h1>
-				<h1 style="background: transparent; font-size: 11px; line-height: 22px; text-align: center; margin-top: -7px; "><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></h1>
+			<div class="row">
+				<p><?php echo $stockInfo['name']; ?></p>
+				<p><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
+			</div>
+			<div class="row">
+				<h1 style="color:#fe0002;font-size:16px;"><?php echo $hqData['daily']['close_price']; ?></h1>
+			</div>
+			<div class="row">
+				<p style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?></p>
+				<p style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_portion']; ?></p>
 			</div>
 		</div>
 		<div class="offset2 span8">
-			<h5>当前时间: <?php echo $curTime; ?></h5>
-		</div>
-	</div>
-	<div class="row">
-		<div class="span4">
-			<i style="color:#fe0002"><?php echo $hqData['daily']['close_price']; ?></i>
-			<i style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?></i>
-			<i style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_portion'] . "%"; ?></i>
+			<div class="row">
+				<p>当前时间: <?php echo $curTime; ?></p>
+			</div>
+			<div class="row">
+				<div class="span3">
+					<label>昨收:</label>
+					<p><?php echo $dailyData['last_close_price']; ?></p>
+				</div>
+				<div class="offset2 span3">
+					<label>今开:</label>
+					<p><?php echo $dailyData['open_price']; ?></p>
+				</div>
+				<div class="offset2 span3">
+					<label>最高:</label>
+					<p><?php echo $dailyData['high_price']; ?></p>
+				</div>
+				<div class="offset2 span3">
+					<label>最低:</label>
+					<p><?php echo $dailyData['low_price']; ?></p>
+				</div>
+			</div>			
 		</div>
 	</div>
 	
