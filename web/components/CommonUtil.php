@@ -371,7 +371,7 @@ class CommonUtil
 		}
 		
         $stone = self::$timestones[$location];
-		var_dump($timenumber, $stone);
+		// var_dump($timenumber, $stone);
         if ($timenumber < $stone['start'])
         {
         	return self::MSTATE_NOT_OPEN;

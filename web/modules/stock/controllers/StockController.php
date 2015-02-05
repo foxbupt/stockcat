@@ -91,7 +91,8 @@ class StockController extends Controller
 			$poolInfoMap[$record->day] = DataModel::getPoolInfo($sid, $record->day, $record->source);					
 		}
 		
-        $this->render('index', array(       
+        $this->render('index', array(    
+        			'sid' => $sid,   
                     'day' => $day,
         			'curTime' => $curTime,
         			'marketOpen' => $marketOpen,
@@ -101,6 +102,7 @@ class StockController extends Controller
         			'prefix' => $prefix,
         			'poolList' => $poolRecordList,
         			'poolMap' => $poolInfoMap,
+        			'trendStartDay' => date('Ymd', strtotime("6 month ago", strtotime($openDay))),
                 ));
 	}
 	

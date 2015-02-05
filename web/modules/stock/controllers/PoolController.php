@@ -287,7 +287,6 @@ class PoolController extends Controller
         if (CommonUtil::getMarketState($location) >= CommonUtil::MSTATE_OPENED)
         {
         	$datamap = SortHelper::sort($datamap, array("daily.vary_portion", "daily.open_vary_portion"), false);
-        	var_dump($datamap[0]);
         	$orderList = array();
         	foreach ($datamap as $dataItem)
         	{

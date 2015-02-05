@@ -39,10 +39,19 @@
 					<td><?php echo $poolRecord->volume_ratio; ?></td>
 					<td><?php echo $poolRecord->rise_factor; ?></td>
 					<td><?php echo CommonUtil::formatSource($poolRecord->source); ?></td>
-					<td><button class="primary" id="op-<?php echo $poolRecord->day; ?>">展开</button></td>
+					<td><button class="btn btn-primary" id="op-<?php echo $poolRecord->day; ?>">展开</button></td>
 				</tr>
 				<?php endforeach; ?>
 			</tbody>
 		</table>	
+	</div>
+	
+	<div class="row">
+	<?php $this->widget('application.extensions.StockTrendWidget', array(
+         'sid' => $sid,
+         'trendType' => CommonUtil::TREND_FIELD_PRICE,
+         'startDay' => $trendStartDay,
+         'endDay' => $day,
+	));?>
 	</div>
 </div>
