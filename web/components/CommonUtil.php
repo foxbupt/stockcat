@@ -370,12 +370,13 @@ class CommonUtil
 			return self::MSTATE_NOT_OPEN;
 		}
 		
-        $stones = self::$timestones[$location];
-        if ($timenumber < $stones['start'])
+        $stone = self::$timestones[$location];
+		var_dump($timenumber, $stone);
+        if ($timenumber < $stone['start'])
         {
         	return self::MSTATE_NOT_OPEN;
         }
-        else if ($timenumber > $stones['end'])
+        else if ($timenumber > $stone['end'])
         {
         	return self::MSTATE_CLOSED;
         }
