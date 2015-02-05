@@ -1,38 +1,33 @@
 <div class="container-fluid">
 	<div class="row container-fluid">
-		<div class="span4">
+		<div class="offset1 span1">
 			<div class="row">
-				<p><?php echo $stockInfo['name']; ?></p>
-				<p><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
+				<p class="text-center"><?php echo $stockInfo['name']; ?></p>
+				<p class="text-center"><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
 			</div>
 			<div class="row">
-				<h1 style="color:#fe0002;font-size:16px;"><?php echo $hqData['daily']['close_price']; ?></h1>
+				<h1 class="text-center" style="color:#fe0002;"><?php echo $hqData['daily']['close_price']; ?></h1>
 			</div>
 			<div class="row">
-				<p style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?></p>
-				<p style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_portion']; ?></p>
+                <p class="text-center" style="color:#fe0002"><?php echo $prefix . $hqData['daily']['vary_price']; ?> <?php echo $prefix . $hqData['daily']['vary_portion']; ?></p>
 			</div>
 		</div>
-		<div class="offset2 span8">
+		<div class="span8">
 			<div class="row">
-				<p>当前时间: <?php echo $curTime; ?></p>
+				<p class="text-center" style="font-size:16px;">当前时间: <?php echo $curTime; ?></p>
 			</div>
 			<div class="row">
-				<div class="span3">
-					<label>昨收:</label>
-					<p><?php echo $dailyData['last_close_price']; ?></p>
+				<div class="span2">
+					<p>昨收:  <?php echo $dailyData['last_close_price']; ?></p>
 				</div>
-				<div class="offset2 span3">
-					<label>今开:</label>
-					<p><?php echo $dailyData['open_price']; ?></p>
+				<div class="span2">
+					<p>今开:  <?php echo $dailyData['open_price']; ?></p>
 				</div>
-				<div class="offset2 span3">
-					<label>最高:</label>
-					<p><?php echo $dailyData['high_price']; ?></p>
+				<div class="span2">
+					<p>最高: <?php echo $dailyData['high_price']; ?></p>
 				</div>
-				<div class="offset2 span3">
-					<label>最低:</label>
-					<p><?php echo $dailyData['low_price']; ?></p>
+				<div class="span2">
+					<p>最低:<?php echo $dailyData['low_price']; ?></p>
 				</div>
 			</div>			
 		</div>
