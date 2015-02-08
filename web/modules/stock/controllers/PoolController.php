@@ -16,12 +16,12 @@ class PoolController extends Controller
     public function actionIndex()
     {
         // TODO: 目前查询上一个有效交易日的连续上涨/价格突破历史和年内新高的股票列表, 后续统一查询股票池列表
-        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $dayParam = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
         
-        // $day = CommonUtil::getParamDay($day);
-        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
-        // var_dump($day, $lastDay);
+        $day = CommonUtil::getParamDay($dayParam, $location);
+        $lastDay = ($day == $dayParam)? CommonUtil::getPastOpenDay($day, 1, $location) : $day;
+        // var_dump($dayParam, $day, $lastDay);
 
 		$contInfo = DataModel::getContList($lastDay, $day);
 		$contMap = $contInfo['contmap'];
@@ -166,10 +166,11 @@ class PoolController extends Controller
      */
     public function actionThreshold()
     {
-     	$day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+     	$dayParam = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
         $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 
-        $lastDay = CommonUtil::getPastOpenDay($day, 1, $location);
+        $day = CommonUtil::getParamDay($dayParam);
+        $lastDay = ($day == $dayParam)? CommonUtil::getPastOpenDay($day, 1, $location) : $day;
         // var_dump($day, $lastDay);
 
 		$thresholdInfo = DataModel::getThresholdList($lastDay, $day, array(3, 4), array(1, 2, 3, 4));	
