@@ -57,9 +57,10 @@ setTimeout('refreshPage()', 120 * 1000);
                     <?php $stockInfo = isset($dataItem['daily'])? $dailyData : $dataItem['stock']; ?>
                     <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
                     <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $day); ?>
-
+					<?php $viewUrl = Yii::app()->createUrl('/stock/stock/index', array('sid' => $sid)); ?>
+					
 					<tr class="pull-center">
-                        <td><a href="<?php echo $trendUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
+                        <td><a href="<?php echo $viewUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
                         <td><?php echo implode("|", $datamap[$sid]['tags']); ?></td>
