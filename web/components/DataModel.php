@@ -220,10 +220,19 @@ class DataModel
             // $lastday = CommonUtil::getPastOpenDay($day, 1, CommonUtil::LOCATION_US);
        		$datalist = StockUtil::getStockData($sid, $day, $day);
             // var_dump($sid, $day, count($datalist));
-       		if (1 == count($datalist))
+       		if (count($datalist) > 0)
        		{
        			$dataItem['daily'] = $datalist[0];
        		}
+            else // get last_close_price
+            {
+                $lastday = CommonUtil::getPastOpenDay($day, 1, $dataItem['stock']['location']);
+       		    $datalist = StockUtil::getStockData($sid, $lastday, $day);
+                if (count($datalist))
+                {
+                    $dataItem['daily']['last_close_price'] = $datalist[0]['close_price'];
+                }
+            }
        	}
        	
        	return $dataItem;
