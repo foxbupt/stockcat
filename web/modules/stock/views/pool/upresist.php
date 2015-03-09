@@ -56,10 +56,10 @@ td {
 
 						<td><?php echo CommonUtil::formatNumber($resistItem->close_price); ?></td>
 						<td><?php echo CommonUtil::formatNumber($resistItem->resist); ?></td>
-						<td><?php echo CommonUtil::formatNumber($resistItem->resist_vary_portion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+						<td class="<?php echo ($resistItem->resist_vary_portion >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($resistItem->resist_vary_portion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
-						<td><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+						<td class="<?php echo ($dailyData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 					</tr>	
 					<?php endforeach; ?>
 				</tbody>
