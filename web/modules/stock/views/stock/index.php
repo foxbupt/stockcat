@@ -72,18 +72,19 @@
 					</td>
 					<div class="collapse" id="poolDetail-<?php echo $poolRecord->day;?>">
 						  <div class="well">
-						  		<?php $poolInfo = $poolMap[$poolRecord->day]; ?>
+						  		<?php $poolday = $poolRecord->day; ?>
+						  		<?php $poolInfo = $poolMap[$poolday]; ?>
 						  		<?php if (isset($poolInfo['cont'])): ?>
-						  		<p>累计涨幅:<?php echo CommonUtil::formatNumber($poolInfo['cont']['sum_price_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>|连续上涨:<?php echo $poolInfo['cont']['cont_days']; ?>天|开始日期:<?php echo $poolInfo['cont']['start_day'];?></p>
+						  		<p><?php echo $poolday;?>|累计涨幅:<?php echo CommonUtil::formatNumber($poolInfo['cont']['sum_price_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>|连续上涨:<?php echo $poolInfo['cont']['cont_days']; ?>天|开始日期:<?php echo $poolInfo['cont']['start_day'];?></p>
 						  		<?php endif; ?>
 						  		
 						  		<?php if (isset($poolInfo['threshold'])): ?>
 						  		<?php $isHighThreshold = ($poolInfo['threshold']['high_type'] > 0); ?>						  		
-						  		<p>价格突破:<?php echo $isHighThreshold? $highTypeValues[$poolInfo['threshold']['high_type']] : $lowTypeValues[$poolInfo['threshold']['low_type']]; ?></p>
+						  		<p><?php echo $poolday;?>|价格突破:<?php echo $isHighThreshold? $highTypeValues[$poolInfo['threshold']['high_type']] : $lowTypeValues[$poolInfo['threshold']['low_type']]; ?></p>
 						  		<?php endif; ?>
 						  		
 						  		<?php if (isset($poolInfo['pivot'])): ?>
-						  		<p>阻力位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist']); ?>|阻力位突破涨幅:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>|支撑位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support']);?>|支撑位幅度:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION);?></p>
+						  		<p><?php echo $poolday;?>|阻力位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist']); ?>|阻力位突破涨幅:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>|支撑位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support']);?>|支撑位幅度:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION);?></p>
 						  		<?php endif; ?>
 						  </div>
 					</div>
