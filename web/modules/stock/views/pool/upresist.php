@@ -23,7 +23,7 @@ td {
 				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/stock/stock/add');?>">添加股票</a>
 			</p>
 			<table class="table table-bordered">
-            <caption>当前日期为<?php echo $lastDay;?>, 当前共有<strong><?php echo count($recordList); ?></strong>支关注股票</caption>
+            <caption>当前日期为<?php echo $day;?>, 当前共有<strong><?php echo count($recordList); ?></strong>支关注股票</caption>
 				<thead>
 					<tr>
 						<th>股票id</th>
@@ -38,10 +38,10 @@ td {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($recordList as $resistItem): ?>
-                        <?php $sid = $resistItem->sid; ?>
-
+					<?php foreach ($orderList as $sid): ?>
                         <?php $dataItem = $datamap[$sid]; ?>
+                        <?php $resistItem = $resistMap[$sid]; ?>
+                        
                         <?php $dailyData = $dataItem['daily']; ?>
                         <?php $dailyPolicyData = $dataItem['policy']; ?>
                         <?php $stockInfo = $dataItem['stock']; ?>

@@ -221,8 +221,7 @@ class PoolController extends Controller
                 ));
         $sidList = StockUtil::getStockList($location);
 
-        $resistList = array();
-        $datamap = array();
+        $resistMap = $datamap = $orderList = array();
 		foreach ($recordList as $record)
         {
             $sid = $record->sid;
@@ -231,13 +230,26 @@ class PoolController extends Controller
         		continue;
         	}
 
-            $resistList[] = $record;
+            $resistMap[$sid] = $record;
         	$datamap[$sid] = DataModel::getHQData($sid, $day);	
+        	$orderList[] = $sid;
         }
         
+    	if (CommonUtil::getMarketState($location) >= CommonUtil::MSTATE_OPENED)
+        {
+        	$datamap = SortHelper::sort($datamap, array("daily.vary_portion", "daily.open_vary_portion"), false);
+        	$orderList = array();
+        	foreach ($datamap as $dataItem)
+        	{
+        		$datamap[$dataItem['sid']] = $dataItem;
+        		$orderList[] = $dataItem['sid'];
+        	}
+		}
+		
         $this->render('upresist', array(                   
-                    'recordList' => $resistList,
+                    'resistMap' => $resistMap,
         			'datamap' => $datamap,
+        			'orderList' => $orderList,
                     'day' => $day,
                     'lastDay' => $lastDay,
                 ));
