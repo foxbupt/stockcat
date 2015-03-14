@@ -61,6 +61,7 @@ main()
     done
 
     mysql -uwork -pslanissue -Ddb_stockcat < ${sql_filename}
+    rm -f ${result_filename} ${sql_filename}
 }
 
 cd ${0%/*}
