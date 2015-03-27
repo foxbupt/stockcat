@@ -14,7 +14,7 @@ import redis
 # 假期定义
 holidays = [20150101, 20150102, {'start': 20150218, 'end': 20150224}, 20150406,
         20150501, 20150622, {'start': 20151001, 'end':20151007}]
-us_holidays = [20150101,20150112,20150216,20150403,20150525,20150704,20150901,20151126,20151225]
+us_holidays = [20150101,20150216,20150403,20150525,20150704,20150901,20151126,20151225]
 # ecode
 ecodes = {1:"sh", 2:"sz", 3:"hk", 4:"NASDAQ", 5:"NYSE"}
 
@@ -162,11 +162,12 @@ def add_stock_pool(db_config, redis_config, sid, day, source, trend_info = dict(
                 fields.update(trend_info)
 
             # 获取当日行情数据
-            hqdata = get_hqdata(redis_config, sid, day)
+            hqdata = get_hqdata(db_config, redis_config, sid, day)
             if hqdata:
                 fields['close_price'] = hqdata['daily']['close_price']
-                fields['volume_ratio'] = round(float(hqdata['policy']['volume_ratio']), 2)
-                fields['rise_factor'] = round(float(hqdata['policy']['rise_factor']), 2)
+                if 'policy' in hqdata and hqdata['policy']:
+                    fields['volume_ratio'] = round(float(hqdata['policy']['volume_ratio']), 2)
+                    fields['rise_factor'] = round(float(hqdata['policy']['rise_factor']), 2)
             #print fields
 
             oper_sql = SqlUtil.create_insert_sql("t_stock_pool", fields)
@@ -387,12 +388,13 @@ def get_timenumber(location = 1):
 
 '''
     @desc: 获取股票当日行情数据
+    @param: db_config dict
     @param: redis_config dict
     @param: sid int
     @param: day int
     @return dict('daily', 'policy')
 '''
-def get_hqdata(redis_config, sid, day):
+def get_hqdata(db_config, redis_config, sid, day):
     hqdata = dict()
     redis_conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
     
@@ -401,6 +403,8 @@ def get_hqdata(redis_config, sid, day):
     if cache_value:
         hqdata['daily'] = json.loads(cache_value)
         hqdata['policy'] = redis_conn.hgetall("daily-policy-" + str(sid) + "-" + str(day))
+    else:
+        hqdata['daily'] = get_stock_data(db_config, sid, day)
 
     return hqdata
 
@@ -428,7 +432,7 @@ if __name__ == "__main__":
     print db_config, redis_config
 
     day = int(day)
-    hqdata = get_hqdata(redis_config, 116, day)
+    hqdata = get_hqdata(db_config, redis_config, 116, day)
     print hqdata
 
     try:
