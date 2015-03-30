@@ -470,6 +470,33 @@ class CommonUtil
 		
 		return implode($delim, $values);
     }
+    
+    /**
+	 * @desc 获取下一个有效交易日
+	 * @param int $day
+	 * @param int $location
+	 * @return int
+	 */
+    public static function nextDay($day, $location = CommonUtil::LOCATION_CHINA)
+    {
+    	$nextDay = $day;
+    	$timestamp = strtotime($day);    
+    	$offset = 1;
+    	
+        while (true)
+        {
+            $nextTimestamp = strtotime("${offset} days", $timestamp); 
+            $nextDay = date('Ymd', $nextTimestamp);
+            $offset += 1;
+
+            if (self::isMarketOpen($nextDay, $location))
+            {
+                return $nextDay;
+            }
+        }
+        
+        return $nextDay;
+    }
 }
 	
 ?>

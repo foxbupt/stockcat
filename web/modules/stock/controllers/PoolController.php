@@ -77,6 +77,8 @@ class PoolController extends Controller
                     'hqMap' => $dataMap,
                     'day' => $day,
                     'lastDay' => $lastDay,
+        			'nextDay' => CommonUtil::nextDay($day),
+        			'location' => $location,
                     'curTime' => $curTime,
         			'trendMap' => CommonUtil::getConfigObject("stock.direction"),
         			'opMap' => CommonUtil::getConfigObject("stock.op"),
@@ -316,5 +318,6 @@ class PoolController extends Controller
                     'lastDay' => $lastDay,
                 ));
     }
+    
 }
 ?>
