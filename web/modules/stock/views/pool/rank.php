@@ -20,6 +20,7 @@ td {
 		
 		<div>
 			<p class="pull-right">
+				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/stock/pool/rankList', array('day' => $nextDay, 'location' => $location));?>">明天</a>
 				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/stock/stock/add');?>">添加股票</a>
 			</p>
 			<table class="table table-bordered">

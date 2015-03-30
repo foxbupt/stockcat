@@ -254,6 +254,8 @@ class PoolController extends Controller
         			'orderList' => $orderList,
                     'day' => $day,
                     'lastDay' => $lastDay,
+        			'nextDay' => CommonUtil::nextDay($day),
+        			'location' => $location,
                 ));
     }
     
@@ -316,6 +318,8 @@ class PoolController extends Controller
         			'orderList' => $orderList,	
                     'day' => $day,
                     'lastDay' => $lastDay,
+        			'nextDay' => CommonUtil::nextDay($day),
+        			'location' => $location,
                 ));
     }
     
