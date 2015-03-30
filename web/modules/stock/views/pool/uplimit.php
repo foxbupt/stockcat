@@ -64,9 +64,9 @@ setTimeout('refreshPage()', 120 * 1000);
 
 						<td><?php echo CommonUtil::formatNumber($stockData['close_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($stockData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
-						<td><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
+						<td class="<?php echo ($dailyData['open_price'] >= $stockData['close_price'])? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
-						<td><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+						<td class="<?php echo ($dailyData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 					</tr>	
 					<?php endforeach; ?>
 				</tbody>
