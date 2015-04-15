@@ -107,7 +107,15 @@ class TopCommand extends CConsoleCommand
 					continue;
 				}
 			}
+			
 			$closePrice = (1 == count($stockDataList))? $stockDataList[0]['close_price'] : $latestTrendRecord->end_value;
+			$stockInfo = StockUtil::getStockInfo($sid);
+			$checkResult = self::checkOutCapital($closePrice, $stockInfo, (CommonUtil::LOCATION_CHINA == $location)? 10 : 15);
+			if (!$checkResult)
+			{
+				echo "op=low_out_capitalisation sid=$sid day=$day close_price=$closePrice out_capital=" . $stockInfo['out_capital'] . "\n";
+				continue;
+			}
 			
 			$pivotInfo = TrendHelper::getPivot($sid, $closePrice, $trendList);	
 			$supportVaryPortion = CommonUtil::calcPortion($closePrice, $pivotInfo['support']) * 100;
@@ -188,6 +196,31 @@ class TopCommand extends CConsoleCommand
 			echo "err=add_pivot_record_failed " . StatLogUtil::array2log($record->getErrors()) . "\n";	
 			return false;
 		}
+	}
+	
+	/**
+	 * @desc 检查流通市值是否超过指定数值
+	 *
+	 * @param double $closePrice
+	 * @param array $stockInfo
+	 * @param double $capitalAmount
+	 * @return boolean
+	 */
+	public static function checkOutCapital($closePrice, $stockInfo, $capitalAmount = 10)
+	{
+		$outCapital = $closePrice * floatval($stockInfo['out_capital']); 
+        if (CommonUtil::LOCATION_US == $stockInfo['location'])	// 美股股本单位为万股, 需要转换为亿
+        {
+        	$outCapital = $outCapital / 10000;
+        }
+        
+        // A股>10亿, 美股 >= 15亿刀(部分股票获取不到市值, 取不到股本的直接忽略)
+        if ($outCapital <= $capitalAmount)
+        {
+        	return false;
+        }
+        
+        return true;
 	}
 }
 ?>

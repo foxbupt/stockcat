@@ -92,9 +92,9 @@ class AnalyzeCommand extends CConsoleCommand
         }
         // var_dump($close, $out_capitalisation);
         
-        // A股>10亿, 美股 > 5亿刀(部分股票获取不到市值)
+        // A股>10亿, 美股 >= 15亿刀(部分股票获取不到市值, 取不到股本的直接忽略)
         if (((CommonUtil::LOCATION_CHINA == $stockInfo['location']) && ($out_capitalisation <= 10))
-        	|| ((CommonUtil::LOCATION_US == $stockInfo['location']) && ($out_capitalisation > 0) && ($out_capitalisation <= 5)))
+        	|| ((CommonUtil::LOCATION_US == $stockInfo['location']) && ($out_capitalisation <= 15)))
         {
             $logInfo['reason'] = "low_out_capitalisation";
             $logInfo['out_cap'] = $out_capitalisation;
