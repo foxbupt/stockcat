@@ -32,7 +32,16 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
         #print stock_data
         high_index = 4
         low_index = 4
+
         close_price = float(stock_data['close_price'])
+        out_capital = close_price * float(stock_info['out_capital');
+        capital_limit = 10
+        if 3 == location:
+            out_capital = out_capital / 10000
+            capital_limit = 15
+        # capital < 10/15(us)
+        if out_capital <= capital_limit:
+            continue
 
         for index, field_name in enumerate(high_field_list):
             if close_price > float(stock_info[field_name]):
