@@ -58,15 +58,7 @@ class StockController extends Controller
         $stockInfo = StockUtil::getStockInfo($sid);
         $hqData = DataModel::getHQData($sid, $openDay);
         // var_dump($hqData);
-		$prefix = "";
-		if ($hqData['daily']['vary_price'] > 0.00)
-		{
-			$prefix = "+";
-		}
-		else if ($hqData['daily']['vary_price'] < 0.00)
-		{
-			$prefix = "-";
-		}
+		$prefix = ($hqData['daily']['vary_price'] > 0.00)? "+" : "";
 		
         /**
          * 页面展示内容包括:

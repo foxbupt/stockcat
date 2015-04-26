@@ -1,20 +1,23 @@
-<?php
-/* @var $this SiteController */
+<div class="container">
+	<ul>
+		<li><strong>A股</strong></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/index'); ?>">股票池</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/realtime'); ?>">实时上涨列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rankList'); ?>">评级列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/threshold'); ?>">价格突破</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/upresist'); ?>">趋势突破</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">昨日涨停列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 1)); ?>">快速拉升列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 0)); ?>">快速下跌列表</a></li>
+	</ul>
+	
+	<ul>
+		<li><strong>美股</strong></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/index', array('location' => CommonUtil::LOCATION_US)); ?>">股票池</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rankList', array('location' => CommonUtil::LOCATION_US)); ?>">评级列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/threshold', array('location' => CommonUtil::LOCATION_US)); ?>">价格突破</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/upresist', array('location' => CommonUtil::LOCATION_US)); ?>">趋势突破</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit', array('location' => CommonUtil::LOCATION_US)); ?>">昨日涨停列表</a></li>
+	</ul>
+</div>
 
-$this->pageTitle=Yii::app()->name;
-?>
-
-<h1>Welcome to <i><?php echo CHtml::encode(Yii::app()->name); ?></i></h1>
-
-<p>Congratulations! You have successfully created your Yii application.</p>
-
-<p>You may change the content of this page by modifying the following two files:</p>
-<ul>
-	<li>View file: <code><?php echo __FILE__; ?></code></li>
-	<li>Layout file: <code><?php echo $this->getLayoutFile('main'); ?></code></li>
-</ul>
-
-<p>For more details on how to further develop this application, please read
-the <a href="http://www.yiiframework.com/doc/">documentation</a>.
-Feel free to ask in the <a href="http://www.yiiframework.com/forum/">forum</a>,
-should you have any questions.</p>
