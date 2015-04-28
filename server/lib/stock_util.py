@@ -88,7 +88,7 @@ def get_cont_stock(db_config, current_day, day_count, sum_portion, rise = True):
 
 # 获取所有股票列表, 包含指数
 def get_stock_list(db_config, type = 0, location = 1):
-    sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
+    sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, capital, out_capital, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
             month6_low, month3_high, month3_low from t_stock where status = 'Y' "
     if type > 0:
         sql = sql + " and type = " + str(type)

@@ -6,8 +6,7 @@
 
 import os, sys, re, json, random
 import datetime
-#sys.path.append('../../../server')  
-sys.path.append('../../../../server')  
+sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
@@ -34,7 +33,7 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
         low_index = 4
 
         close_price = float(stock_data['close_price'])
-        out_capital = close_price * float(stock_info['out_capital');
+        out_capital = close_price * float(stock_info['out_capital']);
         capital_limit = 10
         if 3 == location:
             out_capital = out_capital / 10000
