@@ -160,7 +160,9 @@ class ParrelDaily(ParrelFunc):
             # 成交额转化为万元
             item['amount'] = int(fields[37])
             item['exchange_portion'] = fields[38]
+            item['pe'] = fields[39]
             item['swing'] = fields[43]
+            item['out_capital'] = fields[44]
         except IndexError:
             self.logger.error(format_log("parse_daily", {'content': content}))
             return None
