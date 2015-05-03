@@ -72,5 +72,6 @@ return array(
         'commonDB' => 'db_stockcat',
         'stockDB' => 'db_stockcat',
         'serviceDB' => 'db_stockcat',
+		'config' => require_once(dirname(__FILE__) . '/score_config.php'),
 	),
 );
