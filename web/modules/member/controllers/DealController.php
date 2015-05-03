@@ -15,33 +15,91 @@ class DealController extends Controller
 	 */
 	public function actionOwn()
 	{
+		$day = CommonUtil::getParamDay(date('Ymd'));
+		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
+		$userHoldList = DealHelper::getUserHoldList($uid, DealHelper::DEAL_STATE_HOLD);
 		
+		$stockHqMap = array();
+		foreach (array_keys($userHoldList) as $sid)
+		{
+			$stockHqMap[$sid] = DataModel::getHQData($sid, $day);
+		}
+		
+		$this->render('own', array(
+				'day' => $day,
+				'userHoldList' => $userHoldList,
+				'stockHqMap' => $stockHqMap,
+			));
 	}
 	
 	/**
 	 * @desc 买入操作
-	 * @param $_POST['sid'] int
+	 * @param $_POST['sid']/$_POST['code'] int
 	 * @param $_POST['count'] int
 	 * @param $_POST['price'] float 价格
-	 * @param $_POST['bno'] int 批次编码, 可选
 	 * @return json
 	 */
 	public function actionBuy()
 	{
+		$this->layout = false;
+		$day = CommonUtil::getParamDay(date('Ymd'));
+		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
 		
+		if (isset($_POST['sid']))
+		{
+			$sid = intval($_POST['sid']);
+		}
+		else if (isset($_POST['code']))
+		{
+			$stockMap = StockUtil::getStockMap();
+			$sid = $stockMap[$_POST['code']];	
+		} 
+		 
+		$count = intval($_POST['count']);
+		$price = intval($_POST['price']);
+		if (($count <= 0) || ($price <= 0))
+		{
+			$this->renderText(OutputUtil::json(array(), -1));
+			return;
+		}
+		
+		$result = DealHelper::buyStock($uid, $sid, $day, $price, $count);
+		$this->renderText(OutputUtil::json(array(), $result? 0 : -2));
 	}
 	
 	/**
 	 * @desc 卖出操作
-	 * @param $_POST['sid'] int
+	 * @param $_POST['sid']/$_POST['code'] int
 	 * @param $_POST['count'] int
 	 * @param $_POST['price'] float 价格
-	 * @param $_POST['bno'] int 批次编码, 可选
 	 * @return json
 	 */
 	public function actionSell()
 	{
+		$this->layout = false;
+		$day = CommonUtil::getParamDay(date('Ymd'));
+		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
 		
+		if (isset($_POST['sid']))
+		{
+			$sid = intval($_POST['sid']);
+		}
+		else if (isset($_POST['code']))
+		{
+			$stockMap = StockUtil::getStockMap();
+			$sid = $stockMap[$_POST['code']];	
+		} 
+		 
+		$count = intval($_POST['count']);
+		$price = intval($_POST['price']);
+		if (($count <= 0) || ($price <= 0))
+		{
+			$this->renderText(OutputUtil::json(array(), -1));
+			return;
+		}
+		
+		$result = DealHelper::sellStock($uid, $sid, $day, $price, $count);
+		$this->renderText(OutputUtil::json(array(), $result? 0 : -2));
 	}
 	
 	/**

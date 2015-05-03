@@ -45,14 +45,14 @@ class UserHold extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('uid, sid, count, update_time, create_time', 'numerical', 'integerOnly'=>true),
+			array('uid, sid, count, state, update_time, create_time', 'numerical', 'integerOnly'=>true),
 			array('batch_no', 'length', 'max'=>11),
 			array('price, profit_portion', 'length', 'max'=>6),
 			array('cost, amount, profit', 'length', 'max'=>10),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, batch_no, uid, sid, count, price, cost, amount, profit, profit_portion, update_time, create_time, status', 'safe', 'on'=>'search'),
+			array('id, batch_no, uid, sid, count, state, price, cost, amount, profit, profit_portion, update_time, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -78,6 +78,7 @@ class UserHold extends CActiveRecord
 			'uid' => 'Uid',
 			'sid' => 'Sid',
 			'count' => 'Count',
+			'state' => 'State',
 			'price' => 'Price',
 			'cost' => 'Cost',
 			'amount' => 'Amount',

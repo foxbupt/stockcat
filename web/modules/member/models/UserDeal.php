@@ -138,4 +138,24 @@ class UserDeal extends CActiveRecord
 			'criteria'=>$criteria,
 		));
 	}
+	
+	/**
+	 * @desc 添加交易记录
+	 *
+	 * @param int $dealType
+	 * @param array $params array('uid', 'sid', 'batchno', 'day', 'count', 'price', 'fee', 'commision', 'tax', 'amount')
+	 * @return bool
+	 */
+	public static function addDealRecord($dealType, $params)
+	{
+		$record = new UserDeal();
+		foreach ($params as $fieldName => $fieldValue)
+		{
+			$record->$fieldName = $fieldValue;	
+		}
+		$record->create_time = time();
+		$record->status = 'Y';
+		
+		return $record->save();
+	}
 }
