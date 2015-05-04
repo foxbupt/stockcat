@@ -125,16 +125,19 @@ class ShortTermCommand extends CConsoleCommand
 		
 		arsort($stockScoreMap, SORT_NUMERIC);
         $slicePreCount = count($stockScoreMap);
-		$stockScoreMap = array_slice($stockScoreMap, 0, $this->count, true);
-		echo "op=core_run time=" . date("His") . " pre_count=${slicePreCount} " . StatLogUtil::array2log($stockScoreMap) . "\n";
-		
 		$newPoolList = array();
 		foreach ($stockScoreMap as $sid => $score)
 		{
 			$newPoolList[$sid] = $cachePoolList[$sid];
 		}
 		
+		$stockScoreMap = array_slice($stockScoreMap, 0, $this->count, true);
+		$shortList = array_slice($stockScoreMap, 0, $this->count, true);
+		echo "op=core_run time=" . date("His") . " pre_count=${slicePreCount} " . StatLogUtil::array2log($stockScoreMap) . "\n";
+		
+		// 更新shortpool和shortterm
 		Yii::app()->redis->set($cacheKey, json_encode($newPoolList), 86400);
+		Yii::app()->redis->set("shortterm-" . $location . "-" . $day, json_encode($shortList), 86400);
 		return;
 	}
 	

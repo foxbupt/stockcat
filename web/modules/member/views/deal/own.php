@@ -1,3 +1,4 @@
+
 <div class="container">
 	<div class="span12">
 		<div class="hd">
@@ -63,8 +64,8 @@
                         <td>-</td>
                         <?php endif; ?>
                         <td>
-							<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/member/deal/buy', array('sid' => $sid));?>">买入</a>
-							<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/member/deal/sell', array('sid' => $sid));?>">卖出</a>
+                        	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" data-whatever="1" data-code="<?php echo $stockInfo['code']; ?>">买入</button>
+							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" data-whatever="2" data-code="<?php echo $stockInfo['code']; ?>">卖出</button>
 						</td>
 					</tr>	
 					<?php endforeach; ?>
@@ -73,13 +74,96 @@
 		</div>
 	</div>
 	
-	<div id="buy">
-		<form>
-		</form>
+	<div class="modal fade" id="dealModal" tabindex="-1" role="dialog" aria-labelledby="dealModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+		    	<div class="modal-header">
+		    		<button type="button" class="close" data-dismiss="modal" aria-label="关闭"><span aria-hidden="true">&times;</span></button>
+		        	<h4 class="modal-title" id="dealModalLabel">股票交易-</h4>
+		      	</div>
+		      	<div class="modal-body">
+		        	<form id="dealForm" action="">	
+		        		<input type="hidden" id="deal_type" value="1">
+		        		<div class="form-group">
+			            	<label for="code" class="control-label">代码:</label>
+			            	<input type="text" class="form-control" id="code">
+			          	</div>	        	
+			        	<div class="form-group">
+			            	<label for="count" class="control-label">数目:</label>
+			            	<input type="text" class="form-control" id="count">
+			          	</div>
+			          	<div class="form-group">
+			            	<label for="price" class="control-label">价格:</label>
+			            	<input class="form-control" id="price"></textarea>
+			          	</div>
+			          	<div class="form-group">
+			            	<label id="msg" class="control-label"></label>
+			          	</div>
+			        </form>
+		      	</div>
+		      	<div class="modal-footer">
+			        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+			        <button type="button" class="btn btn-primary" id="dealButton">确定</button>
+		      	</div>
+			</div>
+		</div>
 	</div>
 	
-	<div id="sell">
-		<form>
-		</form>
-	</div>
 </div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('#dealModal').on('show.bs.modal', function (event) {
+		var button = $(event.relatedTarget); // Button that triggered the modal
+		var type = button.data('whatever'); // Extract info from data-* attributes
+		var code = button.data('code');
+		  
+		var modal = $(this);
+		var url = "";
+		var title = "";
+		
+		if (1 == type) {
+			title = "股票交易-买入";
+			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
+		} else {
+			title = "股票交易-卖出";
+			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
+		}	
+
+		$("#deal_type").val(type);
+		modal.find('.modal-title').text(title);
+		modal.find(".modal-body [id='code']").val(code);
+		
+		$.post(url, {'code':$('#code').val(), ''})  
+	});
+
+	$("#dealButton").click(function(){
+		var type = $("#deal_type").val();
+		var code = $("#code").val();
+		var price = $("#price").val();
+		var count = $("#count").val();
+
+		if ((count <= 0) || (price <= 0)) {
+			$("#msg").text("价格或数量不能为0");
+			return;
+		}
+		
+		if (1 == type)
+		{
+			url = <?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
+		} else {
+			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
+		}
+
+		$.post(url, {'code': code, 'count': count, 'price': price), function(response) {
+				var code = response.code;
+				if (0 == code) {
+					$('#dealModal').modal('hide');
+				} else {
+					$("#msg").text(response.msg);
+					return;
+				}
+			});	
+	});
+});
+</script>
