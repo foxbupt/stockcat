@@ -4,7 +4,7 @@
  * @desc 短线操作股票池
  *
  */
-class ShortTermController extends Controllerion 
+class ShortTermController extends Controller 
 {
 	/**
 	 * @desc 
@@ -15,7 +15,9 @@ class ShortTermController extends Controllerion
 		$location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 		$day = CommonUtil::getParamDay(date("Ymd"));
 		$cacheKey = "shortpool-" . $location . "-" . $day;
-		$shortList = Yii::app()->redis->getInstance()->hGetAll($cacheKey);
+		$cacheValue = Yii::app()->redis->get($cacheKey);
+        $shortList = json_decode($cacheValue, true);
+        // print_r($shortList);
 		
 		$this->render('index', array(
 				'day' => $day,

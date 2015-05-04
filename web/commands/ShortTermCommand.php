@@ -40,7 +40,8 @@ class ShortTermCommand extends CConsoleCommand
 		$lastOpenDay = CommonUtil::getPastOpenDay($day, 1, $location);
 		while (true)
 		{
-			$marketState = CommonUtil::getMarketState($location);
+			// $marketState = CommonUtil::getMarketState($location);
+			$marketState = CommonUtil::MSTATE_OPENED;
 			if ((CommonUtil::MSTATE_NOT_OPEN == $marketState) || (CommonUtil::MSTATE_PAUSED == $marketState))
 			{
 				if ((CommonUtil::MSTATE_NOT_OPEN == $marketState) && !$this->inited)
@@ -87,7 +88,7 @@ class ShortTermCommand extends CConsoleCommand
 		
 		// TODO: 添加热点/资讯选股
 		$key = "shortpool-" . $location . "-" . $day;
-		Yii::app()->redis->getInstance()->hMSet($key, $shortPoolList);
+		Yii::app()->redis->set($key, json_encode($shortPoolList), 86400);
 		$this->inited = true;
 		
 		return true;
@@ -101,7 +102,8 @@ class ShortTermCommand extends CConsoleCommand
 		}
 		
 		$cacheKey = "shortpool-" . $location . "-" . $day;
-		$cachePoolList = Yii::app()->redis->getInstance()->hGetAll($cacheKey);
+		$cacheValue = Yii::app()->redis->get($cacheKey);
+        $cachePoolList = json_decode($cacheValue, true);
 		$stockScoreMap = array();
 		
 		$configInfo = Yii::app()->params['config'];
@@ -114,7 +116,7 @@ class ShortTermCommand extends CConsoleCommand
 				'day' => $day
 			)) . "\n";	
 			
-			if ($result)
+			if (0 == $result)
 			{
 				$score = $this->evaluate($sid, $day, $configInfo);
 				$stockScoreMap[$sid] = $score;
@@ -122,8 +124,9 @@ class ShortTermCommand extends CConsoleCommand
 		}
 		
 		arsort($stockScoreMap, SORT_NUMERIC);
-		array_slice($stockScoreMap, 0, $this->count, true);
-		echo "op=core_run time=" . date("His") . " ". StatLogUtil::array2log($stockScoreMap) . "\n";
+        $slicePreCount = count($stockScoreMap);
+		$stockScoreMap = array_slice($stockScoreMap, 0, $this->count, true);
+		echo "op=core_run time=" . date("His") . " pre_count=${slicePreCount} " . StatLogUtil::array2log($stockScoreMap) . "\n";
 		
 		$newPoolList = array();
 		foreach ($stockScoreMap as $sid => $score)
@@ -131,7 +134,7 @@ class ShortTermCommand extends CConsoleCommand
 			$newPoolList[$sid] = $cachePoolList[$sid];
 		}
 		
-		Yii::app()->redis->getInstance()->hMSet($cacheKey, $newPoolList);
+		Yii::app()->redis->set($cacheKey, json_encode($newPoolList), 86400);
 		return;
 	}
 	

@@ -25,7 +25,7 @@ setTimeout('refreshPage()', <?php echo $refreshInterval; ?> * 1000);
 
 <div>
 	<table class="table table-bordered">
-        <caption>有<strong><?php echo count($poolList); ?>只股票, 交易日: <?php echo $day;?>, </strong>支关注股票</caption>
+        <caption>有<strong><?php echo count($poolList); ?></strong>只股票, 交易日: <?php echo $day;?></caption>
 		
 		<thead>
 			<tr>
