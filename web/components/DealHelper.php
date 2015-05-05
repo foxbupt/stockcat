@@ -38,7 +38,7 @@ class DealHelper
 
 		$holdList = array();
 		$recordList = UserHold::model()->findAll(array(
-					'criteria' => $criteria,
+					'condition' => $criteria,
 				));
 		foreach ($recordList as $record)
 		{
