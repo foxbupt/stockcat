@@ -145,6 +145,8 @@ class ShortTermCommand extends CConsoleCommand
 	{
 		$hqData = DataModel::getHQData($sid, $day);
 		$dailyData = $hqData['daily'];
+        var_dump($dailyData);
+
 		// 开盘涨幅在[-3.00, 5.00]之间
 		if (($dailyData['open_vary_portion'] < -3.00) || ($dailyData['open_vary_portion'] > 5.00))
 		{
