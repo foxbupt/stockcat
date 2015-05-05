@@ -16,7 +16,7 @@ class ShortTermController extends Controller
 		$day = CommonUtil::getParamDay(date("Ymd"));
 		$cacheKey = "shortlist-" . $location . "-" . $day;
 		$cacheValue = Yii::app()->redis->get($cacheKey);
-        $shortList = json_decode($cacheValue, true);
+        $shortList = empty($cacheValue)? array() : json_decode($cacheValue, true);
         // print_r($shortList);
 		
 		$this->render('index', array(

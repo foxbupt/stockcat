@@ -145,8 +145,10 @@ class ShortTermCommand extends CConsoleCommand
 	{
 		$hqData = DataModel::getHQData($sid, $day);
 		$dailyData = $hqData['daily'];
+		$dailyPolicy = $hqData['policy'];
+		
 		// 开盘涨幅在[-3.00, 5.00]之间
-		if (($dailyData['open_vary_portion'] < -3.00) || ($dailyData['open_vary_portion'] > 5.00))
+		if (($dailyPolicy['open_vary_portion'] < -3.00) || ($dailyPolicy['open_vary_portion'] > 5.00))
 		{
 			return -1;
 		}
@@ -158,7 +160,6 @@ class ShortTermCommand extends CConsoleCommand
 		}
 		
 		$timenumber = intval(date("His"));
-		$dailyPolicy = $hqData['policy'];
 		if ($timenumber < 935)
 		{
 			return 0;
