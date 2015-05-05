@@ -7,8 +7,8 @@
 		
 		<div>
 			<p class="pull-right">
-				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" data-whatever="1">买入</a>
-				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" data-whatever="2">卖出</a>
+				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" deal_type="1">买入</a>
+				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" deal_type="2">卖出</a>
 			</p>
 			<table class="table table-bordered">
             <caption>当前共有<strong><?php echo count($userHoldList); ?></strong>支股票, 交易日:<?php echo $day;?></caption>
@@ -64,8 +64,8 @@
                         <td>-</td>
                         <?php endif; ?>
                         <td>
-                        	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" data-whatever="1" data-code="<?php echo $stockInfo['code']; ?>">买入</button>
-							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" data-whatever="2" data-code="<?php echo $stockInfo['code']; ?>">卖出</button>
+                        	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" deal_type="1" code="<?php echo $stockInfo['code']; ?>">买入</button>
+							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" deal_type="2" code="<?php echo $stockInfo['code']; ?>">卖出</button>
 						</td>
 					</tr>	
 					<?php endforeach; ?>
@@ -115,9 +115,9 @@
 $(document).ready(function(){
 	$('#dealModal').on('show.bs.modal', function (event) {
 		var button = $(event.relatedTarget); // Button that triggered the modal
-		var type = button.data('whatever'); // Extract info from data-* attributes
+		var type = button.attr('deal_type); // Extract info from data-* attributes
         alert(type);
-		var code = button.data('code');
+		var code = button.attr('code');
 		  
 		var modal = $(this);
 		var url = "";
