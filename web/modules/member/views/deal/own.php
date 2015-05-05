@@ -132,9 +132,9 @@ $(document).ready(function(){
 
     $("#main .btn").click(function(){
         var id = $(this).attr('id');
-        alert(id);
+        //alert(id);
         var type = $(this).attr('deal_type');      
-        alert(type);
+        //alert(type);
         $("#deal_type").val(type);
 
         var code = "";
@@ -150,8 +150,8 @@ $(document).ready(function(){
 		var code = $("#code").val();
 		var price = $("#price").val();
 		var count = $("#count").val();
-        alert(type);
-        alert(code);
+        //alert(type);
+        //alert(code);
 
 		if ((count <= 0) || (price <= 0)) {
 			$("#msg").text("价格或数量不能为0");

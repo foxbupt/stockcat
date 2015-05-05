@@ -56,7 +56,7 @@ class DealController extends Controller
 		} 
 		 
 		$count = intval($_POST['count']);
-		$price = intval($_POST['price']);
+		$price = floatval($_POST['price']);
 		if (($count <= 0) || ($price <= 0))
 		{
 			$this->renderText(OutputUtil::json(array(), -1));
@@ -91,7 +91,7 @@ class DealController extends Controller
 		} 
 		 
 		$count = intval($_POST['count']);
-		$price = intval($_POST['price']);
+		$price = floatval($_POST['price']);
 		if (($count <= 0) || ($price <= 0))
 		{
 			$this->renderText(OutputUtil::json(array(), -1));
