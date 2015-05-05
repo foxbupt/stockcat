@@ -45,8 +45,8 @@ class UserHold extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('uid, sid, count, state, update_time, create_time', 'numerical', 'integerOnly'=>true),
-			array('batch_no', 'length', 'max'=>11),
+			array('uid, sid, count, day, state, update_time, create_time', 'numerical', 'integerOnly'=>true),
+			array('batch_no, day', 'length', 'max'=>11),
 			array('price, profit_portion', 'length', 'max'=>6),
 			array('cost, amount, profit', 'length', 'max'=>10),
 			array('status', 'length', 'max'=>1),
@@ -77,6 +77,7 @@ class UserHold extends CActiveRecord
 			'batch_no' => 'Batch No',
 			'uid' => 'Uid',
 			'sid' => 'Sid',
+			'day' => 'Day',
 			'count' => 'Count',
 			'state' => 'State',
 			'price' => 'Price',
