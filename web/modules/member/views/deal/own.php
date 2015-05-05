@@ -53,7 +53,7 @@
 						<?php $amount = $holdInfo['count'] * $dailyData['close_price']; ?>
 						<td><?php echo $amount; ?></td>
 						<td><?php echo $amount - $cost; ?></td> 
-                        <td><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
+                        <td><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
                         
                         <?php if (isset($hqData['policy'])): ?>
                         <td><?php echo $hqData['policy']['trend']; ?></td>
