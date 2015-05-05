@@ -37,7 +37,6 @@
                     <?php $dailyData = $hqData['daily']; ?>
                     
                     <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
-                    <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $day); ?>
 					<?php $viewUrl = Yii::app()->createUrl('/stock/stock/index', array('sid' => $sid)); ?>
 					
 					<tr class="pull-center">
