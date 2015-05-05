@@ -7,8 +7,8 @@
 		
 		<div>
 			<p class="pull-right">
-				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/member/deal/buy');?>">买入</a>
-				<a class="btn btn-primary" type="button" href="<?php echo $this->createUrl('/member/deal/sell');?>">卖出</a>
+				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" data-whatever="1">买入</a>
+				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" data-whatever="2">卖出</a>
 			</p>
 			<table class="table table-bordered">
             <caption>当前共有<strong><?php echo count($userHoldList); ?></strong>支股票, 交易日:<?php echo $day;?></caption>
@@ -116,6 +116,7 @@ $(document).ready(function(){
 	$('#dealModal').on('show.bs.modal', function (event) {
 		var button = $(event.relatedTarget); // Button that triggered the modal
 		var type = button.data('whatever'); // Extract info from data-* attributes
+        alert(type);
 		var code = button.data('code');
 		  
 		var modal = $(this);
@@ -124,17 +125,13 @@ $(document).ready(function(){
 		
 		if (1 == type) {
 			title = "股票交易-买入";
-			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
 		} else {
 			title = "股票交易-卖出";
-			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
 		}	
 
 		$("#deal_type").val(type);
 		modal.find('.modal-title').text(title);
 		modal.find(".modal-body [id='code']").val(code);
-		
-		$.post(url, {'code':$('#code').val(), ''})  
 	});
 
 	$("#dealButton").click(function(){
@@ -150,12 +147,12 @@ $(document).ready(function(){
 		
 		if (1 == type)
 		{
-			url = <?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
-		} else {
 			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
+		} else {
+			url = "<?php echo Yii::app()->createUrl('/member/deal/sell'); ?>";
 		}
 
-		$.post(url, {'code': code, 'count': count, 'price': price), function(response) {
+		$.post(url, {'code': code, 'count': count, 'price': price}, function(response) {
 				var code = response.code;
 				if (0 == code) {
 					$('#dealModal').modal('hide');
