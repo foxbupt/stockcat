@@ -74,7 +74,7 @@ class DealHelper
 					'price' => $price,
 					'count' => $count,
 					'fee' => $cost,
-					'commision' => CommonUtil::formatNumber($commision),
+					'commission' => CommonUtil::formatNumber($commision),
 					'tax' => CommonUtil::formatNumber($tax),
 					'amount' => CommonUtil::formatNumber($amount),
 				);				
@@ -154,7 +154,7 @@ class DealHelper
 					'price' => $price,
 					'count' => $count,
 					'fee' => $cost,
-					'commision' => $commision,
+					'commission' => $commision,
 					'tax' => $tax, 
 					'amount' => $amount,
 				);				
