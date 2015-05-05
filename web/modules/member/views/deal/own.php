@@ -5,10 +5,10 @@
 			<h3>当前持仓</h3>
 		</div>
 		
-		<div>
+		<div id="main">
 			<p class="pull-right">
-				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" deal_type="1">买入</a>
-				<a class="btn btn-primary" type="button" data-toggle="modal" data-target="#dealModal" deal_type="2">卖出</a>
+				<a class="btn btn-primary" type="button" deal_type="1" id="buyBtn">买入</a>
+				<a class="btn btn-primary" type="button" deal_type="2" id="sellBtn">卖出</a>
 			</p>
 			<table class="table table-bordered">
             <caption>当前共有<strong><?php echo count($userHoldList); ?></strong>支股票, 交易日:<?php echo $day;?></caption>
@@ -64,8 +64,8 @@
                         <td>-</td>
                         <?php endif; ?>
                         <td>
-                        	<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" deal_type="1" code="<?php echo $stockInfo['code']; ?>">买入</button>
-							<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#dealModal" deal_type="2" code="<?php echo $stockInfo['code']; ?>">卖出</button>
+                        	<button type="button" class="btn btn-primary" deal_type="1" id="buyBtn-<?php echo $stockInfo['code']; ?>">买入</button>
+							<button type="button" class="btn btn-primary" deal_type="2" id="sellBtn-<?php echo $stockInfo['code']; ?>">卖出</button>
 						</td>
 					</tr>	
 					<?php endforeach; ?>
@@ -113,40 +113,53 @@
 
 <script type="text/javascript">
 $(document).ready(function(){
-	$('#dealModal').on('show.bs.modal', function (event) {
-		var button = $(event.relatedTarget); // Button that triggered the modal
-		var type = button.attr('deal_type'); // Extract info from data-* attributes
-        alert(type);
-		var code = button.attr('code');
-		alert(code);
-		  
+	$('#dealModal').on('show', function (event) {
+		//var button = $(event.relatedTarget); // Button that triggered the modal
+		//var type = button.attr('deal_type'); // Extract info from data-* attributes
+		//var code = button.attr('code');
+
 		var modal = $(this);
-		var url = "";
+        var type = $("#deal_type").val();
 		var title = "";
 		
-		if (1 == type) {
+		if (type == "1") {
 			title = "股票交易-买入";
 		} else {
 			title = "股票交易-卖出";
 		}	
 
-		$("#deal_type").val(type);
 		modal.find('.modal-title').text(title);
-		modal.find(".modal-body [id='code']").val(code);
 	});
+
+    $("#main .btn").click(function(){
+        var id = $(this).attr('id');
+        alert(id);
+        var type = $(this).attr('deal_type');      
+        alert(type);
+        $("#deal_type").val(type);
+
+        var code = "";
+        if (id.indexOf("-") != -1) {
+            code = id.substring(id.indexOf("-")+1);
+        }
+		$("#dealModal").find(".modal-body [id='code']").val(code);
+        $("#dealModal").modal();
+    });
 
 	$("#dealButton").click(function(){
 		var type = $("#deal_type").val();
 		var code = $("#code").val();
 		var price = $("#price").val();
 		var count = $("#count").val();
+        alert(type);
+        alert(code);
 
 		if ((count <= 0) || (price <= 0)) {
 			$("#msg").text("价格或数量不能为0");
 			return;
 		}
 		
-		if (1 == type)
+		if (type == "1")
 		{
 			url = "<?php echo Yii::app()->createUrl('/member/deal/buy'); ?>";
 		} else {
