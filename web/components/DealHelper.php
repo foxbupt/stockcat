@@ -62,8 +62,8 @@ class DealHelper
 	{
 		$holdList = self::getUserHoldList($uid, self::DEAL_STATE_HOLD);
 		$cost = $price * $count;
-		$commision = CommonUtil::formatNumber($cost * self::COMMISION_FEE);
-		$tax = CommonUtil::formatNumber($cost * self::TAX_FEE);
+		$commision = $cost * self::COMMISION_FEE;
+		$tax = $cost * self::TAX_FEE;
 		$amount = $cost + $commision + $tax;
 
 		$dealParams = array(
@@ -74,9 +74,9 @@ class DealHelper
 					'price' => $price,
 					'count' => $count,
 					'fee' => $cost,
-					'commision' => $commision,
-					'tax' => $tax,
-					'amount' => $amount,
+					'commision' => CommonUtil::formatNumber($commision),
+					'tax' => CommonUtil::formatNumber($tax),
+					'amount' => CommonUtil::formatNumber($amount),
 				);				
 		if (isset($holdList[$sid]))
 		{
@@ -96,6 +96,7 @@ class DealHelper
 		{
 			$dealParams['batch_no'] = $batchno = $day;
 			$costPrice = CommonUtil::formatNumber($amount / $count);
+			var_dump($amount, $count, $costPrice);
 			
 			$record = new UserHold();
 			$record->uid = $uid;
