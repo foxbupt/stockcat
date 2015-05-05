@@ -14,7 +14,7 @@ class ShortTermController extends Controller
 	{
 		$location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 		$day = CommonUtil::getParamDay(date("Ymd"));
-		$cacheKey = "shortlist-" . $location . "-" . $day;
+		$cacheKey = "shortterm-" . $location . "-" . $day;
 		$cacheValue = Yii::app()->redis->get($cacheKey);
         $shortList = empty($cacheValue)? array() : json_decode($cacheValue, true);
         // print_r($shortList);
