@@ -81,7 +81,7 @@ class DealHelper
 		if (isset($holdList[$sid]))
 		{
 			$holdInfo = $holdList[$sid];
-			$dealParams['batchno'] = $holdInfo['batchno'];
+			$dealParams['batch_no'] = $holdInfo['batch_no'];
 			$totalCost = $holdInfo['cost'] + $amount;
 			$totalCount = $holdInfo['count'] + $count;
 			$avgPrice = CommonUtil::formatNumber($totalCost / $totalCount);
@@ -94,13 +94,13 @@ class DealHelper
 		}
 		else
 		{
-			$dealParams['batchno'] = $batchno = $day;
+			$dealParams['batch_no'] = $batchno = $day;
 			$costPrice = CommonUtil::formatNumber($amount / $count);
 			
 			$record = new UserHold();
 			$record->uid = $uid;
 			$record->sid = $sid;
-			$record->batchno = $batchno;
+			$record->batch_no = $batchno;
 			$record->day = $day;
 			$record->count = $count;
 			$record->state = self::DEAL_STATE_HOLD;
@@ -148,7 +148,7 @@ class DealHelper
 					'uid' => $uid, 
 					'sid' => $sid,
 					'day' => $day,
-					'batchno' => $holdInfo['batchno'],	 
+					'batch_no' => $holdInfo['batch_no'],	 
 					'deal_type' => self::DEAL_TYPE_SELL,
 					'price' => $price,
 					'count' => $count,
