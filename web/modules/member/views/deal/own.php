@@ -115,7 +115,7 @@
 $(document).ready(function(){
 	$('#dealModal').on('show.bs.modal', function (event) {
 		var button = $(event.relatedTarget); // Button that triggered the modal
-		var type = button.attr('deal_type); // Extract info from data-* attributes
+		var type = button.attr('deal_type'); // Extract info from data-* attributes
         alert(type);
 		var code = button.attr('code');
 		alert(code);
