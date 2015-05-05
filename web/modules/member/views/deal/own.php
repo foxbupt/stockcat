@@ -118,6 +118,7 @@ $(document).ready(function(){
 		var type = button.attr('deal_type); // Extract info from data-* attributes
         alert(type);
 		var code = button.attr('code');
+		alert(code);
 		  
 		var modal = $(this);
 		var url = "";
