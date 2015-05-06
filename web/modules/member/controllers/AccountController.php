@@ -10,7 +10,7 @@ Yii::import('application.extensions.captchaExtended.CaptchaExtendedAction');
  */
 class AccountController extends Controller 
 {
-/**
+	/**
 	 * @return array action filters
 	 */
 	public function filters()

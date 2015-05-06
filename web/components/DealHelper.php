@@ -65,7 +65,7 @@ class DealHelper
 		$commission = $cost * self::COMMISION_FEE;
 		$tax = $cost * self::TAX_FEE;
 		$amount = $cost + $commission + $tax;
-		var_dump($cost, $commission, $tax, $amount);
+		// var_dump($cost, $commission, $tax, $amount);
 
 		$dealParams = array(
 					'uid' => $uid, 
@@ -97,7 +97,7 @@ class DealHelper
 		{
 			$dealParams['batch_no'] = $batchno = $day;
 			$costPrice = CommonUtil::formatNumber($amount / $count);
-			var_dump($amount, $count, $costPrice);
+			// var_dump($amount, $count, $costPrice);
 			
 			$record = new UserHold();
 			$record->uid = $uid;
@@ -113,6 +113,17 @@ class DealHelper
 			
 			$result = $record->save()? true : false;			
 		}
+		
+		StatLogUtil::log("buy_stock", array(
+				'result' => $result? 1 : 0,
+				'uid' => $uid,
+				'sid' => $sid,
+				'day' => $day,
+				'count' => $count,
+				'price' => $price,
+				'cost' => $cost,
+				'amount' => $amount,
+			));
 		
 		if ($result)
 		{

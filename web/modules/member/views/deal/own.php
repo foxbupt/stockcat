@@ -1,3 +1,15 @@
+<style>
+.red {
+    color: #ff0000;
+}
+.green {
+    color: #008000;
+}
+    
+td {
+    text-align:center;
+}
+</style>
 
 <div class="container">
 	<div class="span12">
@@ -44,16 +56,16 @@
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
-						<td><?php echo $holdInfo['day']; ?></td>
+						<td><?php echo date('Y/m/d', $holdInfo['day']); ?></td>
 						<td><?php echo $holdInfo['count']; ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<?php $cost = $holdInfo['count'] * $holdInfo['price']; ?>
-						<td><?php echo $cost; ?></td>
+						<td><?php echo CommonUtil::formatNumber($cost); ?></td>
 						<td><?php echo $dailyData['close_price']; ?></td>
 						<?php $amount = $holdInfo['count'] * $dailyData['close_price']; ?>
-						<td><?php echo $amount; ?></td>
-						<td><?php echo $amount - $cost; ?></td> 
-                        <td><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
+						<td><?php echo CommonUtil::formatNumber($amount); ?></td>
+						<td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo $amount - $cost; ?></td> 
+                        <td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
                         
                         <?php if (isset($hqData['policy'])): ?>
                         <td><?php echo $hqData['policy']['trend']; ?></td>
