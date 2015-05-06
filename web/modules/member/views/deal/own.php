@@ -68,8 +68,8 @@ td {
                         <td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
                         
                         <?php if (isset($hqData['policy'])): ?>
-                        <td><?php echo $hqData['policy']['trend']; ?></td>
-                        <td><?php echo $hqData['policy']['op']; ?></td>
+                        <td><?php echo $trendMap[$hqData['policy']['trend']]; ?></td>
+                        <td class="<?php echo ($hqData['policy']['op'] == CommonUtil::OP_BUY)? 'red' : 'green'; ?>"><?php echo $opMap[$hqData['policy']['op']]; ?></td>
                         <?php else: ?>
                         <td>-</td>
                         <td>-</td>

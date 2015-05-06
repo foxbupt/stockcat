@@ -57,6 +57,8 @@ class DealController extends Controller
 				'day' => $day,
 				'userHoldList' => $userHoldList,
 				'stockHqMap' => $stockHqMap,
+				'trendMap' => CommonUtil::getConfigObject("stock.direction"),
+        		'opMap' => CommonUtil::getConfigObject("stock.op"),
 			));
 	}
 	
