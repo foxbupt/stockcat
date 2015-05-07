@@ -1,7 +1,5 @@
 <?php
 
-Yii::import('common.components.BevaUtil');
-
 /*
  * @desc 输出统计日志和错误日志, 格式为[op|error]=msg key=value key=value
  * 		 考虑不区分统计日志和错误日志, 两者格式一致, 方便后续对错误日志进行统计
