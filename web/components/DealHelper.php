@@ -63,7 +63,7 @@ class DealHelper
 		$holdList = self::getUserHoldList($uid, self::DEAL_STATE_HOLD);
 		$cost = $price * $count;
 		$commission = $cost * self::COMMISION_FEE;
-		$tax = $cost * self::TAX_FEE;
+		$tax = 0; //$cost * self::TAX_FEE;
 		$amount = $cost + $commission + $tax;
 		// var_dump($cost, $commission, $tax, $amount);
 
