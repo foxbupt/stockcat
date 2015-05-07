@@ -98,6 +98,10 @@ td {
 		        		<div class="form-group">
 			            	<label for="code" class="control-label">代码:</label>
 			            	<input type="text" class="form-control" id="code">
+			          	</div>	
+			          	<div class="form-group">
+			            	<label for="day" class="control-label">日期:</label>
+			            	<input type="text" class="form-control" id="day">
 			          	</div>	        	
 			        	<div class="form-group">
 			            	<label for="count" class="control-label">数目:</label>
@@ -160,6 +164,7 @@ $(document).ready(function(){
 	$("#dealButton").click(function(){
 		var type = $("#deal_type").val();
 		var code = $("#code").val();
+		var day = $("#day").val();
 		var price = $("#price").val();
 		var count = $("#count").val();
         //alert(type);
@@ -177,7 +182,7 @@ $(document).ready(function(){
 			url = "<?php echo Yii::app()->createUrl('/member/deal/sell'); ?>";
 		}
 
-		$.post(url, {'code': code, 'count': count, 'price': price}, function(response) {
+		$.post(url, {'code': code, 'day': day, 'count': count, 'price': price}, function(response) {
 				var code = response.code;
 				if (0 == code) {
 					$('#dealModal').modal('hide');

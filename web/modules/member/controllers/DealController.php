@@ -72,7 +72,7 @@ class DealController extends Controller
 	public function actionBuy()
 	{
 		$this->layout = false;
-		$day = CommonUtil::getParamDay(date('Ymd'));
+		// $day = CommonUtil::getParamDay(date('Ymd'));
 		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
 		
 		if (isset($_POST['sid']))
@@ -87,6 +87,7 @@ class DealController extends Controller
 		 
 		$count = intval($_POST['count']);
 		$price = floatval($_POST['price']);
+		$day = intval($_POST['day']);
 		if (($count <= 0) || ($price <= 0))
 		{
 			$this->renderText(OutputUtil::json(array(), -1));
@@ -107,7 +108,7 @@ class DealController extends Controller
 	public function actionSell()
 	{
 		$this->layout = false;
-		$day = CommonUtil::getParamDay(date('Ymd'));
+		// $day = CommonUtil::getParamDay(date('Ymd'));
 		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
 		
 		if (isset($_POST['sid']))
@@ -122,6 +123,7 @@ class DealController extends Controller
 		 
 		$count = intval($_POST['count']);
 		$price = floatval($_POST['price']);
+		$day = intval($_POST['day']);
 		if (($count <= 0) || ($price <= 0))
 		{
 			$this->renderText(OutputUtil::json(array(), -1));
