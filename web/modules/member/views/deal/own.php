@@ -56,7 +56,7 @@ td {
                         <td><?php echo $stockInfo['name']; ?></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
-						<td><?php echo date('Y/m/d', $holdInfo['day']); ?></td>
+						<td><?php echo date('Y/m/d', strtotime($holdInfo['day'])); ?></td>
 						<td><?php echo $holdInfo['count']; ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<?php $cost = $holdInfo['count'] * $holdInfo['price']; ?>
