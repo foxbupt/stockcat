@@ -183,7 +183,7 @@ $(document).ready(function(){
 		}
 
 		$.post(url, {'code': code, 'day': day, 'count': count, 'price': price}, function(response) {
-				var code = response.code;
+				var code = response.errorCode;
 				if (0 == code) {
 					$('#dealModal').modal('hide');
 				} else {
