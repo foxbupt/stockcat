@@ -37,7 +37,7 @@ class Account extends CActiveRecord
 	 */
 	public function tableName()
 	{
-		return 't_account';
+		return 't_user';
 	}
 
 	/**
