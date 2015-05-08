@@ -61,7 +61,7 @@ td {
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<?php $cost = $holdInfo['count'] * $holdInfo['price']; ?>
 						<td><?php echo CommonUtil::formatNumber($cost); ?></td>
-						<td><?php echo $dailyData['close_price']; ?></td>
+						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
 						<?php $amount = $holdInfo['count'] * $dailyData['close_price']; ?>
 						<td><?php echo CommonUtil::formatNumber($amount); ?></td>
 						<td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo $amount - $cost; ?></td> 
@@ -183,14 +183,15 @@ $(document).ready(function(){
 		}
 
 		$.post(url, {'code': code, 'day': day, 'count': count, 'price': price}, function(response) {
-				var code = response.errorCode;
-				if (0 == code) {
+				var errorCode = response.errorCode;
+				if (0 == errorCode) {
 					$('#dealModal').modal('hide');
+                    window.location.reload();
 				} else {
 					$("#msg").text(response.msg);
 					return;
 				}
-			});	
+			}, 'json');	
 	});
 });
 </script>
