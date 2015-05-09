@@ -69,10 +69,10 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
                 high_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, high_type, 0)
                 if 0 == len(high_threshold_list):
                     add_result = add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
-                    print format_log("add_high_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'high_type': high_type})
+                    print format_log("add_high_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'high_type': high_type, 'result':add_result})
                     if add_result and high_type <= 2: # 年内新高/历史最高才加入股票池
-                        add_stock_pool(db_config, redis_config, sid, day, 2, {'wave':1})    
-                        print format_log("add_stock_pool", {'sid': sid, 'day': day, 'close_price': close_price})
+                        pool_result = add_stock_pool(db_config, redis_config, sid, day, 2, {'wave':1})    
+                        print format_log("add_stock_pool", {'sid': sid, 'day': day, 'close_price': close_price, 'result':pool_result})
 
                 for field_name in high_field_list[high_index:]:
                     stock_info[field_name] = close_price
@@ -83,8 +83,8 @@ def refresh_stock_histdata(redis_config, db_config, stock_list, today_data_list,
 
                 low_threshold_list = get_stock_price_threshold(db_config, sid, range_start_day, day, 0, low_type)
                 if 0 == len(low_threshold_list):
-                    add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
-                    print format_log("add_low_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'low_type': low_type})
+                    add_result = add_stock_price_threshold(db_config, sid, day, close_price, high_type, low_type)
+                    print format_log("add_low_price_threshold", {'sid': sid, 'day': day, 'close_price': close_price, 'low_type': low_type, 'result':add_result})
                     # TODO: 把下跌突破也加入股票池                       
 
                 for field_name in low_field_list[low_index:]:
