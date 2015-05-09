@@ -63,8 +63,8 @@ td {
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
 						<?php $amount = ($holdInfo['state'] == DealHelper::DEAL_STATE_HOLD)? $holdInfo['count'] * $dailyData['close_price'] : $holdInfo['amount']; ?>
 						<td><?php echo CommonUtil::formatNumber($amount); ?></td>
-						<td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo $amount - $cost; ?></td> 
-                        <td class="<?php echo ($amount >= $cost)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber(($amount - $cost) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
+						<td class="<?php echo ($amount >= $holdInfo['cost'])? 'red': 'green'; ?>"><?php echo $amount - $holdInfo['cost']; ?></td> 
+                        <td class="<?php echo ($amount >= $holdInfo['cost'])? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber(($amount - $holdInfo['cost']) / $amount * 100, CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
                         
                         <?php if (isset($hqData['policy'])): ?>
                         <td><?php echo $trendMap[$hqData['policy']['trend']]; ?></td>
