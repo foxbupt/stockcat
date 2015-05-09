@@ -30,7 +30,7 @@ class DealHelper
 	 */
 	public static function getUserHoldList($uid, $state = self::DEAL_STATE_ALL)
 	{
-		$criteria = "uid = ${uid} and count > 0 and status = 'Y'";
+		$criteria = "uid = ${uid} and status = 'Y'";
 		if ($state)
 		{
 			$criteria .= " and state = ${state}";
