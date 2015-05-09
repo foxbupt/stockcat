@@ -11,6 +11,8 @@
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 0)); ?>">快速下跌列表</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/shortTerm/index'); ?>">短线追踪</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/own'); ?>">我的持仓</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/own', array('state' => DealHelper::DEAL_STATE_CLOSE)); ?>">我的持仓-已结算</a></li>
+		
 	</ul>
 	
 	<ul>

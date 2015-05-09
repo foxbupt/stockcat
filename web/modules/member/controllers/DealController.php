@@ -39,13 +39,14 @@ class DealController extends Controller
 	
 	/**
 	 * @desc 当前持有的股票列表
-	 *
+	 * @param $_GET['state'] int 缺省为1
 	 */
 	public function actionOwn()
 	{
 		$day = CommonUtil::getParamDay(date('Ymd'));
 		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
-		$userHoldList = DealHelper::getUserHoldList($uid, DealHelper::DEAL_STATE_HOLD);
+		$state = isset($_GET['state'])? intval($_GET['state']) : DealHelper::DEAL_STATE_HOLD;
+		$userHoldList = DealHelper::getUserHoldList($uid, $state);
 		
 		$stockHqMap = array();
 		foreach (array_keys($userHoldList) as $sid)
