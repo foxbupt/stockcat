@@ -38,12 +38,12 @@
 					<p>成交量: <?php echo CommonUtil::formatNumber($dailyData['volume']/10000) . "万手"; ?></p>
 				</div>
 				<div class="span2">
-					<p>换手率: <?php echo CommonUtil::formatNumber($dailyData['exchange_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></p>
+					<p>换手率: <?php echo CommonUtil::formatNumber($dailyData['exchange_portion']); ?></p>
 				</div>
 				<div class="span2">
-					<p>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio'], CommonUtil::FORMAT_TYPE_PORTION); ?></p>
+					<p>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio']); ?></p>
 				</div class="span2">
-					<p>上涨因子: <?php echo CommonUtil::formatNumber($dailyPolicy['rise_factor'], CommonUtil::FORMAT_TYPE_PORTION); ?></p>
+					<p>上涨因子: <?php echo CommonUtil::formatNumber($dailyPolicy['rise_factor']); ?></p>
 				</div>		
 			</div>			
 		</div>

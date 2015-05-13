@@ -49,13 +49,24 @@ class StockController extends Controller
         	throw new CHttpException(404);
         }
 
+        $stockInfo = StockUtil::getStockInfo($sid);
+ 		if (empty($stockInfo))
+ 		{
+ 			throw new CHttpException(404);
+ 		}
+ 		
+ 		$location = $stockInfo['location'];
         $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        if (CommonUtil::LOCATION_US == $location)
+        {
+        	$day = intval(date("Ymd", strtotime("-9 hours", strtotime($day)))); 	
+        }
+        
         $marketOpen = CommonUtil::isMarketOpen($day);
         $openDay = CommonUtil::getParamDay($day);
         // var_dump($day, $marketOpen, $openDay);
         $curTime = intval(date('His'));
 
-        $stockInfo = StockUtil::getStockInfo($sid);
         $hqData = DataModel::getHQData($sid, $openDay);
         // var_dump($hqData);
 		$prefix = ($hqData['daily']['vary_price'] > 0.00)? "+" : "";
