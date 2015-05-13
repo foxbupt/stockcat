@@ -38,7 +38,7 @@
 					<p>成交量: <?php echo CommonUtil::formatNumber($dailyData['volume']/10000) . "万手"; ?></p>
 				</div>
 				<div class="span2">
-					<p>换手率: <?php echo CommonUtil::formatNumber($dailyData['exchange_portion']); ?></p>
+					<p>换手率: <?php echo CommonUtil::formatNumber($dailyData['exchange_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></p>
 				</div>
 				<div class="span2">
 					<p>量比: <?php echo CommonUtil::formatNumber($dailyPolicy['volume_ratio']); ?></p>
