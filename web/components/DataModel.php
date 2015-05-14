@@ -285,5 +285,41 @@ class DataModel
     	
     	return $poolInfo;
     }
+    
+    /**
+     * @desc 获取指定日期的
+     *
+     * @param int $lastDay
+     * @param int $day
+     * @param int $source
+     * @return array(array('pool', 'hq', 'cont', 'threshold', 'pivot'), ...)
+     */
+    public static function getPoolList($lastDay, $day, $source = 0)
+    {
+    	$poolList = array();
+    	
+    	$condition = "day = ${lastDay} and status = 'Y' ";
+    	if ($source)
+    	{
+    		$condition .= " and (source & ${source}) == ${source}";
+    	}
+    	
+    	$recordList = StockPool::model()->findAll(array(
+                                'condition' => $condition,
+                                'order' => 'source desc, volume_ratio desc, cont_days desc',
+                             ));
+        foreach ($recordList as $record)
+        {
+        	$sid = $record->sid;
+        	
+        	$dataItem = self::getPoolInfo($sid, $lastDay, $record->source);
+        	$dataItem['pool'] = $record->getAttributes();
+        	$dataItem['hq'] = self::getHQData($sid, $day);
+        	
+        	$poolList[] = $dataItem;
+        }
+
+        return $poolList;
+    }
 }
 ?>
