@@ -32,7 +32,8 @@ td {
 						<th>总成本</th>
 						<th>总收入</th>
 						<th>获利金额</th>
-						<th>获利比例</th>						
+						<th>获利比例</th>	
+						<th>操作</th>					
 					</tr>
 				</thead>
 				<tbody>
@@ -50,12 +51,50 @@ td {
 
 						<td><?php echo date('Y/m/d', strtotime($holdInfo['day'])); ?></td>
 						<td><?php echo date('Y/m/d', strtotime($holdInfo['close_day'])); ?></td>
+						<td><?php echo $holdInfo['count']; ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['cost']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['amount']); ?></td>
 						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit']); ?></td> 
                         <td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
-                        
+						
+						<td>
+							<a class="btn btn-primary" data-toggle="collapse" href="#detail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>" aria-expanded="false" aria-controls="collapseExample">详情</a>											
+						</td>
+						<div class="collapse" id="poolDetail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>">
+							<table class="table table-bordered">
+								<thead>
+									<tr>
+										<th>名称</th>
+										<th>交易日期</th>
+										<th>交易类型</th>
+										<th>数量</th>
+										<th>价格</th>
+										<th>费用</th>
+										<th>手续费</th>
+										<th>印花税</th>
+										<th>金额 </th>	
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ($dealList as $dealInfo): ?>
+									<tr>
+										<?php $isBuy = (DealHelper::DEAL_TYPE_BUY == $dealInfo['deal_type']); ?>
+										<?php $sign = $isBuy? "-" : "";?>
+										<td><?php echo $stockInfo['name']; ?>
+										<td><?php echo date('Y/m/d', strtotime($dealInfo['day'])); ?></td>
+										<td><?php echo $isBuy? "买入" : "卖出";?></td>
+										<td><?php echo $dealInfo['count']; ?></td>
+										<td><?php echo $dealInfo['price']; ?></td>
+										<td><?php echo $sign . $dealInfo['fee']; ?></td>
+										<td><?php echo $sign . $dealInfo['commission']; ?></td>
+										<td><?php echo $sign . $dealInfo['tax']; ?></td>
+										<td><?php echo $sign . $dealInfo['amount']; ?></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>	  
+						</div>                        
 					</tr>	
 					<?php endforeach; ?>
 				</tbody>

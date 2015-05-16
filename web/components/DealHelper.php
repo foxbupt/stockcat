@@ -39,6 +39,7 @@ class DealHelper
 		$holdList = array();
 		$recordList = UserHold::model()->findAll(array(
 					'condition' => $criteria,
+					'order' => 'day desc',
 				));
 		foreach ($recordList as $record)
 		{
@@ -220,7 +221,7 @@ class DealHelper
 		));
 		foreach ($recordList as $record)
 		{
-			$dealList[$record->deal_type][] = $record->getAttributes();
+			$dealList[] = $record->getAttributes();
 		}
 		
 		return $dealList;
