@@ -59,7 +59,8 @@ td {
 						<td><?php echo CommonUtil::formatNumber($holdInfo['amount']); ?></td>
 						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit']); ?></td> 
                         <td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
-						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo ($holdInfo['profit_portion'] >= 0)? CommonUtil::formatNumber($holdInfo['profit_portion'] / $openDayCount, CommonUtil::FORMAT_TYPE_PORTION) : "0.00%"; ?> </td>
+                        <?php $dayProfitPortion = ($holdInfo['profit_portion'] >= 0)? ($holdInfo['profit_portion'] / $openDayCount) : 0.00; ?>
+						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php CommonUtil::formatNumber($dayProfitPortion, CommonUtil::FORMAT_TYPE_PORTION) . "/" . $openDayCount; ?> </td>
 						
 						<td>
 							<a class="btn btn-primary" data-toggle="collapse" href="#detail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>" aria-expanded="false" aria-controls="collapseExample">详情</a>											
