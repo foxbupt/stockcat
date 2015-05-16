@@ -51,7 +51,7 @@ td {
 
 						<td><?php echo date('Y/m/d', strtotime($holdInfo['day'])); ?></td>
 						<td><?php echo date('Y/m/d', strtotime($holdInfo['close_day'])); ?></td>
-						<td><?php echo $holdInfo['count']; ?></td>
+						<td><?php echo $holdInfo['total_count']; ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['cost']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['amount']); ?></td>
@@ -96,7 +96,7 @@ td {
 						<td><?php echo $stockInfo['name']; ?>
 						<td><?php echo date('Y/m/d', strtotime($dealInfo['day'])); ?></td>
 						<td><?php echo $isBuy? "买入" : "卖出";?></td>
-						<td><?php echo $dealInfo['total_count']; ?></td>
+						<td><?php echo $dealInfo['count']; ?></td>
 						<td><?php echo $dealInfo['price']; ?></td>
 						<td><?php echo $sign . $dealInfo['fee']; ?></td>
 						<td><?php echo $sign . $dealInfo['commission']; ?></td>
