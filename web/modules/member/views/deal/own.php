@@ -61,7 +61,7 @@ td {
 						<td><?php echo CommonUtil::formatNumber($holdInfo['price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($holdInfo['cost']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
-						<?php $amount = ($holdInfo['state'] == DealHelper::DEAL_STATE_HOLD)? $holdInfo['count'] * $dailyData['close_price'] : $holdInfo['amount']; ?>
+						<?php $amount = ($holdInfo['state'] == DealHelper::DEAL_STATE_CLOSE)? $holdInfo['amount'] : $holdInfo['amount'] + $holdInfo['count'] * $dailyData['close_price']; ?>
 						<?php $profitPortion = ($holdInfo['state'] == DealHelper::DEAL_STATE_HOLD)? ($amount - $holdInfo['cost']) / $holdInfo['cost'] * 100 : $holdInfo['profit_portion']; ?>
 						<td><?php echo CommonUtil::formatNumber($amount); ?></td>
 						<td class="<?php echo ($amount >= $holdInfo['cost'])? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($amount - $holdInfo['cost']); ?></td> 
