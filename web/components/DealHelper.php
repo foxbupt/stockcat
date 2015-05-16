@@ -174,9 +174,17 @@ class DealHelper
 		// 部分卖出时成本价格保持不变, 把获利部分计入即可
 		$restCount = $holdInfo['count'] - $count;	
 		// 全部卖出时, 把状态置为已结算
-		$state = (0 == $restCount)? self::DEAL_STATE_CLOSE : $holdInfo['state'];
-		$relatedCost = (0 == $restCount)? $holdInfo['cost'] : $count / $holdInfo['count'] * $holdInfo['cost'];
-		$totalProfit = $amount - $relatedCost + $holdInfo['profit'];
+		if (0 == $restCount)
+		{
+			$state = self::DEAL_STATE_CLOSE;
+			$totalProfit = ($amount + $holdInfo['amount']) - $holdInfo['cost'];
+		} 
+		else 
+		{
+			$state = self::DEAL_STATE_HOLD;
+			$totalProfit = $amount - $count / $holdInfo['count'] * $holdInfo['cost'] + $holdInfo['profit'];
+		}
+		
 		$profitPortion = CommonUtil::formatNumber($totalProfit / $holdInfo['cost'] * 100);
 		$result = (1 == UserHold::model()->updateByPk($holdInfo['id'], array(
 						'count' => $restCount,
