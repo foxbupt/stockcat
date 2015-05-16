@@ -73,7 +73,7 @@ td {
 		<?php foreach ($historyList as $sid => $holdInfo): ?>
 	        <?php $stockInfo = $stockMap[$sid]; ?>
 	        <?php $dealList = $dealMap[$sid]; ?>
-		<div class="collapse" id="poolDetail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>">
+		<div class="collapse" id="detail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>">
 			<table class="table table-bordered">
 				<thead>
 					<tr>
