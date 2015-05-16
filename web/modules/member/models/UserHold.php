@@ -45,14 +45,14 @@ class UserHold extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('uid, sid, count, day, state, update_time, create_time', 'numerical', 'integerOnly'=>true),
+			array('uid, sid, count, total_count, day, state, update_time, create_time', 'numerical', 'integerOnly'=>true),
 			array('batch_no, day, close_day', 'length', 'max'=>11),
 			array('price, profit_portion', 'length', 'max'=>6),
 			array('cost, amount, profit', 'length', 'max'=>10),
 			array('status', 'length', 'max'=>1),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, batch_no, uid, sid, count, day, close_day, state, price, cost, amount, profit, profit_portion, update_time, create_time, status', 'safe', 'on'=>'search'),
+			array('id, batch_no, uid, sid, count, total_count, day, close_day, state, price, cost, amount, profit, profit_portion, update_time, create_time, status', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -77,9 +77,10 @@ class UserHold extends CActiveRecord
 			'batch_no' => 'Batch No',
 			'uid' => 'Uid',
 			'sid' => 'Sid',
-			'day' => 'Day',
-			'close_day' => 'CloseDay',
-			'count' => 'Count',
+			'day' => '买入日期',
+			'close_day' => '结算日期',
+			'count' => '当前数量',
+			'total_count' => '总数量',
 			'state' => 'State',
 			'price' => 'Price',
 			'cost' => 'Cost',

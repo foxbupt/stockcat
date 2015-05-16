@@ -79,7 +79,8 @@ class DealHelper
 					'commission' => CommonUtil::formatNumber($commission),
 					'tax' => CommonUtil::formatNumber($tax),
 					'amount' => CommonUtil::formatNumber($amount),
-				);				
+				);	
+		$totalCount = $count;			
 		if (isset($holdList[$sid]))
 		{
 			$holdInfo = $holdList[$sid];
@@ -88,7 +89,8 @@ class DealHelper
 			$totalCount = $holdInfo['count'] + $count;
 			$avgPrice = CommonUtil::formatNumber($totalCost / $totalCount);
 			$result = (1 == UserHold::model()->updateByPk($holdInfo['id'], array(
-						'cost' => $totalCost,
+							'cost' => $totalCost,
+							'total_count' => $totalCount,
 							'count' => $totalCount,
 							'price' => $avgPrice,	
 							'update_time' => time(),
@@ -106,6 +108,7 @@ class DealHelper
 			$record->batch_no = $batchno;
 			$record->day = $day;
 			$record->count = $count;
+			$record->total_count = $count;
 			$record->state = self::DEAL_STATE_HOLD;
 			$record->price = $costPrice;
 			$record->cost = $amount;
@@ -121,6 +124,7 @@ class DealHelper
 				'sid' => $sid,
 				'day' => $day,
 				'count' => $count,
+				'total_count' => $totalCount,
 				'price' => $price,
 				'cost' => $cost,
 				'amount' => $amount,
