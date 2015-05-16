@@ -172,28 +172,27 @@ class DealHelper
 				);				
 
 		// 部分卖出时成本价格保持不变, 把获利部分计入即可
-		$restCount = $holdInfo['count'] - $count;	
+		$fields = array();
+		$fields['count'] = $restCount = $holdInfo['count'] - $count;	
+		$fields['amount'] = $amount + $holdInfo['amount'];
+		$fields['update_time'] = time();
+		
 		// 全部卖出时, 把状态置为已结算
 		if (0 == $restCount)
 		{
-			$state = self::DEAL_STATE_CLOSE;
-			$totalProfit = ($amount + $holdInfo['amount']) - $holdInfo['cost'];
+			$fields['close_day'] = $day;
+			$fields['state'] = self::DEAL_STATE_CLOSE;
+			$fields['profit'] = $totalProfit = ($amount + $holdInfo['amount']) - $holdInfo['cost'];
 		} 
 		else 
 		{
-			$state = self::DEAL_STATE_HOLD;
-			$totalProfit = $amount - $count / $holdInfo['count'] * $holdInfo['cost'] + $holdInfo['profit'];
+			$fields['state'] = self::DEAL_STATE_HOLD;
+			$fields['profit'] = $totalProfit = $amount - $count / $holdInfo['count'] * $holdInfo['cost'] + $holdInfo['profit'];
 		}
 		
-		$profitPortion = CommonUtil::formatNumber($totalProfit / $holdInfo['cost'] * 100);
-		$result = (1 == UserHold::model()->updateByPk($holdInfo['id'], array(
-						'count' => $restCount,
-						'state' => $state,
-						'amount' => $holdInfo['amount'] + $amount,
-						'profit' => $totalProfit,
-						'profit_portion' => $profitPortion,	
-						'update_time' => time(),
-				)));
+		$fields['profit_portion'] = CommonUtil::formatNumber($totalProfit / $holdInfo['cost'] * 100);
+		$result = (1 == UserHold::model()->updateByPk($holdInfo['id'], $fields));
+		StatLogUtil::log("sell_stock", array_merge(array('result' => $result? 1 : 0), $fields));	
 		
 		if ($result)
 		{
@@ -201,6 +200,30 @@ class DealHelper
 		}
 		
 		return $result;	
+	}
+	
+	/**
+	 * @desc 获取股票的交易记录列表
+	 *
+	 * @param int $uid
+	 * @param int $sid
+	 * @param int $batchNo
+	 * @return array
+	 */
+	public static function getDealList($uid, $sid, $batchNo)
+	{
+		$dealList = array();
+		
+		$recordList = UserDeal::model()->findAll(array(
+					'condition' => "uid = ${uid} and batch_no = ${batchNo} and sid = ${sid}",
+					'order' => 'day asc',					
+		));
+		foreach ($recordList as $record)
+		{
+			$dealList[$record->deal_type][] = $record->getAttributes();
+		}
+		
+		return $dealList;
 	}
 }
 ?>

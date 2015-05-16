@@ -28,7 +28,7 @@ class DealController extends Controller
 	{
 		return array(
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('own', 'buy', 'sell'),
+				'actions'=>array('own', 'buy', 'sell', 'history'),
 				'users'=>array('*'),
 			),			
 			array('deny',  // deny all users
@@ -148,17 +148,25 @@ class DealController extends Controller
 	}
 	
 	/**
-	 * @desc 查询历史交易记录
-	 * @param $_POST['begin_day']
-	 * @param $_POST['end_day']
-	 * @param $_POST['type']
-	 * @param $_POST['page_no']
-	 * @param $_POST['sort'] 指定排序字段, 可选
-	 * @param $_POST['order'] 排序方式: asc 升序 desc 倒序
+	 * @desc 展现已结算的记录
 	 */
 	public function actionHistory()
 	{
+		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
+		$historyList = DealHelper::getUserHoldList($uid, DealHelper::DEAL_STATE_CLOSE);
 		
+		$dealMap = $stockMap = array();
+		foreach ($historyList as $sid => $historyInfo)
+		{
+			$stockMap[$sid] = StockUtil::getStockInfo($sid);
+			$dealMap[$sid] = DealHelper::getDealList($uid, $sid, $historyInfo['batch_no']);
+		}
+		
+		$this->render('history', array(
+				'historyList' => $historyList,
+				'stockMap' => $stockMap,
+				'dealMap' => $dealMap,
+			));
 	}
 }
 ?>
