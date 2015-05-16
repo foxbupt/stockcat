@@ -33,6 +33,7 @@ td {
 						<th>总收入</th>
 						<th>获利金额</th>
 						<th>获利比例</th>	
+						<th>日均收益</th>
 						<th>操作</th>					
 					</tr>
 				</thead>
@@ -40,6 +41,7 @@ td {
 					<?php foreach ($historyList as $sid => $holdInfo): ?>
                     <?php $stockInfo = $stockMap[$sid]; ?>
                     <?php $dealList = $dealMap[$sid]; ?>
+                    <?php $openDayCount = CommonUtil::getOpenDayCount($holdInfo['day'], $holdInfo['close_day']); ?>
                     
                     <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
 					<?php $viewUrl = Yii::app()->createUrl('/stock/stock/index', array('sid' => $sid)); ?>
@@ -57,6 +59,7 @@ td {
 						<td><?php echo CommonUtil::formatNumber($holdInfo['amount']); ?></td>
 						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit']); ?></td> 
                         <td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($holdInfo['profit_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?> </td>
+						<td class="<?php echo ($holdInfo['profit'] >= 0)? 'red': 'green'; ?>"><?php echo ($holdInfo['profit_portion'] >= 0)? CommonUtil::formatNumber($holdInfo['profit_portion'] / $openDayCount, CommonUtil::FORMAT_TYPE_PORTION) : "0.00%"; ?> </td>
 						
 						<td>
 							<a class="btn btn-primary" data-toggle="collapse" href="#detail-<?php echo $holdInfo['sid'] . "-" . $holdInfo['batch_no'] ;?>" aria-expanded="false" aria-controls="collapseExample">详情</a>											
