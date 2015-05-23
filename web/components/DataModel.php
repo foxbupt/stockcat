@@ -301,7 +301,7 @@ class DataModel
     	$condition = "day = ${lastDay} and status = 'Y' ";
     	if ($source)
     	{
-    		$condition .= " and (source & ${source}) == ${source}";
+    		$condition .= " and (source & ${source}) = ${source}";
     	}
     	
     	$recordList = StockPool::model()->findAll(array(

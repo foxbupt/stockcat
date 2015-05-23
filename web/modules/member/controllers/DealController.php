@@ -40,17 +40,26 @@ class DealController extends Controller
 	/**
 	 * @desc 当前持有的股票列表
 	 * @param $_GET['state'] int 缺省为1
+	 * @param $_GET['location'] int 可选
 	 */
 	public function actionOwn()
 	{
 		$day = CommonUtil::getParamDay(date('Ymd'));
 		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
+		
+		$location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 		$state = isset($_GET['state'])? intval($_GET['state']) : DealHelper::DEAL_STATE_HOLD;
 		$userHoldList = DealHelper::getUserHoldList($uid, $state);
 		
 		$stockHqMap = array();
+		$stockList = StockUtil::getStockList($location);
 		foreach (array_keys($userHoldList) as $sid)
 		{
+			if (!in_array($sid, $stockList))
+			{
+				continue;
+			}
+			
 			$stockHqMap[$sid] = DataModel::getHQData($sid, $day);
 		}
 		
@@ -95,7 +104,8 @@ class DealController extends Controller
 			return;
 		}
 		
-		$result = DealHelper::buyStock($uid, $sid, $day, $price, $count);
+		$stockInfo = StockUtil::getStockInfo($sid);
+		$result = DealHelper::buyStock($uid, $sid, $day, $price, $count, $stockInfo['location']);
 		$this->renderText(OutputUtil::json(array(), $result? 0 : -2));
 	}
 	
@@ -131,7 +141,8 @@ class DealController extends Controller
 			return;
 		}
 		
-		$result = DealHelper::sellStock($uid, $sid, $day, $price, $count);
+		$stockInfo = StockUtil::getStockInfo($sid);
+		$result = DealHelper::sellStock($uid, $sid, $day, $price, $count, $stockInfo['location']);
 		$this->renderText(OutputUtil::json(array(), $result? 0 : -2));
 	}
 	
@@ -149,15 +160,23 @@ class DealController extends Controller
 	
 	/**
 	 * @desc 展现已结算的记录
+	 * @param $_GET['location'] 缺省为1
 	 */
 	public function actionHistory()
 	{
+		$location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
 		$uid = Yii::app()->user->isGuest? 0 : Yii::app()->user->getId();
 		$historyList = DealHelper::getUserHoldList($uid, DealHelper::DEAL_STATE_CLOSE);
 		
 		$dealMap = $stockMap = array();
+		$locationMap = StockUtil::getStockList($location);
 		foreach ($historyList as $sid => $historyInfo)
 		{
+			if (!in_array($sid, $locationMap))
+			{
+				continue;
+			}
+			
 			$stockMap[$sid] = StockUtil::getStockInfo($sid);
 			$dealMap[$sid] = DealHelper::getDealList($uid, $sid, $historyInfo['batch_no']);
 		}

@@ -107,6 +107,7 @@ class StockController extends Controller
         			'prefix' => $prefix,
         			'poolList' => $poolRecordList,
         			'poolMap' => $poolInfoMap,
+        			'isRise' => ($hqData['daily']['vary_portion'] >= 0),
         			'trendStartDay' => date('Ymd', strtotime("6 month ago", strtotime($openDay))),
                 ));
 	}

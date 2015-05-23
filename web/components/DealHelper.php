@@ -57,13 +57,14 @@ class DealHelper
 	 * @param int $day
 	 * @param double $price
 	 * @param int $count
+	 * @param int $location 缺省为LOCATION_CHINA
 	 * @return
 	 */
-	public static function buyStock($uid, $sid, $day, $price, $count)
+	public static function buyStock($uid, $sid, $day, $price, $count, $location = CommonUtil::LOCATION_CHINA)
 	{
 		$holdList = self::getUserHoldList($uid, self::DEAL_STATE_HOLD);
 		$cost = $price * $count;
-		$commission = $cost * self::COMMISION_FEE;
+		$commission = (CommonUtil::LOCATION_CHINA == $location)? $cost * self::COMMISION_FEE : ceil($count/200*1);
 		$tax = 0; //$cost * self::TAX_FEE;
 		$amount = $cost + $commission + $tax;
 		// var_dump($cost, $commission, $tax, $amount);
@@ -146,9 +147,10 @@ class DealHelper
 	 * @param int $day
 	 * @param double $price
 	 * @param int $count
+	 * @param int $location
 	 * @return bool
 	 */
-	public static function sellStock($uid, $sid, $day, $price, $count)
+	public static function sellStock($uid, $sid, $day, $price, $count, $location = CommonUtil::LOCATION_CHINA)
 	{
 		$holdList = self::getUserHoldList($uid, self::DEAL_STATE_HOLD);
 		$holdInfo = $holdList[$sid];
@@ -158,8 +160,16 @@ class DealHelper
 		}
 		
 		$cost = $price * $count;
-		$commision = CommonUtil::formatNumber($cost * self::COMMISION_FEE);
-		$tax = CommonUtil::formatNumber($cost * self::TAX_FEE);
+		if (CommonUtil::LOCATION_CHINA == $location)
+		{
+			$commision = CommonUtil::formatNumber($cost * self::COMMISION_FEE);
+			$tax = CommonUtil::formatNumber($cost * self::TAX_FEE);
+		} 
+		else 
+		{
+			$commision = ceil($count/200 * 1.00);
+			$tax = 0;
+		}
 		$amount = $cost - $commision - $tax;
 
 		$dealParams = array(
