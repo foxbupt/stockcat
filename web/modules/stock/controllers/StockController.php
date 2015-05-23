@@ -56,10 +56,13 @@ class StockController extends Controller
  		}
  		
  		$location = $stockInfo['location'];
-        $day = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
-        if (CommonUtil::LOCATION_US == $location)
+ 		if (isset($_GET['day']))
+ 		{
+        	$day = isset($_GET['day']);
+ 		}
+ 		else
         {
-        	$day = intval(date("Ymd", strtotime("-9 hours", strtotime($day)))); 	
+        	$day = (CommonUtil::LOCATION_CHINA == $location)? intval(date("Ymd")) : CommonUtil::getUSDay(); 	
         }
         
         $marketOpen = CommonUtil::isMarketOpen($day);

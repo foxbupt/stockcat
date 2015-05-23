@@ -357,6 +357,21 @@ class CommonUtil
     }
     
     /**
+     * @desc 获取美国股市交易日
+     *		夏令时是9:30开市, 冬令时是10:30开市, 我们早12个小时
+     * @return int
+     */
+    public static function getUSDay()
+    {
+    	$hour = date("H");
+    	$min = date("i");
+
+    	$day = (($hour < 21) || (($hour == 21) && ($min < 30)))?
+    		date('Ymd', strtotime("-1 days", time())) : date('Ymd');
+    	return intval($day);
+    }
+    
+    /**
      * @desc 获取当前时刻的市场交易状态(暂时不支持中间休息的状态)
      * @param int $location
      * @param int $timevalue 格式为HHMMSS, 缺省null表示采用当前时间

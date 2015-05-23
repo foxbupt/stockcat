@@ -92,5 +92,6 @@ return array(
         'commonDB' => 'db_stockcat',
         'stockDB' => 'db_stockcat',
         'serviceDB' => 'db_stockcat',
+		'cnlist' => require_once(dirname(__FILE__) . '/cnlist.php'),
 	),
 );
