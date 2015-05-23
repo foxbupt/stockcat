@@ -68,8 +68,10 @@ setTimeout('refreshPage()', <?php echo $refreshInterval; ?> * 1000);
 					<?php $value = $this->getFieldValue($dataItem, $fieldName, $fieldConfig); ?>
 					<?php if (strstr($fieldName, "vary_portion") !== FALSE): ?>
 					<td class="<?php echo ($value >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($value, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
-					<?php else: ?>
+					<?php elseif (strstr($fieldName, "price") !== FALSE):  ?>
 					<td><?php echo CommonUtil::formatNumber($value); ?></td>
+					<?php else: ?>
+					<td><?php echo $value; ?></td>
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</tr>	

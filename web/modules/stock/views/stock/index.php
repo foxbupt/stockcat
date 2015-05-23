@@ -6,10 +6,10 @@
 				<p class="text-center"><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
 			</div>
 			<div class="row">
-				<h1 class="text-center" style="<?php echo 'color:' . ($isRise? '#009900' : '#fe0002'); ?>"><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></h1>
+				<h1 class="text-center" style="<?php echo 'color:' . ($isRise? '#fe0002' : '#009900'); ?>"><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></h1>
 			</div>
 			<div class="row">
-                <p class="text-center" style="<?php echo 'color:' . ($isRise? '#009900' : '#fe0002'); ?>">
+                <p class="text-center" style="<?php echo 'color:' . ($isRise? '#fe0002' : '#009900'); ?>">
                 	<?php echo $prefix . CommonUtil::formatNumber($hqData['daily']['vary_price']); ?> 
                 	<?php echo $prefix . CommonUtil::formatNumber($hqData['daily']['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>
                 </p>
