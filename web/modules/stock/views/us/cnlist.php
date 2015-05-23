@@ -35,7 +35,7 @@
 					'label' => '支撑位',
 				),
 			),
-	        'refreshInterval' => 60,
+	        'refreshInterval' => 0,
 		));?>
 	</div>
 </div>

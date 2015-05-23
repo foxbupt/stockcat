@@ -29,6 +29,7 @@ class UsController extends Controller
 			
 			$sid = $code2idmap[$code];	
 			$poolInfo = DataModel::getPoolInfo($sid, $day, CommonUtil::SOURCE_CONT|CommonUtil::SOURCE_PRICE_THRESHOLD|CommonUtil::SOURCE_UP_RESIST);
+			print_r($poolInfo);
 			$cnStockMap[$sid] = $poolInfo;
 		}
 		
