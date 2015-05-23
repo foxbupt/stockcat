@@ -26,7 +26,6 @@ td {
             <caption>当前共有<strong><?php echo count($userHoldList); ?></strong>支股票, 交易日:<?php echo $day;?></caption>
 				<thead>
 					<tr>
-						<th>股票id</th>
 						<th>名称</th>
 						<th>代码</th>
 						<th>买入日期</th>
@@ -52,8 +51,7 @@ td {
 					<?php $viewUrl = Yii::app()->createUrl('/stock/stock/index', array('sid' => $sid)); ?>
 					
 					<tr class="pull-center">
-                        <td><a href="<?php echo $viewUrl;?>" target="_blank"><?php echo $sid; ?></a></td>
-                        <td><?php echo $stockInfo['name']; ?></td>
+                        <td><a href="<?php echo $viewUrl;?>" target="_blank"><?php echo $stockInfo['name'] . "(" . $sid . ")"; ?></a></td>
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
 						<td><?php echo date('Y/m/d', strtotime($holdInfo['day'])); ?></td>
