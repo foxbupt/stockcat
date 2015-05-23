@@ -6,7 +6,7 @@
  * @date 2015/04/28
  *
  */
-class USController extends Controller
+class UsController extends Controller
 {
 	/**
 	 * @desc 中概股数据总览
