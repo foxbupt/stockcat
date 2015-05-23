@@ -33,8 +33,8 @@ setTimeout('refreshPage()', <?php echo $refreshInterval; ?> * 1000);
 				<th><?php echo $label; ?></th>
 				<?php endforeach;?>
 				
-				<?php foreach ($customFields as $fieldName => $label): ?>
-				<th><?php echo $label; ?></th>
+				<?php foreach ($customFields as $fieldName => $fieldConfig): ?>
+				<th><?php echo $fieldConfig['label']; ?></th>
 				<?php endforeach;?>
 			</tr>
 		</thead>
@@ -64,8 +64,8 @@ setTimeout('refreshPage()', <?php echo $refreshInterval; ?> * 1000);
 					<?php endif; ?>
 				<?php endforeach; ?>
 
-				<?php foreach (array_keys($customFields) as $fieldName): ?>					
-					<?php $value = $this->getFieldValue($hqItem, $fieldName); ?>
+				<?php foreach ($customFields as $fieldName => $fieldConfig): ?>					
+					<?php $value = $this->getFieldValue($hqItem, $fieldName, $fieldConfig); ?>
 					<?php if (strstr($fieldName, "vary_portion") !== FALSE): ?>
 					<td class="<?php echo ($value >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($value, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 					<?php else: ?>

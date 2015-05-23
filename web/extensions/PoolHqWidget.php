@@ -26,7 +26,18 @@ class PoolHqWidget extends CWidget
 			'daily.close_price' => '当前价格',
 			'daily.vary_portion' => '涨幅',			
 		);
-	// 自定义显示字段
+		
+	/**
+	 * @desc 自定义显示字段, 格式为
+	 * array(
+	 * 		field => array(
+	 * 			'label' => name, 
+	 * 			'map' => array(
+	 * 				value1 => show1,
+	 * 				value2 => show2
+	 * 			),
+	 *  ...)
+	 */
 	public $customFields = array();
 	
 	// 自动刷新间隔, 0 表示不刷新
@@ -61,9 +72,10 @@ class PoolHqWidget extends CWidget
 	 *
 	 * @param array $map
 	 * @param string $fieldPath 形如daily.vary_portion
+	 * @param array $fieldConfig 
 	 * @return mixed
 	 */
-	public function getFieldValue($map, $fieldPath)
+	public function getFieldValue($map, $fieldPath, $fieldConfig = array())
 	{
 		$fields = explode(".", $fieldPath);
 		$value = $map;
@@ -78,6 +90,10 @@ class PoolHqWidget extends CWidget
 			$value = $value[$fieldName];
 		}
 		
+		if (!empty($fieldConfig) && isset($fieldConfig['map']))
+		{
+			return $fieldConfig['map'][$value];
+		}
 		return $value;
 	}
 }

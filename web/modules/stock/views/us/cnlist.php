@@ -9,9 +9,25 @@
 			'day' => $day,
 	        'poolList' => $poolList,
 			'customFields' => array(
-				'cont.cont_days' => '连续上涨天数',
-				'threshold.high_index' => '向上价格突破',
-				'threshold.low_index' => '向下价格突破',
+				'cont.cont_days' => array('label' => '连续上涨天数'),
+				'threshold.high_index' => array(
+					'label' => '向上价格突破',
+					'map' => array(
+						0 => '历史最高',
+						1 => '年内最高',
+						2 => '60日最高',
+						3 => '30日最高',			
+					)
+				),
+				'threshold.low_index' => array(
+					'label' => '向上价格突破',
+					'map' => array(
+						0 => '历史最低',
+						1 => '年内最低',
+						2 => '60日最低',
+						3 => '30日最低',			
+					)
+				),
 				'pivot.resist' => '阻力位',
 				'pivot.support' => '支撑位',
 			),
