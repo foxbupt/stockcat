@@ -20,7 +20,7 @@
 					)
 				),
 				'threshold.low_index' => array(
-					'label' => '向上价格突破',
+					'label' => '向下价格突破',
 					'map' => array(
 						0 => '历史最低',
 						1 => '年内最低',
@@ -28,8 +28,12 @@
 						3 => '30日最低',			
 					)
 				),
-				'pivot.resist' => '阻力位',
-				'pivot.support' => '支撑位',
+				'pivot.resist' => array(
+					'label' => '阻力位',
+				),
+				'pivot.support' => array(
+					'label' => '支撑位',
+				),
 			),
 	        'refreshInterval' => 60,
 		));?>

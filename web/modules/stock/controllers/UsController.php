@@ -15,6 +15,7 @@ class UsController extends Controller
 	public function actionCnlist()
 	{
 		$day = isset($_GET['day'])? intval($_GET['day']) : CommonUtil::getUSDay();
+		$day = CommonUtil::getParamDay($day, CommonUtil::LOCATION_US);
 		$cnCodeList = Yii::app()->params['cnlist'];
 		$cnStockMap = array();
 		
