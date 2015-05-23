@@ -65,7 +65,7 @@ setTimeout('refreshPage()', <?php echo $refreshInterval; ?> * 1000);
 				<?php endforeach; ?>
 
 				<?php foreach ($customFields as $fieldName => $fieldConfig): ?>					
-					<?php $value = $this->getFieldValue($hqItem, $fieldName, $fieldConfig); ?>
+					<?php $value = $this->getFieldValue($dataItem, $fieldName, $fieldConfig); ?>
 					<?php if (strstr($fieldName, "vary_portion") !== FALSE): ?>
 					<td class="<?php echo ($value >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($value, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 					<?php else: ?>
