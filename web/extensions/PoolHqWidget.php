@@ -84,7 +84,7 @@ class PoolHqWidget extends CWidget
 		{
 			if (!is_array($value) || !isset($value[$fieldName]))
 			{
-				return "";
+				return "-";
 			}
 			
 			$value = $value[$fieldName];
