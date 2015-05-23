@@ -178,7 +178,7 @@ class StockUtil
     	if (!empty($record))
     	{
     		$attrs = $trendInfo;
-    		$attrs['source'] = $record->source | $source;
+    		$attrs['source'] = intval($record->source) | $source;
     		return $record->updateByPk($record->id, $attrs);
     	}
     	

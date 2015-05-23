@@ -53,10 +53,12 @@ class DealController extends Controller
 		
 		$stockHqMap = array();
 		$stockList = StockUtil::getStockList($location);
-		foreach (array_keys($userHoldList) as $sid)
+		$sidKeyList = array_keys($userHoldList);
+		foreach ($sidKeyList as $sid)
 		{
 			if (!in_array($sid, $stockList))
 			{
+				unset($userHoldList[$sid]);
 				continue;
 			}
 			
@@ -170,13 +172,16 @@ class DealController extends Controller
 		
 		$dealMap = $stockMap = array();
 		$locationMap = StockUtil::getStockList($location);
-		foreach ($historyList as $sid => $historyInfo)
+		$sidKeyList = array_keys($historyList);
+		foreach ($sidKeyList as $sid)
 		{
 			if (!in_array($sid, $locationMap))
 			{
+				unset($historyList[$sid]);
 				continue;
 			}
 			
+			$historyInfo = $historyList[$sid];
 			$stockMap[$sid] = StockUtil::getStockInfo($sid);
 			$dealMap[$sid] = DealHelper::getDealList($uid, $sid, $historyInfo['batch_no']);
 		}
