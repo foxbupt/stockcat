@@ -64,7 +64,7 @@ class StockUtil
 				$stockMap[$record->code] = $record->id;
 			}
 			
-			Yii::app()->redis->set(StockUtil::CACHE_KEY_STOCK_MAP, json_encode($stockMap));
+			Yii::app()->redis->set(StockUtil::CACHE_KEY_STOCK_MAP . strval($location), json_encode($stockMap));
 			return $stockMap;
 		}
 		
