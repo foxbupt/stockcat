@@ -46,7 +46,7 @@ class StockUtil
 	 * @param $location int 缺省为1
 	 * @return array(code => sid)
 	 */
-	public static function getStockMap($location = CommonUtil::LOCATION_CHINA)
+	public static function getStockMap($location = CommonUtil::LOCATION_ALL)
 	{
 		$cacheValue = Yii::app()->redis->get(StockUtil::CACHE_KEY_STOCK_MAP . strval($location));
 		if (!$cacheValue)

@@ -95,14 +95,19 @@ class DealController extends Controller
 		{
 			$stockMap = StockUtil::getStockMap();
 			$sid = $stockMap[$_POST['code']];	
-		} 
+		} 		
+		if (0 == $sid)
+		{
+			$this->renderText(OutputUtil::json(array(), -1));
+			return;
+		}
 		 
 		$count = intval($_POST['count']);
 		$price = floatval($_POST['price']);
 		$day = intval($_POST['day']);
 		if (($count <= 0) || ($price <= 0))
 		{
-			$this->renderText(OutputUtil::json(array(), -1));
+			$this->renderText(OutputUtil::json(array(), -2));
 			return;
 		}
 		
@@ -133,13 +138,18 @@ class DealController extends Controller
 			$stockMap = StockUtil::getStockMap();
 			$sid = $stockMap[$_POST['code']];	
 		} 
+		if (0 == $sid)
+		{
+			$this->renderText(OutputUtil::json(array(), -1));
+			return;
+		}
 		 
 		$count = intval($_POST['count']);
 		$price = floatval($_POST['price']);
 		$day = intval($_POST['day']);
 		if (($count <= 0) || ($price <= 0))
 		{
-			$this->renderText(OutputUtil::json(array(), -1));
+			$this->renderText(OutputUtil::json(array(), -2));
 			return;
 		}
 		
