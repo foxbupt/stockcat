@@ -52,7 +52,7 @@ class StockUtil
 		if (!$cacheValue)
 		{
 			$stockMap = array();
-            $attrs = array('status' => 'Y');
+            $attrs = array('type' => 1, 'status' => 'Y');
             if ($location > 0)
             {
                 $attrs['location'] =  $location;
