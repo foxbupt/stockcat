@@ -434,13 +434,15 @@ class CommonUtil
     	switch ($location)
     	{
     		case CommonUtil::LOCATION_CHINA:
-    			return "http://stockhtm.finance.qq.com/sstock/ggcx/" . $code . ".shtml";	
+    			return "http://gu.qq.com/" . self::$ecodeMaps[$ecode] . $code;
+    			// return "http://stockhtm.finance.qq.com/sstock/ggcx/" . $code . ".shtml";	
     		case CommonUtil::LOCATION_HK:
-				return "http://stock.qq.com/hk" . $code;
+				return "http://gu.qq.com/hk" . $code;
     		case CommonUtil::LOCATION_US:
    			{	
    				$postfix = (CommonUtil::ECODE_NASDAQ == $ecode)? "OQ" : "N";
-   				return "http://stockhtm.finance.qq.com/astock/ggcx/" . $code . "." . $postfix . ".htm";
+   				return "http://gu.qq.com/us" . $code . "." . $postfix;
+   				// return "http://stockhtm.finance.qq.com/astock/ggcx/" . $code . "." . $postfix . ".htm";
    			}
     	}
     }
