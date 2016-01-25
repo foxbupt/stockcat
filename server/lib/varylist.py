@@ -18,9 +18,6 @@ if __name__ == "__main__":
     config_info = Util.load_config(sys.argv[1])
     config_info['DB']['port'] = int(config_info['DB']['port'])
     config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
-
-     # 初始化日志
-    logging.config.fileConfig(config_info["LOG"]["conf"])
     db_config = config_info['DB']
 
     start_day = int(sys.argv[2])
@@ -41,21 +38,12 @@ if __name__ == "__main__":
         end_close_price = float(end_hq_data[sid]['close_price'])
         vary_portion = (start_close_price - end_close_price) / start_close_price * 100
 
-        print format_log("vary_stock", {'sid': sid, 'code': stock_info['code'], 'name': stock_info['name'], 'start_close_price': start_close_price, 'end_close_price': end_close_price, 'vary_portion': vary_portion})
+        #print format_log("vary_stock", {'sid': sid, 'code': stock_info['code'], 'name': stock_info['name'], 'start_close_price': start_close_price, 'end_close_price': end_close_price, 'vary_portion': vary_portion})
         vary_list.append((sid, stock_info['code'], stock_info['name'], start_close_price, end_close_price, vary_portion))
 
     #  按照跌幅的高低排序
-    sorted(vary_list, key = lamba item : abs(item[3]), reverse=True)
+    vary_list.sort(key = lambda item :item[5], reverse=True)
     for item in vary_list:
-        str = "\t".join(item)
-        print str + "\n"
-
-
-
-
-
-
-
-
-
-
+        #print item
+        str = "\t".join([safestr(v) for v in item])
+        print str
