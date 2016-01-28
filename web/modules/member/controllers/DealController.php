@@ -53,9 +53,9 @@ class DealController extends Controller
 		
 		$stockHqMap = array();
 		$stockList = StockUtil::getStockList($location);
-		$sidKeyList = array_keys($userHoldList);
-		foreach ($sidKeyList as $sid)
+		foreach ($userHoldList as $holdStock)
 		{
+			$sid = $holdStock['sid'];
 			if (!in_array($sid, $stockList))
 			{
 				unset($userHoldList[$sid]);
@@ -140,7 +140,7 @@ class DealController extends Controller
 		} 
 		if (0 == $sid)
 		{
-			$this->renderText(OutputUtil::json(array(), -1));
+			$this->renderText(OutputUtil::json(array(), -1, "股票代码不存在"));
 			return;
 		}
 		 
@@ -149,7 +149,7 @@ class DealController extends Controller
 		$day = intval($_POST['day']);
 		if (($count <= 0) || ($price <= 0))
 		{
-			$this->renderText(OutputUtil::json(array(), -2));
+			$this->renderText(OutputUtil::json(array(), -2, "价格/数量不能为0"));
 			return;
 		}
 		
@@ -182,16 +182,15 @@ class DealController extends Controller
 		
 		$dealMap = $stockMap = array();
 		$locationMap = StockUtil::getStockList($location);
-		$sidKeyList = array_keys($historyList);
-		foreach ($sidKeyList as $sid)
+		foreach ($historyList as $historyInfo)
 		{
+			$sid = $historyInfo['sid'];
 			if (!in_array($sid, $locationMap))
 			{
 				unset($historyList[$sid]);
 				continue;
 			}
 			
-			$historyInfo = $historyList[$sid];
 			$stockMap[$sid] = StockUtil::getStockInfo($sid);
 			$dealMap[$sid] = DealHelper::getDealList($uid, $sid, $historyInfo['batch_no']);
 		}
