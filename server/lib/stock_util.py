@@ -381,7 +381,7 @@ def get_timenumber(location = 1):
         cur_time = datetime.datetime.now().time()
     elif 3 == location:
         # TODO: 判断是夏令时(12)还是冬令时(13)
-        us_time = datetime.datetime.now() - datetime.timedelta(hours = 13)
+        us_time = datetime.datetime.now() - datetime.timedelta(hours = 12)
         cur_time = us_time.time()
         
     return cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
