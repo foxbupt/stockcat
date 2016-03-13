@@ -38,7 +38,8 @@ td {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($historyList as $sid => $holdInfo): ?>
+					<?php foreach ($historyList as $holdInfo): ?>
+					<?php $sid = $holdInfo['sid']; ?>
                     <?php $stockInfo = $stockMap[$sid]; ?>
                     <?php $dealList = $dealMap[$sid]; ?>
                     <?php $openDayCount = CommonUtil::getOpenDayCount($holdInfo['day'], $holdInfo['close_day']); ?>

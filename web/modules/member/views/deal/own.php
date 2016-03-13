@@ -42,7 +42,8 @@ td {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ($userHoldList as $sid => $holdInfo): ?>
+					<?php foreach ($userHoldList as $holdInfo): ?>
+					<?php $sid = $holdInfo['sid']; ?>
                     <?php $hqData = $stockHqMap[$sid]; ?>
                     <?php $stockInfo = $hqData['stock']; ?>
                     <?php $dailyData = $hqData['daily']; ?>

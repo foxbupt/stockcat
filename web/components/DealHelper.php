@@ -22,7 +22,7 @@ class DealHelper
 	const DEAL_TYPE_SELL = 2;
 	
 	/**
-	 * @desc 获取用户当前持仓的列表
+	 * @desc 获取用户当前持仓的列表, 对于关闭状态, 会存在多个批次, 所以不能用sid作为key
 	 *
 	 * @param int $uid
 	 * @param int $state
@@ -43,7 +43,7 @@ class DealHelper
 				));
 		foreach ($recordList as $record)
 		{
-			$holdList[$record->sid] = $record->getAttributes();
+			$holdList[] = $record->getAttributes();
 		}
 		
 		return $holdList;
