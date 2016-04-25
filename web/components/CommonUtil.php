@@ -40,15 +40,17 @@ class CommonUtil
     const FORMAT_TYPE_PORTION = 2;
     const FORMAT_TYPE_NUMBER = 3;
 	
-    // 股票池来源(source): 1 连续上涨, 2 价格突破, 4 趋势突破阻力位
-    const SOURCE_BITMAP = 3;
+    // 股票池来源(source): 1 连续上涨, 2 价格突破, 4 趋势突破阻力位, 8 蜡烛形态
+    const SOURCE_BITMAP = 4;
     const SOURCE_CONT = 1;
     const SOURCE_PRICE_THRESHOLD = 2;
     const SOURCE_UP_RESIST = 4;
+    const SOURCE_CANDLE = 8;
     static $sourceMaps = array(
     		self::SOURCE_CONT => '连续上涨',
     		self::SOURCE_PRICE_THRESHOLD => '价格突破',
     		self::SOURCE_UP_RESIST => '趋势突破',
+    		self::SOURCE_CANDLE => '蜡烛形态',
     	);
     
     // 股票所属国家(location): 0 全部 1 中国 2 香港(hk) 3 美国(us)
