@@ -22,18 +22,22 @@ class CandleParser
 	public static function parseSingle($singleData)
 	{
 		// 计算实体长度、上影线和下影线长度
-		$solidLength = abs($singleData['close_price'] - $singleData['open_price']);
-		$upLength = abs($singleData['high_price'] - $singleData['close_price']);
-		$bottomLength = abs($singleData['open_price'] - $singleData['low_price']);
+        $openPrice = $singleData['open_price'];
+        $closePrice = $singleData['close_price'];
+
+		$solidLength = abs($closePrice - $openPrice);
+		$upLength = abs($singleData['high_price'] - max($openPrice, $closePrice));
+		$bottomLength = abs(min($openPrice, $closePrice) - $singleData['low_price']);
 
 		// 最大长度必须占据收盘价的2%以上, 避免长度过小误判
 		$maxLength = max(max($solidLength, $upLength), $bottomLength);
-		if ($maxLength/$singleData['close_price'] * 100 <= 2)
+		var_dump($solidLength, $upLength, $bottomLength, $closePrice);
+		if (($maxLength/$closePrice * 100 <= 2) || ($solidLength/$closePrice * 100 <= 1))
 		{
 			return self::CANDLE_NONE;
 		}
 		
-		var_dump($solidLength, $upLength, $bottomLength);
+        // TODO: 返回上下影线与实体长度的比例, 用于判断强弱
 		if ($bottomLength >= 2 * $solidLength) 
 		{
 			return self::CANDLE_FLIP;
