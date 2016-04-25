@@ -50,7 +50,7 @@ setTimeout('refreshPage()', 120 * 1000);
 					<?php foreach ($rapidList as $rapidInfo): ?>
                     <?php $sid = $rapidInfo['sid']; ?>
                     <?php $stockInfo = $stockMap[$sid]; ?>
-                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code']); ?>
+                    <?php $qqhqUrl = CommonUtil::getHQUrl($stockInfo['code'], $stockInfo['ecode'], $stockInfo['location']); ?>
                     <?php $trendUrl = $this->getTrendUrl($sid, CommonUtil::TREND_FIELD_PRICE, $day); ?>
 					<?php $viewUrl = Yii::app()->createUrl('/stock/stock/index', array('sid' => $sid)); ?>
 					
