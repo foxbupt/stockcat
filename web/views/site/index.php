@@ -23,6 +23,7 @@
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/threshold', array('location' => CommonUtil::LOCATION_US)); ?>">价格突破</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/upresist', array('location' => CommonUtil::LOCATION_US)); ?>">趋势突破</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit', array('location' => CommonUtil::LOCATION_US)); ?>">昨日涨停列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/candle', array('location' => CommonUtil::LOCATION_US)); ?>">蜡烛形态</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/own', array('location' => CommonUtil::LOCATION_US)); ?>">我的持仓</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/history', array('location' => CommonUtil::LOCATION_US)); ?>">历史交易记录</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/us/cnlist'); ?>">中概股</a></li>
