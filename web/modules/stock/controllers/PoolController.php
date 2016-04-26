@@ -323,5 +323,61 @@ class PoolController extends Controller
                 ));
     }
     
+	/**
+     * @desc 展现蜡烛形态列表
+     * @param $_GET['day'] 可选
+     * @param $_GET['location'] 可选, 缺省为1
+     *
+     */
+    public function actionCandle()
+    {
+    	$dayParam = isset($_GET['day'])? intval($_GET['day']) : intval(date('Ymd'));
+        $location = isset($_GET['location'])? intval($_GET['location']) : CommonUtil::LOCATION_CHINA;
+
+        $day = CommonUtil::getParamDay($dayParam, $location);
+        $lastDay = ($day == $dayParam)? CommonUtil::getPastOpenDay($day, 1, $location) : $day;
+        // var_dump($day, $lastDay);
+
+        $recordList = StockCandle::model()->findAll(array(
+                    'condition' => "day = $lastDay and status = 'Y'",
+                    'order' => 'strength asc'
+                ));
+        $sidList = StockUtil::getStockList($location);
+
+        $candleMap = $datamap = $stockList = array();
+		foreach ($recordList as $record)
+        {
+            $sid = $record->sid;
+        	if (!in_array($sid, $sidList))
+        	{
+        		continue;
+        	}
+
+            $candleMap[$sid] = $record;
+        	$datamap[$sid] = DataModel::getHQData($sid, $day);	
+        	$stockList[] = $sid;
+        }
+        
+    	if (CommonUtil::getMarketState($location) >= CommonUtil::MSTATE_OPENED)
+        {
+        	$datamap = SortHelper::sort($datamap, array("daily.vary_portion", "daily.open_vary_portion"), false);
+        	$stockList = array();
+        	foreach ($datamap as $dataItem)
+        	{
+        		$datamap[$dataItem['sid']] = $dataItem;
+        		$stockList[] = $dataItem['sid'];
+        	}
+		}
+		
+        $this->render('upresist', array(                   
+                    'candleMap' => $candleMap,
+        			'datamap' => $datamap,
+        			'stockList' => $stockList,
+                    'day' => $day,
+                    'lastDay' => $lastDay,
+        			'nextDay' => CommonUtil::nextDay($day),
+        			'location' => $location,
+                ));
+    }
 }
 ?>
