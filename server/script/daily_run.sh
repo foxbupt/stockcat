@@ -33,6 +33,9 @@ main()
     # 更新rank
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php rank ${day} $location >> $result_path/rank_${location}.log
 
+    # 分析蜡烛形态
+    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php candle $location $day >> $result_path/candle_${location}.log
+
     echo "finish"
 }
 
