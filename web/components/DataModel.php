@@ -283,6 +283,16 @@ class DataModel
     		}
     	}
     	
+    	if ($source & CommonUtil::SOURCE_CANDLE)
+    	{
+    		$candleList = StockCandle::model()->findAllByAttributes(array(
+    						'sid' => $sid, 'day' => $day, 'status' => 'Y'
+    					));
+    		foreach ($candleList as $candleRecord)
+    		{
+    			$poolInfo['candles'][] = $candleRecord->getAttributes();
+    		}	
+    	}
     	return $poolInfo;
     }
     

@@ -92,6 +92,12 @@
 						  		<?php if (isset($poolInfo['pivot'])): ?>
 						  		<p><?php echo $poolday;?>|阻力位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist']); ?>|阻力位突破涨幅:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['resist_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?>|支撑位:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support']);?>|支撑位幅度:<?php echo CommonUtil::formatNumber($poolInfo['pivot']['support_vary_portion'], CommonUtil::FORMAT_TYPE_PORTION);?></p>
 						  		<?php endif; ?>
+						  		
+						  		<?php if (isset($poolInfo['candles'])): ?>
+						  			<?php foreach ($poolInfo['candles'] as $candleInfo): ?>
+						  			<p><?php echo $poolday;?>|蜡烛形态:<?php echo CandleParser::getCandleName($candleInfo['candle_type']); ?>|强度:<?php echo $candleInfo['strength']; ?></p>						  			
+						  			<?php endforeach; ?>
+						  		<?php endif; ?>
 						  </div>
 					</div>
 				</tr>

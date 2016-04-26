@@ -13,6 +13,15 @@ class CandleParser
 	// 反转线
 	const CANDLE_FLIP = 1;
 	
+	public static $candleNameMap = array(
+				self::CANDLE_FLIP => '反转线',
+			);
+
+	public static function getCandleName($candle)
+	{
+		return isset(self::$candleNameMap[$candle])? self::$candleNameMap[$candle] : "";	
+	}
+	
 	/**
 	 * @desc 解析单天蜡烛形态
 	 *
