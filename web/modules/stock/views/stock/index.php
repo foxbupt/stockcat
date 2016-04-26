@@ -2,7 +2,7 @@
 	<div class="row container-fluid">
 		<div class="offset1 span1">
 			<div class="row">
-				<p class="text-center"><?php echo $stockInfo['name']; ?></p>
+				<p class="text-center"><a href="<?php echo CommonUtil::getHQUrl($stockInfo['code'], $stockInfo['ecode'], $stockInfo['location']); ?>" target="_blank"><?php echo $stockInfo['name']; ?></a></p>
 				<p class="text-center"><?php echo CommonUtil::getShowCode($stockInfo['code'], $stockInfo['ecode']); ?></p>
 			</div>
 			<div class="row">
