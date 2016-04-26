@@ -9,6 +9,7 @@
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit'); ?>">昨日涨停列表</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 1)); ?>">快速拉升列表</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/rapid', array('rise' => 0)); ?>">快速下跌列表</a></li>
+		<li><a href="<?php echo Yii::app()->createUrl('/stock/pool/candle'); ?>">蜡烛形态</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/stock/shortTerm/index'); ?>">短线追踪</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/own', array('location' => CommonUtil::LOCATION_CHINA)); ?>">我的持仓</a></li>
 		<li><a href="<?php echo Yii::app()->createUrl('/member/deal/history', array('location' => CommonUtil::LOCATION_CHINA)); ?>">历史交易记录</a></li>
