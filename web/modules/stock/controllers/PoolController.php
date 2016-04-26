@@ -369,7 +369,7 @@ class PoolController extends Controller
         	}
 		}
 		
-        $this->render('upresist', array(                   
+        $this->render('candle', array(                   
                     'candleMap' => $candleMap,
         			'datamap' => $datamap,
         			'stockList' => $stockList,
