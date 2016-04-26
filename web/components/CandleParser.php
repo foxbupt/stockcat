@@ -31,7 +31,7 @@ class CandleParser
 
 		// 最大长度必须占据收盘价的2%以上, 避免长度过小误判
 		$maxLength = max(max($solidLength, $upLength), $bottomLength);
-		var_dump($solidLength, $upLength, $bottomLength, $closePrice);
+		// var_dump($solidLength, $upLength, $bottomLength, $closePrice);
 		if (($maxLength/$closePrice * 100 <= 2) || ($solidLength/$closePrice * 100 <= 1))
 		{
 			return array('type' => self::CANDLE_NONE);

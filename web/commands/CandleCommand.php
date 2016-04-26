@@ -67,7 +67,7 @@ class CandleCommand extends CConsoleCommand
         $record->sid = $stockInfo['id'];
         $record->day = $day;
         $record->candle_type = $candleData['candle'];
-        $record->strength = $candleData['strength'];
+        $record->strength = round($candleData['strength'], 2);
         $record->create_time = time();
         $record->status = 'Y';
 
