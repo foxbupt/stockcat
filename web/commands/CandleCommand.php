@@ -12,12 +12,12 @@ class CandleCommand extends CConsoleCommand
     {
         if (count($args) < 2)
         {
-            echo "Usage: php -c /etc/php.ini console_entry.php candle <location> <day> [sid] \n";
+            echo "Usage: php -c /etc/php.ini console_entry.php candle <location> [day] [sid] \n";
             exit(1);
         }
 
         $location = intval($args[0]);
-        $day = intval($args[1]);
+        $day = (count($args) >= 2)? intval($args[1]) : intval(date("Ymd"));
         
         $stockList = array();
         if (count($args) >= 3)

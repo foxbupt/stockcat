@@ -55,6 +55,8 @@
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/rankList', array('location' => CommonUtil::LOCATION_US)); ?>">评级列表</a></li>
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/threshold', array('location' => CommonUtil::LOCATION_US)); ?>">价格突破列表</a></li>
 								    <li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/upresist', array('location' => CommonUtil::LOCATION_US)); ?>">趋势突破列表</a></li>
+									<li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/uplimit', array('location' => CommonUtil::LOCATION_US)); ?>">昨日涨停列表</a></li>
+								  	<li role="presentation"><a role="menuitem" tabindex="-1" href="<?php echo Yii::app()->createUrl('/stock/pool/candle', array('location' => CommonUtil::LOCATION_US)); ?>">蜡烛形态</a></li>
 								  </ul>
 								</li>
 							</ul>
