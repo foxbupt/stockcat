@@ -45,19 +45,35 @@ class CandleCommand extends CConsoleCommand
             } 
 
             // var_dump($sid, $stockData);
-           	$candleType = CandleParser::parseSingle($stockData);
-        	if ($candleType != CandleParser::CANDLE_NONE)
+           	$candleResult = CandleParser::parseSingle($stockData);
+        	if ($candleResult['candle'] != CandleParser::CANDLE_NONE)
             {
-                // self::addStockCont($day, $stockInfo, $result);
                 $stockInfo = StockUtil::getStockInfo($sid);
-                echo "op=stock_candle day=$day sid=$sid code=" . $stockInfo['code'] . " name=" . $stockInfo['name'] . " candle=${candleType}\n";
+            	$result = self::addStockCandle($day, $stockInfo, $candleResult);
+                echo "op=stock_candle day=$day sid=$sid result=${result} code=" . $stockInfo['code'] . " name=" . $stockInfo['name'] . " " . StatLogUtil::array2log($candleResult) . "\n";
 				
                 // 添加到股票池
-                // $poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_CANDLE, array());
-                $poolResult = 1;
+                $poolResult = StockUtil::addStockPool($sid, $day, CommonUtil::SOURCE_CANDLE, array());
+                // $poolResult = 1;
                 echo "op=add_pool_succ result=" . ($poolResult? 1:0) . " day=$day sid=$sid name=" . $stockInfo['name'] . "\n";
             }
         }
+    }
+    
+    public static function addStockCandle($day, $stockInfo, $candleData)
+    {
+        $record = new StockCandle();
+
+        $record->sid = $stockInfo['id'];
+        $record->day = $day;
+        $record->candle_type = $candleData['candle'];
+        $record->strength = $candleData['strength'];
+        $record->create_time = time();
+        $record->status = 'Y';
+
+        $result = $record->save();
+        // var_dump($record->getErrors());
+        return $result? 1 : 0;
     }
 }
 ?>        

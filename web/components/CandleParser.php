@@ -17,7 +17,7 @@ class CandleParser
 	 * @desc 解析单天蜡烛形态
 	 *
 	 * @param $singleData array('day', 'open_price', 'high_price', 'low_price', 'close_price', 'last_close_price')
-	 * return int
+	 * return array('candle', 'solid', 'up_ratio', 'bottom_ratio')
 	 */
 	public static function parseSingle($singleData)
 	{
@@ -34,16 +34,27 @@ class CandleParser
 		var_dump($solidLength, $upLength, $bottomLength, $closePrice);
 		if (($maxLength/$closePrice * 100 <= 2) || ($solidLength/$closePrice * 100 <= 1))
 		{
-			return self::CANDLE_NONE;
+			return array('type' => self::CANDLE_NONE);
 		}
 		
-        // TODO: 返回上下影线与实体长度的比例, 用于判断强弱
-		if ($bottomLength >= 2 * $solidLength) 
+        // 返回上下影线与实体长度的比例, 用于判断强弱
+        $upRatio = $upLength / $solidLength;
+        $bottomRatio = $bottomLength / $solidLength;
+        $data = array(
+        			'candle' => self::CANDLE_NONE, 
+        			'solid' => $solidLength, 
+        			'up_ratio' => $upRatio, 
+        			'bottom_ratio' => $bottomRatio
+        		);
+        
+        // 下影线超过2倍实体长度, 为反转线, 下影线/实体比例为强度
+        if ($bottomRatio >= 2.0) 
 		{
-			return self::CANDLE_FLIP;
+			$data['strength'] = $bottomRatio;
+			$data['candle'] = self::CANDLE_FLIP;
 		}
 		
-		return self::CANDLE_NONE;
+		return $data;
 	}
 	
 	/**
