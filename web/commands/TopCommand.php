@@ -128,10 +128,16 @@ class TopCommand extends CConsoleCommand
 			$trendData['trend'] = $latestTrendRecord->trend;
 			$trendData['current_price'] = $closePrice;
 				
-			// TODO: 需要判断shave
+			// 上升趋势判断突破阻力位
 			if ((CommonUtil::DIRECTION_UP == $trendData['trend']) && ($resistVaryPortion >= -1.0))
 			{								
 				echo "op=recommend_trend_above_resist " . StatLogUtil::array2log($trendData) . "\n";	
+				$recommendList[] = $trendData;
+			}
+			// 下降趋势判断突破支撑位
+			else if ((CommonUtil::DIRECTION_DOWN == $trendData['trend']) && ($supportVaryPortion <= -1.0))
+			{								
+				echo "op=recommend_trend_below_support " . StatLogUtil::array2log($trendData) . "\n";	
 				$recommendList[] = $trendData;
 			}
 			else 
@@ -161,12 +167,14 @@ class TopCommand extends CConsoleCommand
 		foreach ($recordList as $record)
 		{
 			// 两周内存在重复超越相同阻力位, 表明一直在上涨, 不插入记录
-			if ($record->resist == $trendItem['pivot']['resist'])
+			if (((CommonUtil::DIRECTION_UP == $record->trend) && ($record->resist == $trendItem['pivot']['resist']))
+				|| ((CommonUtil::DIRECTION_DOWN == $record->trend) && ($record->support == $trendItem['pivot']['support'])))
 			{
 				$logInfo = array(
 						'lastday' => $record->day,
 						'last_price' => $record->close_price,
 						'resist' => $record->resist,
+						'support' => $record->support,
 						'close_price' => $trendItem['current_price'],
 					);
 				echo "op=ignore_duplicate_record " . StatLogUtil::array2log($logInfo) . "\n";	
@@ -203,11 +211,16 @@ class TopCommand extends CConsoleCommand
 	 *
 	 * @param double $closePrice
 	 * @param array $stockInfo
-	 * @param double $capitalAmount
+	 * @param double $capitalLimit
 	 * @return boolean
 	 */
-	public static function checkOutCapital($closePrice, $stockInfo, $capitalAmount = 10)
+	public static function checkOutCapital($closePrice, $stockInfo, $capitalLimit = 10)
 	{
+		if ($closePrice < 3.00)
+		{
+			return false;
+		}
+		
 		$outCapital = $closePrice * floatval($stockInfo['out_capital']); 
         if (CommonUtil::LOCATION_US == $stockInfo['location'])	// 美股股本单位为万股, 需要转换为亿
         {
@@ -215,7 +228,7 @@ class TopCommand extends CConsoleCommand
         }
         
         // A股>10亿, 美股 >= 15亿刀(部分股票获取不到市值, 取不到股本的直接忽略)
-        if ($outCapital <= $capitalAmount)
+        if ($outCapital <= $capitalLimit)
         {
         	return false;
         }
