@@ -44,6 +44,7 @@ td {
                         <?php $dataItem = $datamap[$sid]; ?>
                         <?php $resistItem = $resistMap[$sid]; ?>
                         <?php $direction = $resistItem->trend;?>
+                        <?php $class = ($direction == CommonUtil::DIRECTION_UP)? "red" : "green"; ?>
                         <?php $trendPrice = ($direction == CommonUtil::DIRECTION_UP)? $resistItem->resist : $resistItem->support; ?>
                         <?php $trendPortion = ($direction == CommonUtil::DIRECTION_UP)? $resistItem->resist_vary_portion : $resistItem->support_vary_portion; ?>
                         
@@ -60,7 +61,7 @@ td {
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
 						<td><?php echo CommonUtil::formatNumber($resistItem->close_price); ?></td>
-						<td><?php echo ($direction == CommonUtil::DIRECTION_UP)? "向上" : "向下"; ?></td>
+						<td class="<?php echo $class;?>"><?php echo ($direction == CommonUtil::DIRECTION_UP)? "向上" : "向下"; ?></td>
 						<td><?php echo CommonUtil::formatNumber($trendPrice); ?></td>
 						<td class="<?php echo ($trendPortion >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($trendPortion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
