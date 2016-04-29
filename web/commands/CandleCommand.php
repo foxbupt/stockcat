@@ -46,7 +46,7 @@ class CandleCommand extends CConsoleCommand
 
             // var_dump($sid, $stockData);
            	$candleResult = CandleParser::parseSingle($stockData);
-        	if ($candleResult['candle'] != CandleParser::CANDLE_NONE)
+        	if (($candleResult['candle'] != CandleParser::CANDLE_NONE) && ($stockData['close_price'] >= 3.00))
             {
                 $stockInfo = StockUtil::getStockInfo($sid);
             	$result = self::addStockCandle($day, $stockInfo, $candleResult);
