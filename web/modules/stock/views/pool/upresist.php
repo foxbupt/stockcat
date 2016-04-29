@@ -15,7 +15,7 @@ td {
 <div class="container">
 	<div class="span12">
 		<div class="hd">
-			<h3>突破阻力位股票列表</h3>
+			<h3>趋势突破股票列表</h3>
 		</div>
 		
 		<div>
@@ -30,8 +30,9 @@ td {
 						<th>股票id</th>
 						<th>名称</th>
 						<th>代码</th>
-						<th>昨收</th>						
-						<th>阻力位</th>
+						<th>昨收</th>	
+						<th>方向</th>					
+						<th>趋势位</th>
 						<th>突破涨幅</th>
 						<th>今开</th>
 						<th>当前价格</th>
@@ -42,6 +43,9 @@ td {
 					<?php foreach ($orderList as $sid): ?>
                         <?php $dataItem = $datamap[$sid]; ?>
                         <?php $resistItem = $resistMap[$sid]; ?>
+                        <?php $direction = $resistItem->trend;?>
+                        <?php $trendPrice = ($direction == CommonUtil::DIRECTION_UP)? $resistItem->resist : $resistItem->support; ?>
+                        <?php $trendPortion = ($direction == CommonUtil::DIRECTION_UP)? $resistItem->resist_vary_portion : $resistItem->support_vary_portion; ?>
                         
                         <?php $dailyData = $dataItem['daily']; ?>
                         <?php $dailyPolicyData = $dataItem['policy']; ?>
@@ -56,8 +60,9 @@ td {
 						<td><a href="<?php echo $qqhqUrl; ?>" target="_blank"><?php echo $stockInfo['code']; ?></a></td>
 
 						<td><?php echo CommonUtil::formatNumber($resistItem->close_price); ?></td>
-						<td><?php echo CommonUtil::formatNumber($resistItem->resist); ?></td>
-						<td class="<?php echo ($resistItem->resist_vary_portion >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($resistItem->resist_vary_portion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
+						<td><?php echo ($direction == CommonUtil::DIRECTION_UP)? "向上" : "向下"; ?></td>
+						<td><?php echo CommonUtil::formatNumber($trendPrice); ?></td>
+						<td class="<?php echo ($trendPortion >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($trendPortion, CommonUtil::FORMAT_TYPE_PORTION); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['open_price']); ?></td>
 						<td><?php echo CommonUtil::formatNumber($dailyData['close_price']); ?></td>
 						<td class="<?php echo ($dailyData['vary_portion'] >= 0.00)? 'red': 'green'; ?>"><?php echo CommonUtil::formatNumber($dailyData['vary_portion'], CommonUtil::FORMAT_TYPE_PORTION); ?></td>
