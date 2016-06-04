@@ -136,10 +136,10 @@ class Scheduler(object):
 
         last_open_day = get_past_openday(str(self.day), 1)
         #print last_open_day
-        cont_list = []
+        pool_list = []
         try:
             db_conn = SqlUtil.get_db(self.db_config)
-            sql = "select sid from t_stock_cont where day = " + last_open_day + " and status = 'Y'"
+            sql = "select sid from t_stock_pool where day = " + last_open_day + " and status = 'Y'"
             #print sql
             record_list = db_conn.query_sql(sql)
         except Exception as e:
@@ -147,26 +147,10 @@ class Scheduler(object):
             return
 
         for stock_data in record_list:
-            cont_list.append(int(stock_data['sid']))
-        self.datamap['cont_list'] = cont_list
-        #print len(self.datamap['cont_list'])
-
-        threshold_list = []
-        try:
-            db_conn = SqlUtil.get_db(self.db_config)
-            sql = "select sid from t_stock_price_threshold where day = " + last_open_day + " and (high_type = 1 or high_type = 2 or low_type = 1 or low_type = 2) and status = 'Y'"
-            price_record_list = db_conn.query_sql(sql)
-        except Exception as e:
-            print e
-            return
-
-        for stock_data in price_record_list:
-            threshold_list.append(int(stock_data['sid']))
-        self.datamap['threshold_list'] = threshold_list
-        #print len(self.datamap['threshold_list'])
-
-        self.datamap['pool_list'] = list(set(cont_list + threshold_list))
-        #print self.datamap['pool_list']
+            pool_list.append(int(stock_data['sid']))
+        self.datamap['pool_list'] = pool_list
+        #print len(self.datamap['pool_list'])
+    
         return
 
 if __name__ == "__main__":
