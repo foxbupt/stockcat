@@ -206,16 +206,17 @@ class ParrelRealtime(ParrelFunc):
         
         if 1 == self.location:
             key = scode
-       	    url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_CODE&code=CODE&r=" + str(random.random())
+       	    url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
         elif 3 == self.location:
         	stock_info = self.datamap['stock_list'][sid]
         	ecode_str = "N" if 4 == stock_info['ecode'] else "OQ"
         	key = scode + "." + ecode_str
-        	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_CODE&code=CODE&r=" + str(random.random())
-        print scode, key, url
+        	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
 
+        request_url = url.format(CODE=key)
+        print scode, key, request_url
         try:
-            response = requests.get(url.format(CODE=key), timeout=5)
+            response = requests.get(request_url, timeout=5)
             content = response.text
         except Exception as e:
             self.logger.warning("err=get_stock_realtime sid=%d scode=%s err=%s", sid, scode, str(e))
@@ -223,8 +224,11 @@ class ParrelRealtime(ParrelFunc):
 
         part = content.split("=")
         hq_json = json.loads(part[1])
+        if hq_json["code"] == -1:
+            return
+
       	data_json = hq_json['data'][key]['data']
-      	print data_json
+      	#print data_json
       	
         #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
         date_str = trim(data_json['date'])
