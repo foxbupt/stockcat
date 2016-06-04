@@ -27,7 +27,12 @@ main()
         exit
     fi
 
-    ./service.sh restart all "$location"
+    if [ $# -ge 2 ]
+    then
+        ./service.sh restart all "$location" "$day"
+    else
+        ./service.sh restart all "$location" 
+    fi
     echo "finish"
 }
 
