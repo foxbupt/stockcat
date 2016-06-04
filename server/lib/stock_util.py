@@ -120,8 +120,12 @@ def get_stock_data(db_config, day, sid=0):
         sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
             vary_price, vary_portion from t_stock_data where day = {day} and status = 'Y'".format(day=day)
     else:
-        sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
+        if isinstance(sid, int):
+            sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
             vary_price, vary_portion from t_stock_data where day = {day} and sid = {sid} and status = 'Y'".format(day=day, sid=sid)
+        elif isinstance(sid, list):
+            sql = "select sid, day, open_price, high_price, low_price, close_price, volume, amount, \
+            vary_price, vary_portion from t_stock_data where day = {day} and sid in ({sid_list}) and status = 'Y'".format(day=day, sid=",".join(sid))
     try:
         db_conn = SqlUtil.get_db(db_config)
         record_list = db_conn.query_sql(sql)

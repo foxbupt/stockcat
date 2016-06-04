@@ -2,7 +2,7 @@
 #-*- coding: UTF-8 -*-
 #author: fox
 #desc: 抓取数据的调度框架类
-#date: 20134/06/23
+#date: 2014/06/23
 
 import sys, re, json, random, os
 import datetime, time, logging, logging.config
@@ -27,12 +27,15 @@ class Scheduler(object):
         self.redis_config = config_info['REDIS']
 
     # 核心运行函数, 每隔interval秒检测当前时间是否处于开市区间内.
-    def core(self, location):
-        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
+    def core(self, location, day):
         self.location = location
-        if location == 3:
-            self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
-
+        if 0 == day:
+            self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
+            if location == 3:
+                self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
+        else:
+            self.day = day
+            
         location_key = "location_" + str(location)
         market_content = open(self.config_info['MARKET'][location_key]).read()
         market_config = json.loads(market_content)
@@ -79,7 +82,7 @@ class Scheduler(object):
         self.prepare_data()
 
         for worker_config in market_config['fetch_list']:
-            worker = FetchWorker(worker_config, self.config_info, self.datamap)
+            worker = FetchWorker(market_config['location'], worker_config, self.config_info, self.datamap)
             worker.start()
             self.worker_list.append(worker)
 
@@ -168,7 +171,7 @@ class Scheduler(object):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf> [location]"
+        print "Usage: " + sys.argv[0] + " <conf> [location] [day]"
         sys.exit(1)
 
     config_info = Util.load_config(sys.argv[1])
@@ -176,11 +179,14 @@ if __name__ == "__main__":
     config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
 
     location = 1
+    day = 0
     if len(sys.argv) >= 3:
         location = int(sys.argv[2])
-
+    if len(sys.argv) >= 4:
+        day = int(sys.argv[3])
+    
     # 初始化日志
     logging.config.fileConfig(config_info["LOG"]["conf"])
     scheduler = Scheduler(config_info)
-    scheduler.core(location)
+    scheduler.core(location, day)
     

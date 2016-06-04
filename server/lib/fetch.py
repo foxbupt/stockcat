@@ -5,7 +5,7 @@
 #date: 2014-05-28
 
 import os, sys, random, json
-import datetime, urllib2
+import datetime, requests
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')  
 sys.path.append('../../../../server')  
@@ -66,10 +66,10 @@ def get_stock_daily(stock_info):
     #print scode, url
 
     try:
-        response = urllib2.urlopen(url, timeout=1)
-        content = response.read()
+        response = requests.get(url, timeout=10)
+        content = response.text
     except Exception as e:
-        print "err=get_stock_daily scode=" + scode
+        print "err=get_stock_daily scode=" + scode + " error_msg=" + str(e)
         return 
 
     if content:
@@ -102,6 +102,7 @@ def get_stock_daily(stock_info):
 def get_stock_realtime(stock_info):
     sid = stock_info[0]
     scode = stock_info[1]
+    #url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_usWUBA&code=usWUBA.N&r=" + str(random.random())
     url = "http://data.gtimg.cn/flashdata/hushen/minute/" + scode + ".js?maxage=10&" + str(random.random())
     #print scode, url
 

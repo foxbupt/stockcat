@@ -10,9 +10,10 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
 
 class FetchWorker(threading.Thread):
-    def __init__(self, worker_config, config_info, datamap):
+    def __init__(self, location, worker_config, config_info, datamap):
         threading.Thread.__init__(self)
 
+        self.location = location
         self.worker_config = worker_config
         self.name = self.worker_config['name']
         self.object_name = self.worker_config['object']
@@ -56,7 +57,7 @@ class FetchWorker(threading.Thread):
 
                 run_count += 1
                 if run_count == 1:
-                    parrel_object = object_creator(day, self.config_info, self.datamap, self.worker_config)
+                    parrel_object = object_creator(self.location, day, self.config_info, self.datamap, self.worker_config)
                     parrel_object.load()
 
                 cost_time = 0

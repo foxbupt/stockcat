@@ -5,7 +5,7 @@
 #date: 2014-06-24
 
 import os, sys, random, json, logging, math
-import datetime, urllib2
+import datetime, requests, urllib2
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
 sys.path.append('../../../../server')
@@ -17,7 +17,8 @@ import redis
 class ParrelFunc(object):
     item_list = []
 
-    def __init__(self, day, config_info, datamap, worker_config):
+    def __init__(self, location, day, config_info, datamap, worker_config):
+    	self.location = location
         self.day = day
         self.config_info = config_info
         self.datamap = datamap
@@ -201,25 +202,33 @@ class ParrelRealtime(ParrelFunc):
     def core(self, item):
         sid = item[0]
         scode = item[1]
-        url = "http://data.gtimg.cn/flashdata/hushen/minute/" + scode + ".js?maxage=10&" + str(random.random())
-        #print scode, url
+        url = ""
+        
+        if 1 == self.location:
+            key = scode
+       	    url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_CODE&code=CODE&r=" + str(random.random())
+        else 3 == self.location:
+        	stock_info = self.datamap['stock_list'][sid]
+        	ecode_str = "N" if 4 == stock_info['ecode'] else "OQ"
+        	key = scode + "." + ecode_str
+        	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_CODE&code=CODE&r=" + str(random.random())
+        print scode, key, url
 
         try:
-            response = urllib2.urlopen(url, timeout=1)
-            content = response.read()
-        except urllib2.HTTPError as e:
-            self.logger.warning("err=get_stock_realtime sid=%d scode=%s code=%s", sid, scode, str(e.code))
-            return None
-        except urllib2.URLError as e:
-            self.logger.warning("err=get_stock_realtime sid=%d scode=%s reason=%s", sid, scode, str(e.reason))
+            response = requests.get(url.format(CODE=key), timeout=5)
+            content = response.text
+        except Exception as e:
+            self.logger.warning("err=get_stock_realtime sid=%d scode=%s err=%s", sid, scode, str(e))
             return None
 
-        content = content.strip(' ;"\n').replace("\\n\\", "")
-        lines = content.split("\n")
-        #print lines
+        part = content.split("=")
+		hq_json = json.loads(part[1])
+      	data_json = hq_json['data'][key]['data']
+      	print data_json
+      	
 
-        date_info = lines[1].split(":")
-        data_day = int("20" + date_info[1])
+        #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
+        data_day = int(data_json['date'])
         hq_item = list()
         last_time = 0
 
@@ -227,7 +236,7 @@ class ParrelRealtime(ParrelFunc):
             last_time = self.time_map[sid]
 
         new_time = last_time
-        for line in lines[2:]:
+        for line in data_json['data']:
             fields = line.split(" ")
             # 直接用小时+分组成的时间, 格式为HHMM
             time = int(fields[0])
