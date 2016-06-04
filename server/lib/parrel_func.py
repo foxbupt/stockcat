@@ -227,7 +227,9 @@ class ParrelRealtime(ParrelFunc):
       	print data_json
       	
         #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
-        data_day = int(data_json['date'])
+        date_str = trim(data_json['date'])
+        data_day = int(date_str) if len(date_str) > 0 else self.day
+            
         hq_item = list()
         last_time = 0
 
