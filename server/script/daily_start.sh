@@ -5,12 +5,16 @@
 
 main()
 {
-    day=`date "+%Y%m%d"`
-    weekday=`date "+%w"`
-
+    location=1
     if [ $# -ge 1 ]
     then
-        day=$1
+        location=$1
+    fi
+    
+    day=`get_curday "$location"`
+    if [ $# -ge 2 ]
+    then
+        day=$2
     fi
 
     lastday=`date -d "1 day ago" +%Y%m%d`
@@ -23,13 +27,7 @@ main()
         exit
     fi
 
-    #count=1
-    #if [ $weekday -eq 1 ]
-    #then
-    #    count=3
-    #fi
-
-    ./service.sh restart all
+    ./service.sh restart all "$location"
     echo "finish"
 }
 

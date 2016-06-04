@@ -22,9 +22,11 @@ class PolicyManager(object):
         self.redis_config = config_info['REDIS']
         self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
 
-    def core(self):
+    def core(self, location):
+        self.location = location
         policy_content = open(self.config_info['POLICY']['config']).read()
         #print policy_content
+        
         worker_config = json.loads(policy_content)
         #print worker_config
 
@@ -72,7 +74,7 @@ class PolicyManager(object):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf>"
+        print "Usage: " + sys.argv[0] + " <conf> [location]"
         sys.exit(1)
 
     config_info = Util.load_config(sys.argv[1])
@@ -82,5 +84,9 @@ if __name__ == "__main__":
      # 初始化日志
     logging.config.fileConfig(config_info["LOG"]["conf"])
 
-    manager = PolicyManager(config_info)
+    location = 1
+    if len(sys.argv) >= 3:
+        location = int(sys.argv[2])
+        
+    manager = PolicyManager(config_info, location)
     manager.core()
