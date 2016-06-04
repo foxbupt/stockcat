@@ -23,7 +23,7 @@ main()
     fi
 
     location=1
-    if [ $# -ge 3]
+    if [ $# -ge 3 ]
     then
         location=$3
     fi
