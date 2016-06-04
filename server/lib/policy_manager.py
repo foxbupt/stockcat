@@ -91,5 +91,5 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         location = int(sys.argv[2])
         
-    manager = PolicyManager(config_info, location)
-    manager.core()
+    manager = PolicyManager(config_info)
+    manager.core(location)
