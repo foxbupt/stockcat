@@ -20,10 +20,13 @@ class PolicyManager(object):
         self.config_info = config_info
         self.db_config = config_info['DB']
         self.redis_config = config_info['REDIS']
-        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
 
     def core(self, location):
         self.location = location
+        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
+        if location == 3:
+            self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
+            
         policy_content = open(self.config_info['POLICY']['config']).read()
         #print policy_content
         
