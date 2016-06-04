@@ -222,11 +222,10 @@ class ParrelRealtime(ParrelFunc):
             return None
 
         part = content.split("=")
-		hq_json = json.loads(part[1])
+        hq_json = json.loads(part[1])
       	data_json = hq_json['data'][key]['data']
       	print data_json
       	
-
         #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
         data_day = int(data_json['date'])
         hq_item = list()
