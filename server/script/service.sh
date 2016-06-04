@@ -10,7 +10,7 @@ main()
 {
     if [ $# -lt 1 ]
     then
-        echo "Usage: $0 <cmd> [service] [location] [clear] "
+        echo "Usage: $0 <cmd> [service] [location] [day] "
         echo "cmd: start|stop|restart|view"
         echo "service: scheduler|policy|all"
     fi
@@ -22,37 +22,20 @@ main()
         service=$2
     fi
 
-    location=1
-    if [ $# -ge 3 ]
-    then
-        location=$3
-    fi
+    shift 2
     
-    flag=0
-    if [ $# -ge 4 ]
-    then
-        flag=$4
-    fi
-
-    if [ $flag -gt 0 ]
-    then
-        lastday=`date -d "1 day ago" +%Y%m%d`
-        echo "$lastday"
-        ./del_key.sh "*${lastday}*"
-    fi
-
     if [ "$cmd" == "start" ]
     then
         if [ "$service" == "scheduler" ]
         then
-            start_scheduler "$location" 
+            start_scheduler "$@" 
         elif [ "$service" == "policy" ]
         then
-            start_policy "$location"
+            start_policy "$@"
         elif [ "$service" == "all" ]
         then
-            start_scheduler "$location" 
-            start_policy "$location" 
+            start_scheduler "$@"
+            start_policy "$@" 
         fi
     elif [ "$cmd" == "stop" ]
     then
@@ -73,17 +56,17 @@ main()
         if [ "$service" == "scheduler" ]
         then
             stop_scheduler
-            start_scheduler "$location" 
+            start_scheduler "$@"
         elif [ "$service" == "policy" ]
         then
             stop_policy
-            start_policy "$location" 
+            start_policy "$@" 
         elif [ "$service" == "all" ]
         then
             stop_scheduler
             stop_policy
-            start_scheduler "$location" 
-            start_policy "$location" 
+            start_scheduler "$@"
+            start_policy "$@" 
         fi
     else
         ps aux | grep scheduler | grep -v "grep"
@@ -97,13 +80,13 @@ main()
 start_scheduler()
 {
     cd $SERVICE_PATH
-    nohup $PYTHON_BIN scheduler.py fetch.ini "$1" 2>&1 &
+    nohup $PYTHON_BIN scheduler.py fetch.ini "$@" 2>&1 &
 }
 
 start_policy()
 {
     cd $SERVICE_PATH
-    nohup $PYTHON_BIN policy_manager.py fetch.ini "$1" 2>&1 &
+    nohup $PYTHON_BIN policy_manager.py fetch.ini "$@" 2>&1 &
 }
 
 stop_scheduler()
