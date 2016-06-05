@@ -1,11 +1,11 @@
 {
     "location": 3,
 	"am_open": 43000,
-	"pm_close": 200000,
+	"pm_close": 230000,
 	"close_delay": 240,
 	"fetch_list": [
-		{"name": "daily", "object": "parrel_func.ParrelUSDaily", "interval": 3600, "item_per_thread": 140}, 
-		{"name": "realtime", "object": "parrel_func.ParrelRealtime", "interval": 60, "item_per_thread": 50}
+        {"name": "daily", "object": "parrel_func.ParrelUSDaily", "interval": 3600, "item_per_thread": 140, "dump": 1, "dump_min": 5},   
+        {"name": "realtime", "object": "parrel_func.ParrelRealtime", "interval": 60, "item_per_thread": 50, "dump": 1, "dump_min": 5} 
 	]
 } 
 

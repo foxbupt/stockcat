@@ -88,7 +88,7 @@ class ParrelDaily(ParrelFunc):
     def core(self, item):
         scode = item
         url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode
-        #print url
+        print url
 
         try:
             response = urllib2.urlopen(url, timeout=1)
@@ -120,12 +120,13 @@ class ParrelDaily(ParrelFunc):
                 self.logger.info(format_log("fetch_daily", daily_item))
                 
                 # 设置dump则把数据dump到日志中, 暂定每5mindump一次, 可配置
-                if 'dump' in self.worker_config and self.worker_config['dump']:
-                    dump_interval = int(self.worker_config['dump_interval']) if 'dump_interval' in self.worker_config['dump_interval'] else 5
+                #print self.worker_config
+                if 'dump' in self.worker_config and int(self.worker_config['dump']):
+                    dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
                     curmin = int(daily_item['time'][0:4])
-                    print curmin, dump_interval
+                    #print curmin, dump_interval
                     if curmin % dump_interval == 0 :
-                        logging.getLogger("dump").debug(json_data)                        
+                        logging.getLogger("dump").info(json_data)                        
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
@@ -151,8 +152,14 @@ class ParrelDaily(ParrelFunc):
 
         try:
             item['name'] = safestr(fields[1])
-            item['code'] = stock_code = fields[2]
-            item['sid'] = int(self.datamap['code2id'][stock_code])
+            '''
+            stock_code = fields[2]
+            if self.location == 3: # 美股返回为usWUBA.N
+                code_parts = stock_code.split(".")
+                stock_code = code_parts[0]
+            '''
+            item['code'] = fields[2]
+            item['sid'] = int(self.datamap['code2id'][item['code']])
             item['day'] = self.day
             item['last_close_price'] = float(fields[4])
             item['open_price'] = open_price
@@ -217,12 +224,11 @@ class ParrelRealtime(ParrelFunc):
        	    url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
         elif 3 == self.location:
         	stock_info = self.datamap['stock_list'][sid]
-        	ecode_str = "N" if 4 == stock_info['ecode'] else "OQ"
+        	ecode_str = "OQ" if 4 == stock_info['ecode'] else "N"
         	key = scode + "." + ecode_str
         	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
 
         request_url = url.format(CODE=key)
-        print scode, key, request_url
         try:
             response = requests.get(request_url, timeout=5)
             content = response.text
@@ -251,28 +257,35 @@ class ParrelRealtime(ParrelFunc):
         new_time = last_time
         for line in data_json['data']:
             fields = line.split(" ")
-            # 直接用小时+分组成的时间, 格式为HHMM
-            time = int(fields[0])
+            try:
+                if len(fields) < 3 or len(fields[0]) == 0:
+                    continue
+                # 直接用小时+分组成的时间, 格式为HHMM
+                time = int(fields[0][1:]) if fields[0].startswith("0") else int(fields[0])
 
-            if time <= last_time:
+                if time <= last_time:
+                    continue
+
+                data_item = dict()
+                data_item['time'] = time
+                data_item['price'] = float(fields[1])
+                data_item['volume'] = int(fields[2])
+
+                if data_item['volume'] <= 0:
+                    continue
+
+                hq_item.append(data_item)
+                new_time = max(time, new_time)
+            except Exception as e:
+                self.logger.warning("err=parse_stock_realtime sid=%d scode=%s line=%s err=%s", sid, scode, line, str(e))
                 continue
-
-            data_item = dict()
-            data_item['time'] = time
-            data_item['price'] = float(fields[1])
-            data_item['volume'] = int(fields[2])
-
-            if data_item['volume'] <= 0:
-                continue
-
-            hq_item.append(data_item)
-            new_time = max(time, new_time)
 
         # 表示当天所有的成交量都为0, 当天停牌
         if len(hq_item) == 0:
             return
 
         # 更新last_time
+        print scode, key, request_url, len(hq_item)
         self.time_map[sid] = new_time
 
         json_item = json.dumps({'sid': sid, 'day': data_day, 'items': hq_item})
@@ -280,11 +293,12 @@ class ParrelRealtime(ParrelFunc):
         self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
         
         # 设置dump则把数据dump到日志中, 暂定每5min dump一次, 可配置
-        if 'dump' in self.worker_config and self.worker_config['dump']:
-            dump_interval = int(self.worker_config['dump_interval']) if 'dump_interval' in self.worker_config['dump_interval'] else 5
-            print new_time, dump_interval
+        #print self.worker_config
+        if 'dump' in self.worker_config and int(self.worker_config['dump']):
+            dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
+            #print new_time, dump_interval
             if new_time % dump_interval == 0 :
-                logging.getLogger("dump").debug(json_item)             
+                logging.getLogger("dump").info(json_item)             
                         
  # 并行抓取股票盘成交明细
 class ParrelTransaction(ParrelFunc):
@@ -457,10 +471,20 @@ class ParrelUSDaily(ParrelFunc):
                     continue
 
                 # 追加到redis队列中
-                #if self.conn:
-                #    self.conn.rpush("daily-queue", json.dumps(daily_item))
+                json_item = json.dumps(daily_item)
+                if self.conn:
+                    self.conn.rpush("daily-queue", json_item)
                 self.logger.info(format_log("fetch_daily", daily_item))
                 #print format_log("fetch_daily", daily_item)
+
+                # 设置dump则把数据dump到日志中, 暂定每5mindump一次, 可配置
+                #print self.worker_config
+                if 'dump' in self.worker_config and int(self.worker_config['dump']):
+                    dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
+                    curmin = int(daily_item['time'][0:4])
+                    #print curmin, dump_interval
+                    if curmin % dump_interval == 0 :
+                        logging.getLogger("dump").info(json_item)                        
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
