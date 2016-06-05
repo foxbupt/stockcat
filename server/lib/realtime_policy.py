@@ -166,16 +166,16 @@ class RTPolicy(BasePolicy):
 		else:
             low_price = start_price
             cont_fall = cont_rise = 0		
-			for price in peak_list:
-				vary_portion = abs(price - low_price) / min(price, low_price) * 100
-				if (price >= low_price) or (vary_portion <= 1.00):
-					cont_rise = cont_rise + 1
-					low_price = max(price, low_price)
-				elif (price <= low_price) or (vary_portion <= 1.00):
-					cont_fall = cont_fall + 1
-					low_price = max(price, low_price)
+            for price in peak_list:
+                vary_portion = abs(price - low_price) / min(price, low_price) * 100
+                if (price >= low_price) or (vary_portion <= 1.00):
+                    cont_rise = cont_rise + 1
+                    low_price = max(price, low_price)
+                elif (price <= low_price) or (vary_portion <= 1.00):
+                    cont_fall = cont_fall + 1
+                    low_price = max(price, low_price)
 
-			if cont_rise / len(peak_list) >= 0.6:
-				return {'trend': 3, 'op': 3}
+            if cont_rise / len(peak_list) >= 0.6:
+                return {'trend': 3, 'op': 3}
 
 		return {'trend': trend}
