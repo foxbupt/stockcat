@@ -84,7 +84,7 @@ class RTPolicy(BasePolicy):
         	for key in minute_trend_info:
         		trend_info[key] = minute_trend_info[key]
 
-        daily_policy_key = "daily-policy-" + str(item['sid']) + "-" + str(item['day']      
+        daily_policy_key = "daily-policy-" + str(item['sid']) + "-" + str(item['day'])      
         self.redis_conn.hmset(daily_policy_key, trend_info)
 
         trend_info['sid'] = item['sid']
@@ -99,12 +99,11 @@ class RTPolicy(BasePolicy):
     	@param: minute_items list
     	@return dict('trend', 'op')
     '''
-   	def minute_trend(self, daily_item, trend, minute_items):
-   		# 分时行情个数<=5, 直接忽略
-   		if len(minute_items) <= 5:
+    def minute_trend(self, daily_item, trend, minute_items):
+        # 分时行情个数<=5, 直接忽略
+        if len(minute_items) <= 5:
    			return {'trend': trend}
-
-   		max_vary = daily_item['high_price'] - daily_item['close_price']
+        max_vary = daily_item['high_price'] - daily_item['close_price']
         min_vary = daily_item['close_price'] - daily_item['low_price']
         
         price_list = list()

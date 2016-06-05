@@ -10,6 +10,7 @@ import multiprocessing as mp
 import redis
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
+from stock_util import *
 
 class PolicyWorker():
     loop = True
