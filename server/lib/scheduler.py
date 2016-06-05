@@ -79,7 +79,7 @@ class Scheduler(object):
 
     # 启动
     def start(self, market_config, cur_timenumber):
-        self.prepare_data()
+        self.prepare_data(market_config)
 
         for worker_config in market_config['fetch_list']:
             worker = FetchWorker(market_config['location'], worker_config, self.config_info, self.datamap)
@@ -117,7 +117,7 @@ class Scheduler(object):
         logging.getLogger("fetch").critical("op=scheduler_terminate day=%d", self.day)
 
     # 准备公共数据集
-    def prepare_data(self):
+    def prepare_data(self, market_config):
         # 获取所有的股票列表
         stock_list = get_stock_list(self.db_config, 1, self.location)
         self.datamap['stock_list'] = stock_list
@@ -150,6 +150,14 @@ class Scheduler(object):
             sid = int(stock_data['sid'])
             if sid in stock_list:
                 pool_list.append(sid)
+        
+        if 3 == self.location and 'cnlist' in market_config:
+            cnlist = market_config['cnlist']
+            for cn_code in cnlist:
+                sid = code2id_map[cn_code]
+                if sid not in pool_list:
+                    pool_list.append(sid)
+                    
         self.datamap['pool_list'] = pool_list
         logging.getLogger("fetch").info("op=scheduler_pool day=%d last_open_day=%s location=%d pool_count=%d", self.day, last_open_day, self.location, len(pool_list))
     

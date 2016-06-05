@@ -6,6 +6,43 @@
 	"fetch_list": [
         {"name": "daily", "object": "parrel_func.ParrelUSDaily", "interval": 3600, "item_per_thread": 140, "dump": 1, "dump_min": 5},   
         {"name": "realtime", "object": "parrel_func.ParrelRealtime", "interval": 60, "item_per_thread": 50, "dump": 1, "dump_min": 5} 
-	]
+	],
+	"cnlist": [
+	    "BABA",
+    	"BIDU",
+    	"JD",
+    	"VIPS",
+    	"WUBA",
+    	"NTES",
+    	"YY",
+    	"QIHU",
+    	"CTRP",
+    	"QUNR",
+    	"YOKU",
+    	"ATHM",
+    	"CMCM",
+    	"JMEI",
+    	"BITA",
+    	"MOMO",
+    	"DSKY",
+    	"TOUR",
+    	"BZUN",
+    	"WBAI",
+    	"DANG",
+    	"EHIC",
+    	"LONG",
+    	"SFUN",
+    	"EJ",
+    	"LEJU",
+    	"TEDU",   	
+    	"SINA",
+    	"WB",
+    	"SOHU",
+    	"EDU",
+    	"HMIN",
+    	"SVN",
+    	"CCIH",
+    	"JRJC"
+    ]
 } 
 
