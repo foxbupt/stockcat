@@ -34,7 +34,7 @@ class Scheduler(object):
         section = get_location_name(self.location).upper()
         market_content = open(self.config_info[section]["scheduler"]).read()
         market_config = json.loads(market_content)
-        print location_key, market_config
+        print section, market_config
 
         while True:
             try:
