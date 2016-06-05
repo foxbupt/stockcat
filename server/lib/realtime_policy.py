@@ -165,7 +165,7 @@ class RTPolicy(BasePolicy):
 		# 从最低点往后, 验证每个低点是否越来越高
 		else:
             low_price = start_price
-			cont_fall = cont_rise = 0		
+            cont_fall = cont_rise = 0		
 			for price in peak_list:
 				vary_portion = abs(price - low_price) / min(price, low_price) * 100
 				if (price >= low_price) or (vary_portion <= 1.00):
