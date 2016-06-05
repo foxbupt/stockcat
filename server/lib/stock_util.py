@@ -15,6 +15,7 @@ import redis
 holidays = [{'start': 20160207, 'end': 20160213}, 20160404,
         20160502, 20160609, 20160610, 20160915, 20160916, {'start': 20151001, 'end':20151007}]
 us_holidays = [20160216,20160403,20160525,20160703,20160907,20161126,20161225]
+locations = {1:"cn", 2:"hk", 3:"us"}
 # ecode
 ecodes = {1:"sh", 2:"sz", 3:"hk", 4:"NASDAQ", 5:"NYSE"}
 
@@ -412,6 +413,20 @@ def get_hqdata(db_config, redis_config, sid, day):
 
     return hqdata
 
+# 返回location对应的名称
+def get_location_name(location):
+    if location in locations:
+        return locations[location]
+    else:
+        return "cn"
+
+# 返回location对应的当前日期
+def get_current_day(location):
+    if 3 == location:
+        return int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
+    else:
+        return int("{0:%Y%m%d}".format(datetime.date.today()))    
+        
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print "Usage: " + sys.argv[0] + " <day>"

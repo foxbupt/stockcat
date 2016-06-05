@@ -14,7 +14,9 @@ from pyutil.util import safestr, format_log
 class PolicyWorker():
     loop = True
 
-    def __init__(self, name, worker_config, config_info, datamap):
+    def __init__(self, location, day, name, worker_config, config_info, datamap):
+        self.location = location
+        self.day = day
         self.name = name
         self.worker_config = worker_config
         self.config_info = config_info
@@ -47,7 +49,6 @@ class PolicyWorker():
         policy_object = object_creator(self.config_info, self.datamap)
 
         item_count = 0
-        day = int("{0:%Y%m%d}".format(datetime.date.today()))
         redis_config = self.config_info['REDIS']
         conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
 
@@ -55,11 +56,10 @@ class PolicyWorker():
             try:
                 pop_data = conn.blpop(self.queue, 1)
                 if pop_data is None:
-                    cur_time = datetime.datetime.now().time()
-                    cur_timenumber = cur_time.hour * 10000 + cur_time.minute * 100 + cur_time.second
+                    cur_timenumber = get_timenumber(self.location)
                     #print "policy timenumber=" + str(cur_timenumber)
 
-                    if cur_timenumber >= int(self.config_info['POLICY']['close_time']):
+                    if cur_timenumber >= int(self.config_info[get_location_name(self.location).upper()]['close_time']):
                         logging.getLogger("policy").critical("op=market_closed time=%d", cur_timenumber)
                         break
                     else:
@@ -71,8 +71,8 @@ class PolicyWorker():
                 if item is None:
                     continue
 
-                if 'day' in item and item['day'] != day:
-                    logging.getLogger("policy").error("err=ignore_expired_item item_day=%d day=%d", item['day'], day)
+                if 'day' in item and item['day'] != self.day:
+                    logging.getLogger("policy").error("err=ignore_expired_item item_day=%d day=%d", item['day'], self.day)
                     continue
 
                 item_count = item_count + 1

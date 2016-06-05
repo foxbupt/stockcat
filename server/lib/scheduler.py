@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from fetch_worker import FetchWorker
-from stock_util import get_stock_list, get_past_openday, time_diff, get_scode, get_timenumber
+from stock_util import get_stock_list, get_past_openday, time_diff, get_scode, get_timenumber, get_location_name, get_current_day
 
 class Scheduler(object):
     worker_list = []
@@ -29,15 +29,10 @@ class Scheduler(object):
     # 核心运行函数, 每隔interval秒检测当前时间是否处于开市区间内.
     def core(self, location, day):
         self.location = location
-        if 0 == day:
-            self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
-            if location == 3:
-                self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
-        else:
-            self.day = day
+        self.day = get_current_day(self.location) if day == 0 else day
             
-        location_key = "location_" + str(location)
-        market_content = open(self.config_info['MARKET'][location_key]).read()
+        section = get_location_name(self.location).upper()
+        market_content = open(self.config_info[section]["scheduler"]).read()
         market_config = json.loads(market_content)
         print location_key, market_config
 
