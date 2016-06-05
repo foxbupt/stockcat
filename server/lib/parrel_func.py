@@ -114,10 +114,18 @@ class ParrelDaily(ParrelFunc):
                     continue
 
                 # 追加到redis队列中
+                json_data = json.dumps(daily_item)
                 if self.conn:
-                    self.conn.rpush("daily-queue", json.dumps(daily_item))
+                    self.conn.rpush("daily-queue", json_data)
                 self.logger.info(format_log("fetch_daily", daily_item))
-                #print format_log("fetch_daily", daily_item)
+                
+                # 设置dump则把数据dump到日志中, 暂定每5mindump一次, 可配置
+                if 'dump' in self.worker_config and self.worker_config['dump']:
+                    dump_interval = int(self.worker_config['dump_interval']) if 'dump_interval' in self.worker_config['dump_interval'] else 5
+                    curmin = int(daily_item['time'][0:4])
+                    print curmin, dump_interval
+                    if curmin % dump_interval == 0 :
+                        logging.getLogger("dump").debug(json_data)                        
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
@@ -267,10 +275,17 @@ class ParrelRealtime(ParrelFunc):
         # 更新last_time
         self.time_map[sid] = new_time
 
-        self.conn.rpush("realtime-queue", json.dumps({'sid': sid, 'day': data_day, 'items': hq_item}))
-        #print format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']})
+        json_item = json.dumps({'sid': sid, 'day': data_day, 'items': hq_item})
+        self.conn.rpush("realtime-queue", json_item)
         self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
-
+        
+        # 设置dump则把数据dump到日志中, 暂定每5min dump一次, 可配置
+        if 'dump' in self.worker_config and self.worker_config['dump']:
+            dump_interval = int(self.worker_config['dump_interval']) if 'dump_interval' in self.worker_config['dump_interval'] else 5
+            print new_time, dump_interval
+            if new_time % dump_interval == 0 :
+                logging.getLogger("dump").debug(json_item)             
+                        
  # 并行抓取股票盘成交明细
 class ParrelTransaction(ParrelFunc):
     # 存储股票上次拉取成交明细的位置(sid, seq)
