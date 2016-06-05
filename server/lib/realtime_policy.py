@@ -14,22 +14,22 @@ from base_policy import BasePolicy
 
 class RTPolicy(BasePolicy):
 
-	def serialize(self, item):
+    def serialize(self, item):
 		key = "rt-" + str(item['sid']) + "-" + str(item['day'])
 		for minute_item in item['items']:
 			#print minute_item
 			self.redis_conn.rpush(key, json.dumps(minute_item))
 			self.logger.debug("desc=realtime_item sid=%d day=%d volume=%.2f price=%.2f time=%d", 
-					item['sid'], item['day'], minute_item['volume'], minute_item['price'], minute_item['time'])
+					item['sid'], item['day'], minute_item['volume'], minute_item['price'], minute_item['time']) 
 
-	'''
+    '''
 		@desc: 结合当日行情和分时价格行情分析趋势
 		@param: item dict
 			设置trend/op到daily-policy key中
 			操作字段(op): 1 卖出  2 待定 3 买入
 			趋势/波段方向(trend): 1 下跌 2 震荡 3 上涨
-	'''
-	def day_trend(self, item):
+    '''
+    def day_trend(self, item):
 		trend = op = 0
 
 		daily_key = "daily-" + str(item['sid']) + "-" + str(item['day'])
@@ -90,49 +90,46 @@ class RTPolicy(BasePolicy):
 		trend_info['sid'] = item['sid']
 		trend_info['day'] = item['day']
 		self.logger.debug("%s", format_log("daily_day_trend", trend_info))
-
-
-	'''
+    
+    '''
 		@desc: 根据分时价格分析盘中的实时趋势
 		@param: daily_item dict
 		@param: trend int
 		@param: minute_items list
 		@return dict('trend', 'op')
-	'''
-	def minute_trend(self, daily_item, trend, minute_items):
-		# 分时行情个数<=5, 直接忽略
-		if len(minute_items) <= 5:
+    '''
+    def minute_trend(self, daily_item, trend, minute_items):
+        # 分时行情个数<=5, 直接忽略
+        if len(minute_items) <= 5:
 			return {'trend': trend}
-			
-		max_vary = daily_item['high_price'] - daily_item['close_price']
-		min_vary = daily_item['close_price'] - daily_item['low_price']
+        max_vary = daily_item['high_price'] - daily_item['close_price']
+        min_vary = daily_item['close_price'] - daily_item['low_price']
 		price_list = list()
 		for item in minute_items:
-			price_list.append(item['price'])
-			
-		start_price = -1
+            price_list.append(item['price'])
+        
+        start_price = -1
 		is_high = True
-		if trend == 3:
-			start_price = daily_item['high_price']
+        if trend == 3:
+            start_price = daily_item['high_price']
 		else:
-			start_price = daily_item['low_price']
-			is_high = False
-			
-		start_index = price_list.index(start_price)
+            start_price = daily_item['low_price']
+            is_high = False
+        start_index = price_list.index(start_price)
 		if start_index == -1:
-			return {'trend': trend}
-			
-		range_items = minute_items[start_index: -1]
-		if len(range_items) <= 5:
-			return {'trend': trend}
+            return {'trend': trend}
 
-		range_price_list = price_list[start_index+1: -1]
+        range_items = minute_items[start_index: -1]
+		if len(range_items) <= 5:
+            return {'trend': trend}
+
+        range_price_list = price_list[start_index+1: -1]
 		peak_list = []
 		# mode: True表示下跌方向, False表示上涨
 		mode = is_high
 		last_peak = start_price
 
-		# 遍历从高点/低点后的分时价格, 最高点取用于后面的每个高点, 最低点取后面的每个低点
+        # 遍历从高点/低点后的分时价格, 最高点取用于后面的每个高点, 最低点取后面的每个低点
 		# TODO: 可以完善从日期区间的趋势波段中取波峰或波谷, 来判断当前股票的阻力位/支撑位和所处通道
 		for minute_price in range_price_list:
 			if mode and minute_price <= last_peak:
@@ -142,12 +139,11 @@ class RTPolicy(BasePolicy):
 			else:
 				if (trend == 3 and not mode) or (trend == 1 and mode):
 					peak_list.append(last_peak)
-				mode = not mode	
+				mode = not mode
 
-		#TODO: 对取出的节点价格, 需要合并相邻且价格相近(1%)的点
-
-		# 若从最高点往后, 需要看每个高点是否越来越低, 验证为下跌
-		if trend == 3:
+        #TODO: 对取出的节点价格, 需要合并相邻且价格相近(1%)的点
+        # 若从最高点往后, 需要看每个高点是否越来越低, 验证为下跌
+        if trend == 3:
 			high_price = start_price
 			cont_fall = cont_rise = 0		
 			for price in peak_list:
@@ -161,8 +157,8 @@ class RTPolicy(BasePolicy):
 
 			if cont_fall / len(peak_list) >= 0.6:
 				return {'trend': 1, 'op': 1}
-				
-		# 从最低点往后, 验证每个低点是否越来越高
+        return {'trend': trend}
+        '''
         else:
             low_price = start_price
             cont_fall = cont_rise = 0		
@@ -177,5 +173,4 @@ class RTPolicy(BasePolicy):
 
             if cont_rise / len(peak_list) >= 0.6:
                 return {'trend': 3, 'op': 3}
-
-		return {'trend': trend}
+        '''
