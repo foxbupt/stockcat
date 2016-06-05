@@ -100,36 +100,36 @@ class RTPolicy(BasePolicy):
     '''
     def minute_trend(self, daily_item, trend, minute_items):
         # 分时行情个数<=5, 直接忽略
-        if len(minute_items) <= 5:
+		if len(minute_items) <= 5:
 			return {'trend': trend}
-        max_vary = daily_item['high_price'] - daily_item['close_price']
-        min_vary = daily_item['close_price'] - daily_item['low_price']
+		max_vary = daily_item['high_price'] - daily_item['close_price']
+		min_vary = daily_item['close_price'] - daily_item['low_price']
 		price_list = list()
 		for item in minute_items:
-            price_list.append(item['price'])
-        
-        start_price = -1
+			price_list.append(item['price'])
+		
+		start_price = -1
 		is_high = True
-        if trend == 3:
-            start_price = daily_item['high_price']
+		if trend == 3:
+			start_price = daily_item['high_price']
 		else:
-            start_price = daily_item['low_price']
-            is_high = False
-        start_index = price_list.index(start_price)
+			start_price = daily_item['low_price']
+			is_high = False
+		start_index = price_list.index(start_price)
 		if start_index == -1:
-            return {'trend': trend}
+			return {'trend': trend}
 
-        range_items = minute_items[start_index: -1]
+		range_items = minute_items[start_index: -1]
 		if len(range_items) <= 5:
-            return {'trend': trend}
+			return {'trend': trend}
 
-        range_price_list = price_list[start_index+1: -1]
+		range_price_list = price_list[start_index+1: -1]
 		peak_list = []
 		# mode: True表示下跌方向, False表示上涨
 		mode = is_high
 		last_peak = start_price
 
-        # 遍历从高点/低点后的分时价格, 最高点取用于后面的每个高点, 最低点取后面的每个低点
+		# 遍历从高点/低点后的分时价格, 最高点取用于后面的每个高点, 最低点取后面的每个低点
 		# TODO: 可以完善从日期区间的趋势波段中取波峰或波谷, 来判断当前股票的阻力位/支撑位和所处通道
 		for minute_price in range_price_list:
 			if mode and minute_price <= last_peak:
@@ -141,9 +141,9 @@ class RTPolicy(BasePolicy):
 					peak_list.append(last_peak)
 				mode = not mode
 
-        #TODO: 对取出的节点价格, 需要合并相邻且价格相近(1%)的点
-        # 若从最高点往后, 需要看每个高点是否越来越低, 验证为下跌
-        if trend == 3:
+		#TODO: 对取出的节点价格, 需要合并相邻且价格相近(1%)的点
+		# 若从最高点往后, 需要看每个高点是否越来越低, 验证为下跌
+		if trend == 3:
 			high_price = start_price
 			cont_fall = cont_rise = 0		
 			for price in peak_list:
@@ -157,20 +157,20 @@ class RTPolicy(BasePolicy):
 
 			if cont_fall / len(peak_list) >= 0.6:
 				return {'trend': 1, 'op': 1}
-        return {'trend': trend}
-        '''
-        else:
-            low_price = start_price
-            cont_fall = cont_rise = 0		
-            for price in peak_list:
-                vary_portion = abs(price - low_price) / min(price, low_price) * 100
-                if (price >= low_price) or (vary_portion <= 1.00):
-                    cont_rise = cont_rise + 1
-                    low_price = max(price, low_price)
-                elif (price <= low_price) or (vary_portion <= 1.00):
-                    cont_fall = cont_fall + 1
-                    low_price = max(price, low_price)
+		return {'trend': trend}
+		'''
+		else:
+			low_price = start_price
+			cont_fall = cont_rise = 0		
+			for price in peak_list:
+				vary_portion = abs(price - low_price) / min(price, low_price) * 100
+				if (price >= low_price) or (vary_portion <= 1.00):
+					cont_rise = cont_rise + 1
+					low_price = max(price, low_price)
+				elif (price <= low_price) or (vary_portion <= 1.00):
+					cont_fall = cont_fall + 1
+					low_price = max(price, low_price)
 
-            if cont_rise / len(peak_list) >= 0.6:
-                return {'trend': 3, 'op': 3}
-        '''
+			if cont_rise / len(peak_list) >= 0.6:
+				return {'trend': 3, 'op': 3}
+		'''
