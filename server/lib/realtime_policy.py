@@ -161,9 +161,9 @@ class RTPolicy(BasePolicy):
 
 			if cont_fall / len(peak_list) >= 0.6:
 				return {'trend': 1, 'op': 1}
-
+				
 		# 从最低点往后, 验证每个低点是否越来越高
-		else:
+        else:
             low_price = start_price
             cont_fall = cont_rise = 0		
             for price in peak_list:
