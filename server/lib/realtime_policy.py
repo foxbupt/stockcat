@@ -11,16 +11,47 @@ from pyutil.util import safestr, format_log
 from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 from base_policy import BasePolicy
+from minute_trend import MinuteTrend
 
 class RTPolicy(BasePolicy):
 
     def serialize(self, item):
 		key = "rt-" + str(item['sid']) + "-" + str(item['day'])
+		last_time = 0
+
+        if self.redis_conn.llen(key) > 0:
+            last_item = json.loads(self.redis_conn.lindex(key, -1))
+            last_time = last_item['time']
+
 		for minute_item in item['items']:
 			#print minute_item
+            if minute_item['time'] <= last_time:
+                continue
+
 			self.redis_conn.rpush(key, json.dumps(minute_item))
 			self.logger.debug("desc=realtime_item sid=%d day=%d volume=%.2f price=%.2f time=%d", 
 					item['sid'], item['day'], minute_item['volume'], minute_item['price'], minute_item['time']) 
+
+
+    def realtime_trend(self, item):
+        sid = int(item['sid'])
+        daily_key = "daily-" + str(sid) + "-" + str(item['day'])
+        daily_cache_value = self.redis_conn.get(daily_key);
+        if daily_cache_value is None:
+            return
+
+        daily_item = json.loads(daily_cache_value)	
+        rt_key = "rt-" + str(sid) + "-" + str(item['day'])
+        item_list = self.redis_conn.lrange(rt_key, 0, -1)
+
+        minute_items = []
+        for item_json in item_list:
+            minute_items.append(json.loads(item_json))
+
+        instance = MinuteTrend(sid)
+        trend_stage = instance.core(daily_item, minute_items)
+        print trend_stage
+
 
     '''
 		@desc: 结合当日行情和分时价格行情分析趋势
@@ -38,7 +69,7 @@ class RTPolicy(BasePolicy):
 			return
 
 		daily_item = json.loads(daily_cache_value)	
-		daily_policy_key = "daily-policy-" + str(sid) + "-" + str(item['day'])
+		daily_policy_key = "daily-policy-" + str(item['sid']) + "-" + str(item['day'])
 		daily_policy_info = self.redis_conn.hgetall(daily_policy_key)
 
 		rt_key = "rt-" + str(item['sid']) + "-" + str(item['day'])
@@ -84,12 +115,11 @@ class RTPolicy(BasePolicy):
 			for key in minute_trend_info:
 				trend_info[key] = minute_trend_info[key]
 
-		daily_policy_key = "daily-policy-" + str(item['sid']) + "-" + str(item['day'])      
 		self.redis_conn.hmset(daily_policy_key, trend_info)
 
 		trend_info['sid'] = item['sid']
 		trend_info['day'] = item['day']
-		self.logger.debug("%s", format_log("daily_day_trend", trend_info))
+		self.logger.info("%s", format_log("daily_day_trend", trend_info))
     
     '''
 		@desc: 根据分时价格分析盘中的实时趋势
@@ -102,10 +132,14 @@ class RTPolicy(BasePolicy):
         # 分时行情个数<=5, 直接忽略
 		if len(minute_items) <= 5:
 			return {'trend': trend}
+
 		max_vary = daily_item['high_price'] - daily_item['close_price']
 		min_vary = daily_item['close_price'] - daily_item['low_price']
 		price_list = list()
-		for item in minute_items:
+
+		for item_json in minute_items:
+			item = json.loads(item_json)
+			#print item
 			price_list.append(item['price'])
 		
 		start_price = -1

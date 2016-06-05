@@ -285,7 +285,7 @@ def get_predict_volume(cur_volume, cur_time, location):
     	return round(cur_volume * 240 / daily_min)
     else:
         curmin = (hour - 9) * 60 - 30
-    return round(cur_volume * 450 / curmin)
+    return round(cur_volume * 390 / curmin)
 
 '''
     @desc: 获取过去几天的总览数据, 目前暂定过去5天, 先从缓存加载, 数据字段包括:
