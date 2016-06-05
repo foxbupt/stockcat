@@ -11,7 +11,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from policy_worker import PolicyWorker
-from stock_util import get_stock_list, get_past_openday, get_past_data, get_scode
+from stock_util import get_stock_list, get_past_openday, get_past_data, get_scode, get_location_name, get_current_day
 
 class PolicyManager(object):
     instance_map = {}
@@ -21,13 +21,12 @@ class PolicyManager(object):
         self.db_config = config_info['DB']
         self.redis_config = config_info['REDIS']
 
-    def core(self, location):
+    def core(self, location, day):
         self.location = location
-        self.day = int("{0:%Y%m%d}".format(datetime.date.today()))
-        if location == 3:
-            self.day = int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
-            
-        policy_content = open(self.config_info['POLICY']['config']).read()
+        self.day = get_current_day(self.location) if day == 0 else day
+        
+        section = get_location_name(self.location).upper()
+        policy_content = open(self.config_info[section]["policy"]).read()
         #print policy_content
         
         worker_config = json.loads(policy_content)
@@ -38,11 +37,12 @@ class PolicyManager(object):
 
         for policy_name, policy_config in worker_config.items():
             for i in range(policy_config['process_count']):
-                policy_instance = PolicyWorker(policy_name, policy_config, self.config_info, datamap)
+                # TODO: 需要把location, day, worker_config整体传入构造PolicyWorker对象
+                policy_instance = PolicyWorker(self.location, self.day, policy_name, policy_config, self.config_info, datamap)
                 policy_instance.start()
 
                 instance_list.append(policy_instance)
-                logging.getLogger("policy").debug("desc=policy_worker_start name=%s index=%d id=%s", policy_name, i, str(policy_instance.get_pid()))
+                logging.getLogger("policy").debug("desc=policy_worker_start location=%d day=%d name=%s index=%d id=%s", self.location, self.day, policy_name, i, str(policy_instance.get_pid()))
 
         for instance in instance_list:
             instance.join()
@@ -77,7 +77,7 @@ class PolicyManager(object):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <conf> [location]"
+        print "Usage: " + sys.argv[0] + " <conf> [location] [day]"
         sys.exit(1)
 
     config_info = Util.load_config(sys.argv[1])
@@ -88,8 +88,11 @@ if __name__ == "__main__":
     logging.config.fileConfig(config_info["LOG"]["conf"])
 
     location = 1
+    day = 0
     if len(sys.argv) >= 3:
         location = int(sys.argv[2])
+    if len(sys.argv) >= 4:
+        day = int(sys.argv[3])    
         
     manager = PolicyManager(config_info)
-    manager.core(location)
+    manager.core(location, day)
