@@ -135,21 +135,23 @@ class Scheduler(object):
         #print len(self.datamap['id2scode'])
 
         last_open_day = get_past_openday(str(self.day), 1)
-        #print last_open_day
+        print last_open_day
         pool_list = []
         try:
             db_conn = SqlUtil.get_db(self.db_config)
             sql = "select sid from t_stock_pool where day = " + last_open_day + " and status = 'Y'"
-            #print sql
+            print sql
             record_list = db_conn.query_sql(sql)
         except Exception as e:
             print e
             return
 
         for stock_data in record_list:
-            pool_list.append(int(stock_data['sid']))
+            sid = int(stock_data['sid'])
+            if sid in stock_list:
+                pool_list.append(sid)
         self.datamap['pool_list'] = pool_list
-        #print len(self.datamap['pool_list'])
+        logging.getLogger("fetch").info("op=scheduler_pool day=%d last_open_day=%s location=%d pool_count=%d", self.day, last_open_day, self.location, len(pool_list))
     
         return
 
