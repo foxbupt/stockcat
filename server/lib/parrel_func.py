@@ -172,7 +172,7 @@ class ParrelDaily(ParrelFunc):
             item['vary_portion'] = float(fields[32])
             # 成交量转化为手
             item['volume'] = int(fields[36])
-            item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
+            item['predict_volume'] = get_predict_volume(item['volume'], item['time'], self.location)
             # 成交额转化为万元
             item['amount'] = int(fields[37])
             item['exchange_portion'] = fields[38]
@@ -527,7 +527,7 @@ class ParrelUSDaily(ParrelFunc):
             item['vary_portion'] = float(fields[2])
             # 成交量单位为股
             item['volume'] = int(fields[10])
-            #item['predict_volume'] = get_predict_volume(item['volume'], item['time'])
+            item['predict_volume'] = get_predict_volume(item['volume'], item['time'], self.location)
             # 成交额转化为万元
             item['amount'] = 0
             # 总股本

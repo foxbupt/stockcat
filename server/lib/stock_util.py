@@ -268,21 +268,24 @@ def get_stock_trendlist(db_config, sid, start_day, end_day):
   @param cur_time 当天的时刻
   @return int
 '''
-def get_predict_volume(cur_volume, cur_time):
+def get_predict_volume(cur_volume, cur_time, location):
     hour = int(cur_time[0:2])
     min = int(cur_time[2:4])
     #print hour, min
 
     daily_min = min
-    if hour >= 15:
-        return cur_volume
+    if 1 == location:
+        if hour >= 15:
+            return cur_volume
 
-    if hour >= 9 and hour <= 11:
-        daily_min += (hour - 9) * 60 - 30
-    elif hour >= 13 and hour < 15:
-        daily_min += 120 + (hour - 13) * 60
-
-    return round(cur_volume * 240 / daily_min)
+        if hour >= 9 and hour <= 11:
+            daily_min += (hour - 9) * 60 - 30
+        elif hour >= 13 and hour < 15:
+            daily_min += 120 + (hour - 13) * 60
+    	return round(cur_volume * 240 / daily_min)
+    else:
+        curmin = (hour - 9) * 60 - 30
+    return round(cur_volume * 450 / curmin)
 
 '''
     @desc: 获取过去几天的总览数据, 目前暂定过去5天, 先从缓存加载, 数据字段包括:
