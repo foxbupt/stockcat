@@ -17,7 +17,7 @@ class RTPolicy(BasePolicy):
 
     def serialize(self, item):
 		key = "rt-" + str(item['sid']) + "-" + str(item['day'])
-		last_time = 0
+        last_time = 0
 
         if self.redis_conn.llen(key) > 0:
             last_item = json.loads(self.redis_conn.lindex(key, -1))
