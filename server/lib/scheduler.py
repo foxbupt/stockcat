@@ -154,9 +154,10 @@ class Scheduler(object):
         if 3 == self.location and 'cnlist' in market_config:
             cnlist = market_config['cnlist']
             for cn_code in cnlist:
-                sid = code2id_map[cn_code]
-                if sid not in pool_list:
-                    pool_list.append(sid)
+                if cn_code in code2id_map:
+                    sid = code2id_map[cn_code]
+                    if sid not in pool_list:
+                        pool_list.append(sid)
                     
         self.datamap['pool_list'] = pool_list
         logging.getLogger("fetch").info("op=scheduler_pool day=%d last_open_day=%s location=%d pool_count=%d", self.day, last_open_day, self.location, len(pool_list))
@@ -182,5 +183,6 @@ if __name__ == "__main__":
     # 初始化日志
     logging.config.fileConfig(config_info["LOG"]["conf"])
     scheduler = Scheduler(config_info)
+    print "enter core"
     scheduler.core(location, day)
     
