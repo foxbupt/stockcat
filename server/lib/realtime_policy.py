@@ -52,7 +52,7 @@ class RTPolicy(BasePolicy):
         # 开盘即涨停
         if daily_item['close_price'] == daily_item['open_price'] and daily_item['vary_portion'] >= 9.6:
             trend = 3
-        	op = 2
+            op = 2
         elif abs(day_vary_portion) < 2:
             trend = 2
             op = 2
