@@ -58,6 +58,18 @@ class ParrelFunc(object):
     def save(self):
         pass
 
+    '''
+    @desc: 导出抓取数据到日志中
+    @param: curtime HHMMSS string
+    @param: data str
+    @return
+    '''
+    def dump(self, curmin, data):
+        if 'dump' in self.worker_config and int(self.worker_config['dump']):
+            dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
+            if curmin % dump_interval == 0 :
+                logging.getLogger("dump").info(data)
+
 # 并行抓取当日总览数据
 class ParrelDaily(ParrelFunc):
 
@@ -120,13 +132,7 @@ class ParrelDaily(ParrelFunc):
                 self.logger.info(format_log("fetch_daily", daily_item))
                 
                 # 设置dump则把数据dump到日志中, 暂定每5mindump一次, 可配置
-                #print self.worker_config
-                if 'dump' in self.worker_config and int(self.worker_config['dump']):
-                    dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
-                    curmin = int(daily_item['time'][0:4])
-                    #print curmin, dump_interval
-                    if curmin % dump_interval == 0 :
-                        logging.getLogger("dump").info(json_data)                        
+                self.dump(int(daily_item['time'][2:4]), json_data)
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
@@ -293,12 +299,7 @@ class ParrelRealtime(ParrelFunc):
         self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
         
         # 设置dump则把数据dump到日志中, 暂定每5min dump一次, 可配置
-        #print self.worker_config
-        if 'dump' in self.worker_config and int(self.worker_config['dump']):
-            dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
-            #print new_time, dump_interval
-            if new_time % dump_interval == 0 :
-                logging.getLogger("dump").info(json_item)             
+        self.dump(new_time, json_item)
                         
  # 并行抓取股票盘成交明细
 class ParrelTransaction(ParrelFunc):
@@ -478,13 +479,7 @@ class ParrelUSDaily(ParrelFunc):
                 #print format_log("fetch_daily", daily_item)
 
                 # 设置dump则把数据dump到日志中, 暂定每5mindump一次, 可配置
-                #print self.worker_config
-                if 'dump' in self.worker_config and int(self.worker_config['dump']):
-                    dump_interval = int(self.worker_config['dump_min']) if 'dump_min' in self.worker_config else 5
-                    curmin = int(daily_item['time'][0:4])
-                    #print curmin, dump_interval
-                    if curmin % dump_interval == 0 :
-                        logging.getLogger("dump").info(json_item)                        
+                self.dump(int(daily_item['time'][2:4]), json_item)
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
