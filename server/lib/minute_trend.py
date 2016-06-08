@@ -196,7 +196,7 @@ class MinuteTrend(object):
                 last_item = result_list[-1] if len(result_list) > 0 else None
                 count = item[3]
 
-                if count >= 3:
+                if count >= 3 or last_item is None:
                     result_list.append(item)
                     i += 1
                 # item与左右两边的趋势相反, 3段合并到一起
