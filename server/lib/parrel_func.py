@@ -212,7 +212,10 @@ class ParrelRealtime(ParrelFunc):
         sid_list = self.datamap['pool_list']
 
         if "dataset" in self.worker_config:
-            sid_list = self.worker_config['dataset']
+            sid_list = []
+            for scode in self.worker_config['dataset']:
+                sid_list.append(self.datamap['code2id'][scode])
+
         for sid in sid_list:
             if sid in self.datamap['id2scode']:
                 item_list.append((sid, self.datamap['id2scode'][sid]))
@@ -429,9 +432,8 @@ class ParrelUSDaily(ParrelFunc):
 
         if "dataset" in self.worker_config:
             scode_dataset = []
-            for sid in self.worker_config["dataset"]:
-                if sid in self.datamap['id2scode']:
-                    scode_dataset.append(self.get_callcode(self.datamap['id2scode'][sid]))
+            for scode in self.worker_config["dataset"]:
+                scode_dataset.append(self.get_callcode("us" + scode))
             item_list.append(",".join(scode_dataset))
         else:
             offset = 0
