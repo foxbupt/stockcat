@@ -298,7 +298,7 @@ class ParrelRealtime(ParrelFunc):
         print scode, key, request_url, len(hq_item)
         self.time_map[sid] = new_time
 
-        json_item = json.dumps({'sid': sid, 'day': self.day, 'items': hq_item})
+        json_item = json.dumps({'sid': sid, 'day': data_day, 'items': hq_item})
         self.conn.rpush("realtime-queue", json_item)
         self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
         
