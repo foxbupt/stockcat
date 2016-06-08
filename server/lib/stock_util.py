@@ -426,7 +426,7 @@ def get_location_name(location):
 # 返回location对应的当前日期
 def get_current_day(location):
     if 3 == location:
-        return int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(days = 1)))
+        return int("{0:%Y%m%d}".format(datetime.date.today() - datetime.timedelta(hours = 12)))
     else:
         return int("{0:%Y%m%d}".format(datetime.date.today()))    
         
@@ -453,6 +453,9 @@ if __name__ == "__main__":
     redis_config['port'] = int(redis_config['port'])
     print db_config, redis_config
 
+    print get_current_day(3)
+
+    '''
     day = int(day)
     hqdata = get_hqdata(db_config, redis_config, 116, day)
     print hqdata
@@ -461,3 +464,4 @@ if __name__ == "__main__":
         add_stock_pool(db_config, redis_config, 116, day, 2, {'trend':3, 'wave':3}) 
     except Exception as e:
         print e
+    '''
