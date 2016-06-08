@@ -63,7 +63,11 @@ class FetchWorker(threading.Thread):
                 cost_time = 0
                 if parrel_object:
                     before_timestamp = time.time()
-                    parrel_object.run()
+                    try:
+                        parrel_object.run()
+                    except Exception as e:
+                        logging.getLogger("fetch").exception("err=parrel_run name=%s exception=%s", self.name, str(e))
+                        continue
                     cost_time = round(time.time() - before_timestamp, 1)
 
                 #print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count, 'cost_time': cost_time})

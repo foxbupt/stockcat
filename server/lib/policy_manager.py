@@ -42,7 +42,7 @@ class PolicyManager(object):
                 policy_instance.start()
 
                 instance_list.append(policy_instance)
-                logging.getLogger("policy").debug("desc=policy_worker_start location=%d day=%d name=%s index=%d id=%s", self.location, self.day, policy_name, i, str(policy_instance.get_pid()))
+                logging.getLogger("policy").info("desc=policy_worker_start location=%d day=%d name=%s index=%d id=%s", self.location, self.day, policy_name, i, str(policy_instance.get_pid()))
 
         for instance in instance_list:
             instance.join()
