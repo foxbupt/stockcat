@@ -255,6 +255,7 @@ class ParrelRealtime(ParrelFunc):
       	
         #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
         date_str = data_json['date'].strip()
+        #返回的日期为当前日期，非美国时区的日期
         data_day = int(date_str) if len(date_str) > 0 else self.day
             
         hq_item = list()
@@ -297,7 +298,7 @@ class ParrelRealtime(ParrelFunc):
         print scode, key, request_url, len(hq_item)
         self.time_map[sid] = new_time
 
-        json_item = json.dumps({'sid': sid, 'day': data_day, 'items': hq_item})
+        json_item = json.dumps({'sid': sid, 'day': self.day, 'items': hq_item})
         self.conn.rpush("realtime-queue", json_item)
         self.logger.info(format_log("fetch_realtime", {'sid': sid, 'scode': scode, 'time': hq_item[len(hq_item) - 1]['time'], 'price': hq_item[len(hq_item) - 1]['price']}))
         
