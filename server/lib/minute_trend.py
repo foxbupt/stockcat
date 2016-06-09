@@ -11,7 +11,6 @@ import datetime, time
 #from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 
-
 class MinuteTrend(object):
     # 操作定义: 0 等待 1 买入 2 卖出
     OP_WAIT = 0
@@ -177,6 +176,8 @@ class MinuteTrend(object):
 
 
     '''
+        TODO: 由于请求间隔的原因, 可能存在前后2段趋势相同, 需要优先合并
+        TODO: 对于上次合并分析的结果需要缓存，下次从最后2段趋势开始合并
         @desc 对分段的趋势节点进行归并处理, 每段趋势节点个数>=3
         @param range_list [(start, end, direction, length, high_price, low_price)]
         @return list[(start, end, direction, length, high_price, low_price)]
@@ -194,55 +195,59 @@ class MinuteTrend(object):
             while i < len(range_list):
                 item = range_list[i]
                 last_item = result_list[-1] if len(result_list) > 0 else None
+                next_item = range_list[i + 1] if i < len(range_list) - 1 else None
                 count = item[3]
 
-                if count >= 3 or last_item is None:
-                    result_list.append(item)
-                    i += 1
+                if next_item and item[2] == next_item[2]:
+                    merge_item = (item[0], next_item[1], item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
+                            min(item[5], next_item[5]))
+                    i = i+2
                 # item与左右两边的趋势相反, 3段合并到一起
                 elif i > 0 and i < len(range_list) - 1:
-                    next_item = range_list[i + 1]
                     '''
                         前后相邻两段趋势肯定相同, 满足以下条件之一则合并:
                         前后两段长度 都 >= 3
                         相邻两段趋势都是上升, 且后一段的最高点 >= 前一段最高点
                         相邻两段趋势都是下跌, 且后一段的最低点 <= 前一段的最低点
                     '''
-                    if (last_item[3] >= 3 and next_item[3] >= 3) or (
+                    if (last_item[2] == next_item[2]) and ((last_item[3] >= 3 and next_item[3] >= 3) or (
                             last_item[2] == 1 and next_item[4] >= last_item[4]) or (
-                            last_item[2] == -1 and next_item[5] <= last_item[5]):
+                            last_item[2] == -1 and next_item[5] <= last_item[5])):
                         merge_item = (last_item[0], next_item[1], last_item[2], next_item[1] - last_item[0] + 1,
                                       max(last_item[4], next_item[4]), min(last_item[5], next_item[5]))
                         result_list[-1] = merge_item
                         i = i + 2
                     else:
                         #  前2次循环, 对左右趋势节点<3的节点不做归并, 便于某些靠后的节点能靠后处理
+                        '''
                         if loop_count <= 2:
                             i = i + 1
                             result_list.append(item)
                         else:
-                            # 当前节点为下跌, 下一个节点为上涨, 且上涨高点 <= 下跌高点, 则合并为下跌
-                            #当前节点为上涨, 下一个节点为下跌, 且下跌低点 >= 上涨低点, 则合并为上涨
-                            if (item[2] == -1 and next_item[4] <= item[4]) or (item[2] == 1 and next_item[5] >= item[5]):
-                                merge_item = (
-                                item[0], next_item[1], item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
-                                min(item[5], next_item[5]))
-                                result_list.append(merge_item)
-                                i = i + 2
-                            else:
-                                merge_item = (last_item[0], next_item[1], last_item[2], next_item[1] - last_item[0] + 1,
-                                              max(last_item[4], next_item[4]), min(last_item[5], next_item[5]))
-                                result_list[-1] = merge_item
-                                i += 2
+                     '''
+                        # 当前节点为下跌, 下一个节点为上涨, 且上涨高点 <= 下跌高点, 则合并为下跌
+                        #当前节点为上涨, 下一个节点为下跌, 且下跌低点 >= 上涨低点, 则合并为上涨
+                        if (item[2] == -1 and next_item[4] <= item[4]) or (item[2] == 1 and next_item[5] >= item[5]):
+                            merge_item = (
+                            item[0], next_item[1], item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
+                            min(item[5], next_item[5]))
+                            result_list.append(merge_item)
+                            i = i + 2
+                        else:
+                            merge_item = (last_item[0], next_item[1], last_item[2], next_item[1] - last_item[0] + 1,
+                                          max(last_item[4], next_item[4]), min(last_item[5], next_item[5]))
+                            result_list[-1] = merge_item
+                            i += 2
                 elif i == 0:
-                    next_item = range_list[i + 1]
-                    if next_item[3] >= 3:
+                    # 判断第2段趋势超过3个节点且与第1段趋势同方向时才合并
+                    if next_item and next_item[3] >= 3 and item[2] == next_item[2]:
                         merge_item = (
                         item[0], next_item[1], next_item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
                         min(item[5], next_item[5]))
                         result_list.append(merge_item)
                         i += 2
                     else:
+                        result_list.append(item)
                         i += 1
 
                 # 最后一段趋势允许<3, 后面会新增节点
@@ -252,8 +257,8 @@ class MinuteTrend(object):
             loop = False
             #print result_list
             range_list = result_list
-            for item in range_list:
-                if item[3] < 3:
+            for index, item in enumerate(range_list):
+                if item[3] < 3 and index != 0 and  index != len(range_list) - 1:
                     loop = True
                     break
             if not loop:
@@ -297,7 +302,8 @@ class MinuteTrend(object):
                 trend_item = dict()
                 trend_item['start'] = item[0]
                 trend_item['end'] = item[1]
-                trend_item['direction'] = item[2]
+                # 重新计算direction
+                trend_item['direction'] = 1 if price_list[item[1]] >= price_list[item[0]] else -1
                 trend_item['trend'] = trend
                 trend_item['high_price'] = item[4]
                 trend_item['low_price'] = item[5]
@@ -309,41 +315,76 @@ class MinuteTrend(object):
 
         return item_list
 
-
 if __name__ == "__main__":
-    def parse_file(filename):
-        content = open(filename).read()
-        lines = content.split("\n")
-        daily_item = dict()
-        minute_items = []
+    def loaddata(filename):
+        daily_map = dict()
+        realtime_map = dict()
 
-        for line in lines:
-            line = line.strip("\n ")
-            if len(line) == 0:
-                continue
+        try:
+            content = open(filename).read()
+            lines = content.split("\n")
+            for line in lines:
+                try:
+                    line = line.strip("\n ")
+                    if len(line) == 0:
+                        continue
 
-            #print line
-            item = json.loads(line)
-            if "code" in item:
-                daily_item= item
-            else:
-                minute_items.append(item)
-        return (daily_item, minute_items)
+                    #print line
+                    fields = line.split("|")
+                    if len(fields) < 2:
+                        continue
 
-    sid = 6298
-    (daily_item, minute_items) = parse_file(str(sid) + "_data.txt")
-    print daily_item
-    print minute_items, len(minute_items)
+                    data = fields[1]
+                    parts = fields[0].split("-")
+                    type = None
+                    if len(parts) == 4:
+                        type = parts[3].strip()
+
+                    #print data
+                    item = json.loads(data, encoding='utf-8')
+                    if type is None:
+                        type = "daily" if 'code' in item else "realtime"
+
+                    #print type, data
+                    sid = item['sid']
+                    if "daily" == type:
+                        if sid not in daily_map:
+                            daily_map[sid] = list()
+                        print sid, daily_map[sid]
+                        daily_map[sid].append(item)
+                    elif "realtime" == type:
+                        if sid not in realtime_map:
+                            realtime_map[sid] = {}
+                        item_time = item['items'][-1]['time']
+                        if item_time not in realtime_map[sid]:
+                            realtime_map[sid][item_time] = item
+                except Exception as err:
+                    print "err=parse_line line=" + line + " err=" + str(err)
+                    continue
+
+        except Exception as e:
+            print "err=loaddata filename=" + filename + " err=" + str(e)
+            return False
+
+        return (daily_map, realtime_map)
+
+    sid = 9606
+    (daily_map, realtime_map) = loaddata("dump.log")
+    print daily_map, realtime_map
+    daily_item = daily_map[sid][0]
+    (timenumber, minute_items) = realtime_map[sid].popitem()
     instance = MinuteTrend(sid)
 
     step = 5
     index = 0
-    min_count = len(minute_items)
+    items = minute_items['items']
+    min_count = len(items)
+    print min_count
     while index <= min_count:
         index += 5
         offset = min(index, min_count)
-        trend_stage = instance.core(daily_item, minute_items[0 : offset])
-        print index, minute_items[offset-1:offset]
+        trend_stage = instance.core(daily_item, items[0 : offset])
+        print index, items[offset-1:offset]
         print trend_stage
         print "price_op", trend_stage['op'], trend_stage['price_range'], trend_stage['time'], trend_stage['trend_item']
     print "finish"
