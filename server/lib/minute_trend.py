@@ -311,64 +311,39 @@ class MinuteTrend(object):
 
 
 if __name__ == "__main__":
-    item_map = {}
-
     def parse_file(filename):
         content = open(filename).read()
         lines = content.split("\n")
+        daily_item = dict()
+        minute_items = []
 
         for line in lines:
             line = line.strip("\n ")
             if len(line) == 0:
                 continue
 
-            print line
-            parts = line.split("=")
-            code = parts[0]
-            hq_data = parts[1]
-
-            item_map[code] = []
-            minute_list = hq_data.split(",")
-
-            for minute_item in minute_list:
-                values = minute_item.strip("\"").split(" ")
-                min_data = {"time": int(values[0]), "price": float(values[1]), "volume": int(values[2])}
-                item_map[code].append(min_data)
-
-    def get_datamap(code, index):
-        item_list = item_map[code]
-        now_item = item_list[index - 1]
-        minute_items = item_list[0:index]
-
-        last_close_price = 32.85
-        price_list = [item["price"] for item in item_list[0: index]]
-
-        high_price = max(price_list)
-        low_value = min(price_list)
-        daily_item = {"sid": 212, "code": "WUBA", "day": 20160311, "open_price": 56.36,
-                      "last_close_price": last_close_price, "close_price": now_item['price'], "time": now_item['time'],
-                      "high_price": high_price, "low_price": low_value,
-                      "vary_price": now_item['price'] - last_close_price,
-                      "vary_portion": (now_item['price'] - last_close_price) / last_close_price * 100}
-        #print daily_item
+            #print line
+            item = json.loads(line)
+            if "code" in item:
+                daily_item= item
+            else:
+                minute_items.append(item)
         return (daily_item, minute_items)
 
-        #price_list = [item['price'] for item in minute_items]
-        #combined_list = MinuteTrend.split_list(price_list)
-        #print combined_list, len(combined_list)
+    sid = 6298
+    (daily_item, minute_items) = parse_file(str(sid) + "_data.txt")
+    print daily_item
+    print minute_items, len(minute_items)
+    instance = MinuteTrend(sid)
 
-    parse_file("usmin_20160314.txt")
-    print item_map
-    instance = MinuteTrend(210)
-
-    code = "EDU"
-    index = 5
-    while index < len(item_map[code]):
-        index = min(index, len(item_map[code]) - 1)
-        daily_item, minute_items = get_datamap(code, index)
-        print minute_items
-        trend_stage = instance.core(daily_item, minute_items)
-        print index
-        print trend_stage
+    step = 5
+    index = 0
+    min_count = len(minute_items)
+    while index <= min_count:
         index += 5
+        offset = min(index, min_count)
+        trend_stage = instance.core(daily_item, minute_items[0 : offset])
+        print index, minute_items[offset-1:offset]
+        print trend_stage
+        print "price_op", trend_stage['op'], trend_stage['price_range'], trend_stage['time'], trend_stage['trend_item']
     print "finish"

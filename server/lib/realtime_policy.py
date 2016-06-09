@@ -32,7 +32,11 @@ class RTPolicy(BasePolicy):
             self.logger.debug("desc=realtime_item sid=%d day=%d volume=%.2f price=%.2f time=%d",
                     item['sid'], item['day'], minute_item['volume'], minute_item['price'], minute_item['time'])
 
-
+    '''
+        @desc 结合每分钟价格和成交量分析实时趋势, 用于指导日内交易操作
+        @param item dict
+        @return trend_stage
+    '''
     def realtime_trend(self, item):
         sid = int(item['sid'])
         daily_key = "daily-" + str(sid) + "-" + str(item['day'])
@@ -42,16 +46,21 @@ class RTPolicy(BasePolicy):
 
         daily_item = json.loads(daily_cache_value)	
         rt_key = "rt-" + str(sid) + "-" + str(item['day'])
-        item_list = self.redis_conn.lrange(rt_key, 0, -1)
+        item_count = self.redis_conn.llen(rt_key)
+        if len(item_count) < 3:
+            return
 
+        item_list = self.redis_conn.lrange(rt_key, 0, -1)
         minute_items = []
         for item_json in item_list:
             minute_items.append(json.loads(item_json))
 
         instance = MinuteTrend(sid)
         trend_stage = instance.core(daily_item, minute_items)
-        print trend_stage
+        if trend_stage['op'] != MinuteTrend.OP_WAIT:
+            self.logger.info("%s", format_log("realtime_chance", trend_stage))
 
+        #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
 
     '''
         @desc: 结合当日行情和分时价格行情分析趋势
