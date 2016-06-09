@@ -47,7 +47,7 @@ class RTPolicy(BasePolicy):
         daily_item = json.loads(daily_cache_value)	
         rt_key = "rt-" + str(sid) + "-" + str(item['day'])
         item_count = self.redis_conn.llen(rt_key)
-        if len(item_count) < 3:
+        if item_count < 3:
             return
 
         item_list = self.redis_conn.lrange(rt_key, 0, -1)
