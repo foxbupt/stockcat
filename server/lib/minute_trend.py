@@ -225,6 +225,7 @@ class MinuteTrend(object):
                             result_list.append(item)
                         else:
                      '''
+                        # TODO: 这里的逻辑有问题(合并过度带来的问题), 出现趋势反转时, 仅会在下跌回前段上涨趋势的最低点时, 才会单独体现为下跌趋势
                         # 当前节点为下跌, 下一个节点为上涨, 且上涨高点 <= 下跌高点, 则合并为下跌
                         #当前节点为上涨, 下一个节点为下跌, 且下跌低点 >= 上涨低点, 则合并为上涨
                         if (item[2] == -1 and next_item[4] <= item[4]) or (item[2] == 1 and next_item[5] >= item[5]):

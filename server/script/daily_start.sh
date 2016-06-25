@@ -17,7 +17,14 @@ main()
         day=$2
     fi
 
-    lastday=`date -d "1 day ago" +%Y%m%d`
+    lastday=`date -d "1 day ago" +%Y%m%d`    
+    
+    # 日志按天切割 
+    if [ -f  /data/stockcat/service/service.log ]
+    then
+        mv /data/stockcat/service/service.log /data/stockcat/service/service_$(lastday)_${location}.log 
+        mv /data/stockcat/service/dump.log /data/stockcat/service/dump_$(lastday)_${location}.log    
+    fi
     ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
 
     open=`is_market_open "$day"`
