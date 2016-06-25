@@ -317,6 +317,10 @@ class MinuteTrend(object):
         return item_list
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print "Usage:" + sys.argv[0] + " <filename> <sid>"
+        sys.exit(1)
+
     def loaddata(filename):
         daily_map = dict()
         realtime_map = dict()
@@ -355,10 +359,11 @@ if __name__ == "__main__":
                         daily_map[sid].append(item)
                     elif "realtime" == type:
                         if sid not in realtime_map:
-                            realtime_map[sid] = {}
-                        item_time = item['items'][-1]['time']
-                        if item_time not in realtime_map[sid]:
-                            realtime_map[sid][item_time] = item
+                            realtime_map[sid] = []
+                        last_time = realtime_map[sid][-1]['time'] if len(realtime_map[sid]) > 0 else 0
+                        for realtime_item in item['items']:
+                            if last_time == 0 or realtime_item['time'] > last_time:
+                                realtime_map[sid].append(realtime_item)
                 except Exception as err:
                     print "err=parse_line line=" + line + " err=" + str(err)
                     continue
@@ -369,21 +374,23 @@ if __name__ == "__main__":
 
         return (daily_map, realtime_map)
 
-    sid = 9606
-    (daily_map, realtime_map) = loaddata("dump.log")
+    sid = int(sys.argv[2])
+    (daily_map, realtime_map) = loaddata(sys.argv[1])
     print daily_map, realtime_map
-    daily_item = daily_map[sid][0]
-    (timenumber, minute_items) = realtime_map[sid].popitem()
+    items = realtime_map[sid]
     instance = MinuteTrend(sid)
 
     step = 5
     index = 0
-    items = minute_items['items']
     min_count = len(items)
     print min_count
     while index <= min_count:
         index += 5
         offset = min(index, min_count)
+        price_list = [ minute_item['price'] for minute_item in items[0 : offset] ]
+        close_price = items[offset]['price'] if offset < min_count else items[-1]['price']
+
+        daily_item = {"sid": sid, "high_price": max(price_list), "low_price": min(price_list), "close_price": close_price, "day": items[index]["day"]}
         trend_stage = instance.core(daily_item, items[0 : offset])
         print index, items[offset-1:offset]
         print trend_stage
