@@ -49,18 +49,19 @@ class RTPolicy(BasePolicy):
         item_count = self.redis_conn.llen(rt_key)
         if item_count < 3:
             return
+        elif item_count % 5 == 0:
+            # 暂定每5分钟调用分析一次, 后续根据时间段调整
+            item_list = self.redis_conn.lrange(rt_key, 0, -1)
+            minute_items = []
+            for item_json in item_list:
+                minute_items.append(json.loads(item_json))
 
-        item_list = self.redis_conn.lrange(rt_key, 0, -1)
-        minute_items = []
-        for item_json in item_list:
-            minute_items.append(json.loads(item_json))
+            instance = MinuteTrend(sid)
+            trend_stage = instance.core(daily_item, minute_items)
+            if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
+                self.logger.info("%s", format_log("realtime_chance", trend_stage))
 
-        instance = MinuteTrend(sid)
-        trend_stage = instance.core(daily_item, minute_items)
-        if trend_stage['op'] != MinuteTrend.OP_WAIT:
-            self.logger.info("%s", format_log("realtime_chance", trend_stage))
-
-        #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
+            #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
 
     '''
         @desc: 结合当日行情和分时价格行情分析趋势

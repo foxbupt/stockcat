@@ -296,7 +296,7 @@ class MinuteTrend(object):
             item = combined_list[index]
             offset = index
             # 合并连续相同的几段趋势节点, 最后1段趋势不参与合并
-            while offset < len(combined_list) - 1:
+            while offset < len(combined_list) - 2:
                 if combined_list[offset + 1]['trend'] == item['trend']:
                     offset += 1
                 else:
