@@ -5,7 +5,7 @@
 #date: 2014/06/28
 
 import sys, re, json, os
-import datetime, time
+import datetime, time, random
 #sys.path.append('../../../../server')
 #from pyutil.util import safestr, format_log
 #from pyutil.sqlutil import SqlUtil, SqlConn
@@ -42,6 +42,51 @@ class MinuteTrend(object):
 
         # 当天整体趋势: 计算从开盘价格到当前价格的涨幅, 至少要>=2%才算上涨
         daily_trend = MinuteTrend.get_trend_by_price(daily_item['open_price'], daily_item['close_price'], 2.0)
+        current_time = minute_items[-1]['time']
+
+        # TODO: 当len(minute_items) >= 60时, 保存上次解析结果的下标, 从最后一段趋势开始解析, 优化过程
+        # 存在问题: parse中解析的部分结果, 需要和之前的趋势统一放到一起进行归并处理
+        self.trend_list = self.parse(daily_item, minute_items)
+        #print self.trend_list
+
+        latest_trend_item = self.trend_list[-1]
+        if latest_trend_item['length'] < 3 and len(self.trend_list) >= 2:
+            latest_trend_item = self.trend_list[-2]
+
+        plan_config = {'time': 2140, 'vary_portion': 3.00}
+        chance_info = dict()
+        buy_chance = MinuteTrend.get_chance(daily_item, self.trend_list, MinuteTrend.TREND_RISE, current_time, plan_config)
+        if buy_chance and buy_chance['op'] == MinuteTrend.OP_BUY:
+            chance_info = buy_chance
+        else:
+            chance_info = MinuteTrend.get_chance(daily_item, self.trend_list, MinuteTrend.TREND_FALL, current_time, plan_config)
+
+        # TODO: 输出日志
+        trend_stage = {"sid": self.sid, "code": daily_item['code'], "daily_trend": daily_trend,
+                       "time": current_time, "chance": chance_info,
+                       "trend_item": latest_trend_item, "daily_item": daily_item}
+        #print format_log("op=minute_trend", trend_stage)
+        return trend_stage
+
+
+    '''
+        @desc 分析趋势看是否存在交易机会
+        @param trend_list
+        @param current_time 当前时间, 格式为HHMM
+        @param trend int 表明上涨/下跌趋势
+        @param plan_config dict(time, vary_portion) 计划配置
+        @return dict(op, price_range, stop_price)
+    '''
+    @staticmethod
+    def get_chance(daily_item, trend_list, trend, current_time, plan_config):
+        # 获取最近一段趋势节点, 要求长度>=3
+        latest_trend_item = trend_list[-1]
+        trend_count = len(trend_list)
+        if latest_trend_item['length'] < 3 and trend_count >= 2:
+            latest_trend_item = trend_list[-2]
+        #print latest_trend_item
+        if not latest_trend_item:
+            return None
 
         '''
             分析当前处于整体趋势的哪个阶段, 找出买点/卖点, 目前仅考虑做多(做空逻辑类似, 判断刚好相反):
@@ -50,76 +95,60 @@ class MinuteTrend(object):
         '''
         op = MinuteTrend.OP_WAIT
         price_range = ()
+        stop_price = 0
 
-        # TODO: 当len(minute_items) >= 60时, 保存上次解析结果的下标, 从最后一段趋势开始解析, 优化过程
-        # 存在问题: parse中解析的部分结果, 需要和之前的趋势统一放到一起进行归并处理
-        #start_index = self.last_trend_index if self.last_trend_index > -1 else 0
-        self.trend_list = self.parse(daily_item, minute_items)
-        print self.trend_list
+        # 根据trend设置上涨标志位/方向/比较key/止损key
+        isrise = True if MinuteTrend.TREND_RISE == trend else False
+        direction = 1 if MinuteTrend.TREND_RISE == trend else -1
+        compare_key = 'high_price' if MinuteTrend.TREND_RISE == trend else 'low_price'
+        stop_key = 'low_price' if MinuteTrend.TREND_RISE == trend else 'high_price'
 
-        latest_trend_item = self.trend_list[-1]
-        #if len(minute_items) >= 60:
-        #	self.last_trend_index = latest_trend_item['start']
-        trend_count = len(self.trend_list)
-        trend_length = latest_trend_item['end'] - latest_trend_item['start'] + 1
-        print latest_trend_item
+        # 找买入/卖出点: 当前趋势为上涨/下跌且节点数>=3 且当前价格>=/<=前两段上涨趋势的最高点/最低点
+        # 当前趋势为震荡向上/向下, 判断是否有新高/新低, 决定买入/卖出
+        if (trend == latest_trend_item['trend']) or (MinuteTrend.TREND_WAVE == latest_trend_item['trend'] and direction == latest_trend_item['direction']):
+            same_item_list = MinuteTrend.rfind_same_trend(trend_list, trend_count - 1, trend)
+            print same_item_list
 
-        if trend_length >= 3:
-            # 找买入点: 当前趋势为上涨且节点数>=3 且当前价格>=上一段上涨趋势的最高点
-            # 当前趋势为震荡向上, 判断是否有新高, 决定买入
-            if (MinuteTrend.TREND_RISE == latest_trend_item['trend']) or (
-                    MinuteTrend.TREND_WAVE == latest_trend_item['trend'] and 1 == latest_trend_item['direction']):
-                same_item = MinuteTrend.rfind_same_trend(self.trend_list, trend_count - 1, MinuteTrend.TREND_RISE)
-                print same_item
+            current_price = max(daily_item['close_price'], latest_trend_item[compare_key])
+            if len(same_item_list) > 0:
+                last_item = same_item_list[0]
+                far_item = same_item_list[1] if len(same_item_list) >= 2 else None
+                past_trend_price = max(last_item[compare_key], far_item[compare_key]) if far_item else last_item[compare_key]
+                past_stop_price = max(last_item[stop_key], far_item[stop_key]) if far_item else last_item[stop_key]
+                if (isrise and current_price >= past_trend_price) or (not isrise and current_price <= past_trend_price):
+                    op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
+                    price_range = (past_trend_price, current_price) if isrise else (current_price, past_trend_price)
+                    stop_price = past_stop_price
+            elif current_time <= plan_config['time'] and direction * daily_item['vary_portion'] >= plan_config['vary_portion']:
+                op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
+                price_range = (current_price, current_price)
+                stop_price = latest_trend_item[stop_key]
 
-                current_price = max(daily_item['close_price'], latest_trend_item['high_price'])
-                if same_item and current_price >= same_item['high_price']:
-                    op = MinuteTrend.OP_BUY
-                    price_range = (same_item['high_price'], current_price)
-
-            # 找卖出点: 当前趋势为下跌且节点数>=3, 且当前价格<=上一段下跌趋势最低点
-            # 当前趋势为震荡向上, 判断是否有新低, 决定卖出
-            elif (MinuteTrend.TREND_FALL == latest_trend_item['trend']) or (
-                    MinuteTrend.TREND_WAVE == latest_trend_item['trend'] and -1 == latest_trend_item['direction']):
-                same_item = MinuteTrend.rfind_same_trend(self.trend_list, trend_count - 1, MinuteTrend.TREND_FALL)
-                print same_item
-
-                current_price = min(daily_item['close_price'], latest_trend_item['low_price'])
-                if same_item and current_price <= same_item['low_price']:
-                    op = MinuteTrend.OP_SELL
-                    price_range = (current_price, same_item['low_price'])
-
-        # TODO: 输出日志
-        trend_stage = {"sid": self.sid, "code": daily_item['code'], "daily_trend": daily_trend,
-                       "time": minute_items[latest_trend_item['end']]['time'], "op": op, "price_range": price_range,
-                       "trend_item": latest_trend_item, "daily_item": daily_item}
-        #print format_log("op=minute_trend", trend_stage)
-        return trend_stage
-
+        return {'op': op, 'price_range': price_range, 'stop_price': stop_price}
 
     '''
         @desc 从指定位置往前找到相邻同方向的趋势节点
         @param trend_list [{}, ...]
         @param pos int 指定位置
         @param trend int 指定趋势
-        @return trend_item/None
+        @return trend_item_list/None
     '''
     @staticmethod
     def rfind_same_trend(trend_list, pos, trend):
         if pos >= len(trend_list):
-            return None
+            return []
 
         item = trend_list[pos]
-        same_item = None
+        same_item_list = []
         offset = pos - 1
 
         while offset >= 0:
             if trend_list[offset]['trend'] == trend:
                 same_item = trend_list[offset]
-                break
+                same_item_list.append(same_item)
             offset -= 1
 
-        return same_item
+        return same_item_list
 
     '''
         @desc 根据两个价格输出趋势判断
@@ -178,93 +207,72 @@ class MinuteTrend(object):
     '''
         TODO: 由于请求间隔的原因, 可能存在前后2段趋势相同, 需要优先合并
         TODO: 对于上次合并分析的结果需要缓存，下次从最后2段趋势开始合并
-        @desc 对分段的趋势节点进行归并处理, 每段趋势节点个数>=3
+        @desc 对分段的趋势节点进行归并处理,
+        @param price_list []
         @param range_list [(start, end, direction, length, high_price, low_price)]
-        @return list[(start, end, direction, length, high_price, low_price)]
+        @return list[{start, end, direction, length, high_price, low_price}]
     '''
     @staticmethod
-    def combine_list(range_list):
-        loop = True
-        loop_count = 0
+    def combine_list(price_list, range_list):
+        result_list = []
 
-        while loop:
-            result_list = []
-            loop_count += 1
+        i = 0
+        while i < len(range_list):
+            item = range_list[i]
+            # 由于往前合并, 上1个节点可能已被合并, 所以取结果中的最后1段节点
+            last_item = result_list[-1] if len(result_list) > 0 else None
+            next_item = range_list[i + 1] if i < len(range_list) - 1 else None
+            count = item[3]
+            need_append = False
 
-            i = 0
-            while i < len(range_list):
-                item = range_list[i]
-                last_item = result_list[-1] if len(result_list) > 0 else None
-                next_item = range_list[i + 1] if i < len(range_list) - 1 else None
-                count = item[3]
+            # 趋势节点个数>= 3 或者是收尾节点, 直接追加
+            if count >= 3 or i == 0 or i == len(range_list) - 1:
+                need_append = True
+            # 当前趋势节点个数 < 3 且下段趋势节点>=3
+            elif count < 3 and next_item and next_item[3] >= 3:
+                '''
+                    前后相邻两段趋势肯定相同, 满足以下条件之一则合并:
+                    后段长度 >= 3
+                    相邻两段趋势都是上升, 且后一段的最高点 >= 前一段最高点
+                    相邻两段趋势都是下跌, 且后一段的最低点 <= 前一段的最低点
+             '''
+                # 前后2段趋势相同, 且后段趋势高点更高、低点更低, 则这3段趋势直接合并
+                if (next_item[2] == 1 and next_item[4] >= last_item['high_price']) or (next_item[2] == -1 and next_item[5] <= last_item['low_price']):
+                    trend_item = dict()
+                    trend_item['start'] = last_item['start']
+                    trend_item['end'] = next_item[1]
+                    # 重新计算direction
+                    trend_item['direction'] = next_item[2]
+                    trend_item['length'] = next_item[1] - last_item['start'] + 1
+                    trend_item['high_price'] = max(last_item['high_price'], next_item[4])
+                    trend_item['low_price'] = min(last_item['low_price'], next_item[5])
 
-                if next_item and item[2] == next_item[2]:
-                    merge_item = (item[0], next_item[1], item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
-                            min(item[5], next_item[5]))
-                    i = i+2
-                # item与左右两边的趋势相反, 3段合并到一起
-                elif i > 0 and i < len(range_list) - 1:
-                    '''
-                        前后相邻两段趋势肯定相同, 满足以下条件之一则合并:
-                        前后两段长度 都 >= 3
-                        相邻两段趋势都是上升, 且后一段的最高点 >= 前一段最高点
-                        相邻两段趋势都是下跌, 且后一段的最低点 <= 前一段的最低点
-                    '''
-                    if (last_item[2] == next_item[2]) and ((last_item[3] >= 3 and next_item[3] >= 3) or (
-                            last_item[2] == 1 and next_item[4] >= last_item[4]) or (
-                            last_item[2] == -1 and next_item[5] <= last_item[5])):
-                        merge_item = (last_item[0], next_item[1], last_item[2], next_item[1] - last_item[0] + 1,
-                                      max(last_item[4], next_item[4]), min(last_item[5], next_item[5]))
-                        result_list[-1] = merge_item
-                        i = i + 2
-                    else:
-                        #  前2次循环, 对左右趋势节点<3的节点不做归并, 便于某些靠后的节点能靠后处理
-                        '''
-                        if loop_count <= 2:
-                            i = i + 1
-                            result_list.append(item)
-                        else:
-                     '''
-                        # TODO: 这里的逻辑有问题(合并过度带来的问题), 出现趋势反转时, 仅会在下跌回前段上涨趋势的最低点时, 才会单独体现为下跌趋势
-                        # 当前节点为下跌, 下一个节点为上涨, 且上涨高点 <= 下跌高点, 则合并为下跌
-                        #当前节点为上涨, 下一个节点为下跌, 且下跌低点 >= 上涨低点, 则合并为上涨
-                        if (item[2] == -1 and next_item[4] <= item[4]) or (item[2] == 1 and next_item[5] >= item[5]):
-                            merge_item = (
-                            item[0], next_item[1], item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
-                            min(item[5], next_item[5]))
-                            result_list.append(merge_item)
-                            i = i + 2
-                        else:
-                            merge_item = (last_item[0], next_item[1], last_item[2], next_item[1] - last_item[0] + 1,
-                                          max(last_item[4], next_item[4]), min(last_item[5], next_item[5]))
-                            result_list[-1] = merge_item
-                            i += 2
-                elif i == 0:
-                    # 判断第2段趋势超过3个节点且与第1段趋势同方向时才合并
-                    if next_item and next_item[3] >= 3 and item[2] == next_item[2]:
-                        merge_item = (
-                        item[0], next_item[1], next_item[2], next_item[1] - item[0] + 1, max(item[4], next_item[4]),
-                        min(item[5], next_item[5]))
-                        result_list.append(merge_item)
-                        i += 2
-                    else:
-                        result_list.append(item)
-                        i += 1
+                    trend_item['trend'] = MinuteTrend.get_trend_by_price(price_list[trend_item['start']], price_list[trend_item['end']])
+                    trend_item['vary_portion'] = (price_list[trend_item['end']] - price_list[trend_item['start']]) / price_list[trend_item['start']] * 100
+                    result_list[-1] = trend_item
 
-                # 最后一段趋势允许<3, 后面会新增节点
-                elif i == len(range_list) - 1:
-                    i += 1
+                    need_append = False
+                    i = i + 2
+                else:
+                    need_append = True
+            else:
+                need_append = True
 
-            loop = False
-            #print result_list
-            range_list = result_list
-            for index, item in enumerate(range_list):
-                if item[3] < 3 and index != 0 and  index != len(range_list) - 1:
-                    loop = True
-                    break
-            if not loop:
-                return result_list
+            if need_append:
+                trend_item = dict()
+                trend_item['start'] = item[0]
+                trend_item['end'] = item[1]
+                # 重新计算direction
+                trend_item['direction'] = item[2]
+                trend_item['length'] = item[3]
+                trend_item['trend'] = MinuteTrend.get_trend_by_price(price_list[item[0]], price_list[item[1]])
+                trend_item['high_price'] = item[4]
+                trend_item['low_price'] = item[5]
+                trend_item['vary_portion'] = (price_list[item[1]] - price_list[item[0]]) / price_list[item[0]] * 100
+                result_list.append(trend_item)
+                i += 1
 
+        return result_list
 
     '''
         desc 解析分钟行情, 划分为多段
@@ -278,41 +286,40 @@ class MinuteTrend(object):
         range_list = MinuteTrend.split_list(price_list)
 
         # 把长度过小的趋势合并到相邻节点上, 确保每段趋势长度>=3
-        combined_list = MinuteTrend.combine_list(range_list)
+        combined_list = MinuteTrend.combine_list(price_list, range_list)
         #print combined_list
 
-        # 10:00 之前不合并趋势
-        need_merge = True if daily_item['time'] >= 1000 else False
-
+        # TODO: 把中间的震荡趋势节点合并, 组成大的趋势列表, 用于判断股票的走势强弱
         item_list = []
-        for item in combined_list:
-            last_item = item_list[-1] if len(item_list) > 0 else None
-            trend = MinuteTrend.get_trend_by_price(price_list[item[0]], price_list[item[1]])
+        index = 0
+        while index < len(combined_list):
+            item = combined_list[index]
+            offset = index
+            # 合并连续相同的几段趋势节点, 最后1段趋势不参与合并
+            while offset < len(combined_list) - 1:
+                if combined_list[offset + 1]['trend'] == item['trend']:
+                    offset += 1
+                else:
+                    break
 
-            # 合并相邻2段相同的趋势
-            if need_merge and last_item and trend == last_item['trend']:
-                merge_item = last_item
-                merge_item['end'] = item[1]
-                merge_item['direction'] = 1 if price_list[merge_item['end']] >= price_list[merge_item['start']] else -1
-                merge_item['high_price'] = max(last_item['high_price'], item[4])
-                merge_item['low_price'] = max(last_item['low_price'], item[5])
-                merge_item['vary_portion'] = (price_list[merge_item['end']] - price_list[merge_item['start']]) / price_list[
-                    merge_item['start']] * 100
-                item_list[-1] = merge_item
-            else:
-                trend_item = dict()
-                trend_item['start'] = item[0]
-                trend_item['end'] = item[1]
+            if offset > index:
+                next_item = combined_list[offset]
+                trend_item = item
+                trend_item['start'] = item['start']
+                trend_item['end'] = next_item['end']
+                trend_item['length'] = trend_item['end'] - trend_item['start'] + 1
+
                 # 重新计算direction
-                trend_item['direction'] = 1 if price_list[item[1]] >= price_list[item[0]] else -1
-                trend_item['trend'] = trend
-                trend_item['high_price'] = item[4]
-                trend_item['low_price'] = item[5]
-                trend_item['vary_portion'] = (price_list[item[1]] - price_list[item[0]]) / price_list[item[0]] * 100
-
+                trend_item['direction'] = 1 if price_list[next_item['end']] >= price_list[item['start']] else -1
+                trend_item['trend'] = item['trend']
+                trend_item['high_price'] = max(item['high_price'], next_item['high_price'])
+                trend_item['low_price'] = min(item['low_price'], next_item['low_price'])
+                trend_item['vary_portion'] = (price_list[next_item['end']] - price_list[item['start']]) / price_list[item['start']] * 100
                 item_list.append(trend_item)
-        #print len(item_list)
-        #print item_list
+                index = offset + 1
+            else:
+                item_list.append(item)
+                index += 1
 
         return item_list
 
@@ -345,7 +352,7 @@ if __name__ == "__main__":
                     if len(parts) == 4:
                         type = parts[3].strip()
 
-                    #print data
+                    #print type, data
                     item = json.loads(data, encoding='utf-8')
                     if type is None:
                         type = "daily" if 'code' in item else "realtime"
@@ -353,10 +360,7 @@ if __name__ == "__main__":
                     #print type, data
                     sid = item['sid']
                     if "daily" == type:
-                        if sid not in daily_map:
-                            daily_map[sid] = list()
-                        print sid, daily_map[sid]
-                        daily_map[sid].append(item)
+                        daily_map[sid] = item
                     elif "realtime" == type:
                         if sid not in realtime_map:
                             realtime_map[sid] = []
@@ -376,23 +380,29 @@ if __name__ == "__main__":
 
     sid = int(sys.argv[2])
     (daily_map, realtime_map) = loaddata(sys.argv[1])
-    print daily_map, realtime_map
+    #print daily_map, realtime_map
+    daily_info = daily_map[sid]
     items = realtime_map[sid]
     instance = MinuteTrend(sid)
 
     step = 5
     index = 0
     min_count = len(items)
-    print min_count
+    #print min_count
     while index <= min_count:
-        index += 5
+        index += 3
         offset = min(index, min_count)
         price_list = [ minute_item['price'] for minute_item in items[0 : offset] ]
         close_price = items[offset]['price'] if offset < min_count else items[-1]['price']
 
-        daily_item = {"sid": sid, "high_price": max(price_list), "low_price": min(price_list), "close_price": close_price, "day": items[index]["day"]}
+        daily_item = dict(daily_info)
+        daily_item["high_price"] = max(price_list)
+        daily_item['low_price'] = min(price_list)
+        daily_item['close_price'] = close_price
+
         trend_stage = instance.core(daily_item, items[0 : offset])
         print index, items[offset-1:offset]
-        print trend_stage
-        print "price_op", trend_stage['op'], trend_stage['price_range'], trend_stage['time'], trend_stage['trend_item']
+        #print trend_stage
+        if trend_stage['chance']:
+            print "op=chance_info ", trend_stage['time'], trend_stage['chance'], trend_stage['trend_item']
     print "finish"
