@@ -59,6 +59,7 @@ class RTPolicy(BasePolicy):
             instance = MinuteTrend(sid)
             trend_stage = instance.core(daily_item, minute_items)
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
+                self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
 
             #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
