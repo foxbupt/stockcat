@@ -53,7 +53,7 @@ class MinuteTrend(object):
         if latest_trend_item['length'] < 3 and len(self.trend_list) >= 2:
             latest_trend_item = self.trend_list[-2]
 
-        plan_config = {'time': 2140, 'vary_portion': 3.00}
+        plan_config = {'time': 940, 'vary_portion': 3.00}
         chance_info = dict()
         buy_chance = MinuteTrend.get_chance(daily_item, self.trend_list, MinuteTrend.TREND_RISE, current_time, plan_config)
         if buy_chance and buy_chance['op'] == MinuteTrend.OP_BUY:
@@ -113,10 +113,14 @@ class MinuteTrend(object):
                 stop_price = latest_trend_item[stop_key]
                 price_range = (current_price, current_price)
 
-            # 趋势长度>=4 && <= 100 且 abs(趋势幅度) >= 1.00
+            # 趋势长度>=4 && <= 100(过滤掉多段震荡合并后的趋势节点) 且 abs(趋势幅度) >= 1.00
             elif latest_trend_item['length'] >= 4 and latest_trend_item['length'] <= 100 and direction * latest_trend_item['vary_portion'] >= 1.00:
-                # TODO: 这里只查找了过去2段相同趋势节点, 可能忽略了同方向震荡的节点
+                # 优先查找过去2段相同趋势节点, 找不到时查找过去2段震荡的节点, 避免前面全部是震荡, 第一段上涨/下跌趋势无法构成操作机会
+                # 仍然存在一段下跌/一段上涨无法找到same_item形成操作的情形, 暂时忽略之
+                # TODO: 其实这种机会可能也会比较弱势, 因为前面全是震荡, 不好说...
                 same_item_list = MinuteTrend.rfind_same_trend(trend_list, trend_count - 1, trend)
+                if len(same_item_list) == 0:
+                    same_item_list = MinuteTrend.rfind_same_trend(trend_list, trend_count - 1, MinuteTrend.TREND_WAVE)
                 print same_item_list
 
                 if len(same_item_list) > 0:
@@ -129,7 +133,6 @@ class MinuteTrend(object):
                         price_range = (past_trend_price, current_price) if isrise else (current_price, past_trend_price)
                         stop_price = past_stop_price
             else:
-
                 return None
         return {'op': op, 'price_range': price_range, 'stop_price': stop_price}
 
@@ -303,6 +306,7 @@ class MinuteTrend(object):
             item = combined_list[index]
             offset = index
             # 合并连续相同的几段趋势节点, 最后1段趋势不参与合并
+            # TODO: 目前仅循环了一次，会出现震荡趋势合并为上涨/下跌趋势, 下个节点为相同方向的趋势节点, 没有进行合并
             while offset < len(combined_list) - 2:
                 if combined_list[offset + 1]['trend'] == item['trend']:
                     offset += 1
@@ -318,7 +322,7 @@ class MinuteTrend(object):
 
                 # 重新计算direction和trend
                 trend_item['direction'] = 1 if price_list[next_item['end']] >= price_list[item['start']] else -1
-                trend_item['trend'] = item['trend'] #MinuteTrend.get_trend_by_price(price_list[trend_item['start']], price_list[trend_item['end']])
+                trend_item['trend'] = MinuteTrend.get_trend_by_price(price_list[trend_item['start']], price_list[trend_item['end']])
                 trend_item['high_price'] = max(item['high_price'], next_item['high_price'])
                 trend_item['low_price'] = min(item['low_price'], next_item['low_price'])
                 trend_item['vary_portion'] = (price_list[next_item['end']] - price_list[item['start']]) / price_list[item['start']] * 100
@@ -397,7 +401,7 @@ if __name__ == "__main__":
     min_count = len(items)
     #print min_count
     while index <= min_count:
-        index += 3
+        index += 5
         offset = min(index, min_count)
         price_list = [ minute_item['price'] for minute_item in items[0 : offset] ]
         close_price = items[offset]['price'] if offset < min_count else items[-1]['price']
@@ -407,9 +411,11 @@ if __name__ == "__main__":
         daily_item['low_price'] = min(price_list)
         daily_item['close_price'] = close_price
 
-        trend_stage = instance.core(daily_item, items[0 : offset])
+        (trend_stage, trend_list) = instance.core(daily_item, items[0 : offset])
         print index, items[offset-1:offset]
+        print trend_list
         #print trend_stage
-        if trend_stage['chance']:
+
+        if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
             print "op=chance_info ", trend_stage['time'], trend_stage['chance'], trend_stage['trend_item']
     print "finish"
