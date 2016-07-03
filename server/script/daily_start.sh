@@ -9,7 +9,9 @@ main()
     if [ $# -ge 1 ]
     then
         location=$1
-    fi
+    fi                  
+    # 获取上1次运行的location
+    last_location=`3 / $location`
     
     day=`get_curday "$location"`
     if [ $# -ge 2 ]
