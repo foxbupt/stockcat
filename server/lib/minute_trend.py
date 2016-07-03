@@ -34,7 +34,7 @@ class MinuteTrend(object):
         @desc 结合实时价格及分钟行情给出当天趋势
         @param daily_item  dict 实时价格
         @param minute_items list 分钟价格列表
-        @return dict(sid, code, time, daily_trend, op, price_range, trend_item, daily_item)
+        @return (dict(sid, code, time, daily_trend, op, price_range, trend_item, daily_item), trend_list)
     '''
     def core(self, daily_item, minute_items):
         if len(minute_items) < 3:
@@ -66,7 +66,7 @@ class MinuteTrend(object):
                        "time": current_time, "chance": chance_info,
                        "trend_item": latest_trend_item, "daily_item": daily_item}
         #print format_log("op=minute_trend", trend_stage)
-        return trend_stage
+        return (trend_stage, self.trend_list)
 
 
     '''
@@ -106,24 +106,31 @@ class MinuteTrend(object):
         # 找买入/卖出点: 当前趋势为上涨/下跌且节点数>=3 且当前价格>=/<=前两段上涨趋势的最高点/最低点
         # 当前趋势为震荡向上/向下, 判断是否有新高/新低, 决定买入/卖出
         if (trend == latest_trend_item['trend']) or (MinuteTrend.TREND_WAVE == latest_trend_item['trend'] and direction == latest_trend_item['direction']):
-            same_item_list = MinuteTrend.rfind_same_trend(trend_list, trend_count - 1, trend)
-            print same_item_list
-
             current_price = max(daily_item['close_price'], latest_trend_item[compare_key])
-            if len(same_item_list) > 0:
-                last_item = same_item_list[0]
-                far_item = same_item_list[1] if len(same_item_list) >= 2 else None
-                past_trend_price = max(last_item[compare_key], far_item[compare_key]) if far_item else last_item[compare_key]
-                past_stop_price = max(last_item[stop_key], far_item[stop_key]) if far_item else last_item[stop_key]
-                if (isrise and current_price >= past_trend_price) or (not isrise and current_price <= past_trend_price):
-                    op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
-                    price_range = (past_trend_price, current_price) if isrise else (current_price, past_trend_price)
-                    stop_price = past_stop_price
-            elif current_time <= plan_config['time'] and direction * daily_item['vary_portion'] >= plan_config['vary_portion']:
+            # 短时间内涨幅超过>=3%, 直接操作
+            if current_time <= plan_config['time'] and direction * daily_item['vary_portion'] >= plan_config['vary_portion']:
                 op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
-                price_range = (current_price, current_price)
                 stop_price = latest_trend_item[stop_key]
+                price_range = (current_price, current_price)
 
+            # 趋势长度>=4 && <= 100 且 abs(趋势幅度) >= 1.00
+            elif latest_trend_item['length'] >= 4 and latest_trend_item['length'] <= 100 and direction * latest_trend_item['vary_portion'] >= 1.00:
+                # TODO: 这里只查找了过去2段相同趋势节点, 可能忽略了同方向震荡的节点
+                same_item_list = MinuteTrend.rfind_same_trend(trend_list, trend_count - 1, trend)
+                print same_item_list
+
+                if len(same_item_list) > 0:
+                    last_item = same_item_list[0]
+                    far_item = same_item_list[1] if len(same_item_list) >= 2 else None
+                    past_trend_price = max(last_item[compare_key], far_item[compare_key]) if far_item else last_item[compare_key]
+                    past_stop_price = max(last_item[stop_key], far_item[stop_key]) if far_item else last_item[stop_key]
+                    if (isrise and current_price >= past_trend_price) or (not isrise and current_price <= past_trend_price):
+                        op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
+                        price_range = (past_trend_price, current_price) if isrise else (current_price, past_trend_price)
+                        stop_price = past_stop_price
+            else:
+
+                return None
         return {'op': op, 'price_range': price_range, 'stop_price': stop_price}
 
     '''
@@ -309,9 +316,9 @@ class MinuteTrend(object):
                 trend_item['end'] = next_item['end']
                 trend_item['length'] = trend_item['end'] - trend_item['start'] + 1
 
-                # 重新计算direction
+                # 重新计算direction和trend
                 trend_item['direction'] = 1 if price_list[next_item['end']] >= price_list[item['start']] else -1
-                trend_item['trend'] = item['trend']
+                trend_item['trend'] = item['trend'] #MinuteTrend.get_trend_by_price(price_list[trend_item['start']], price_list[trend_item['end']])
                 trend_item['high_price'] = max(item['high_price'], next_item['high_price'])
                 trend_item['low_price'] = min(item['low_price'], next_item['low_price'])
                 trend_item['vary_portion'] = (price_list[next_item['end']] - price_list[item['start']]) / price_list[item['start']] * 100

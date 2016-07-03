@@ -8,7 +8,6 @@ import sys, re, json, os
 import datetime, time
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
-from pyutil.sqlutil import SqlUtil, SqlConn
 import redis
 from base_policy import BasePolicy
 from minute_trend import MinuteTrend
@@ -57,10 +56,11 @@ class RTPolicy(BasePolicy):
                 minute_items.append(json.loads(item_json))
 
             instance = MinuteTrend(sid)
-            trend_stage = instance.core(daily_item, minute_items)
+            (trend_stage, trend_list) = instance.core(daily_item, minute_items)
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
+                self.logger.debug("%s", format_log("trend_list", trend_list))
 
             #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
 
