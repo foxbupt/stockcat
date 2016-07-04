@@ -8,7 +8,7 @@ import sys, re, json, os
 import datetime, time, logging, logging.config
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log    
-#sys.path.append('../lib/')
+sys.path.append('../lib/')
 from stock_util import get_hqdata, get_current_day
 import redis      
 

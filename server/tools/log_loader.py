@@ -6,7 +6,7 @@
 
 import sys, re, json, os
 import datetime, time
-sys.path.append('../../../../server')
+#sys.path.append('../../../../server')
 #from pyutil.util import safestr, format_log
 import redis      
 
