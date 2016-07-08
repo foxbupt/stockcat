@@ -24,8 +24,8 @@ main()
     # 日志按天切割 
     if [ -f  /data/stockcat/service/service.log ]
     then
-        mv /data/stockcat/service/service.log /data/stockcat/service/service_$(lastday)_${location}.log 
-        mv /data/stockcat/service/dump.log /data/stockcat/service/dump_$(lastday)_${location}.log    
+        mv /data/stockcat/service/service.log /data/stockcat/service/service_${lastday}_${last_location}.log 
+        mv /data/stockcat/service/dump.log /data/stockcat/service/dump_${lastday}_${last_location}.log    
     fi
     ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
 
