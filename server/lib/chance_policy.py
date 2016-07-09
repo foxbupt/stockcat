@@ -78,7 +78,7 @@ class ChancePolicy(BasePolicy):
         dapan_trend = MinuteTrend.TREND_WAVE
         dapan_sid = self.dapan_map[location]
         daily_cache_value = self.redis_conn.get("daily-"+ str(dapan_sid) + "-" + str(day))
-        dapan_data = json.load(daily_cache_value) if daily_cache_value is not None else dict()
+        dapan_data = json.loads(daily_cache_value) if daily_cache_value is not None else dict()
         if dapan_data:
             dapan_trend = MinuteTrend.TREND_RISE if (dapan_data['close_price'] - dapan_data['last_close_price']) >= 50 else MinuteTrend.TREND_FALL
 
@@ -92,7 +92,7 @@ class ChancePolicy(BasePolicy):
             item_key = (item['sid'], item['time'])
             # 获取最新的价格信息
             daily_cache_value = self.redis_conn.get("daily-"+ str(sid) + "-" + str(day))
-            daily_item = json.load(daily_cache_value) if daily_cache_value else item['daily_item']
+            daily_item = json.loads(daily_cache_value) if daily_cache_value else item['daily_item']
 
             # 操作机会已经交易过直接忽略
             if sid in self.item_map and self.item_map[sid] == item['time']:
@@ -168,7 +168,8 @@ class ChancePolicy(BasePolicy):
         key = "chance-" + str(sid) + "-" + str(day)
         # 该机会不一定是最新的1个
         chance_item_list = self.redis_conn.lrange(key, 0, -1)
-        for chance_item in chance_item_list:
+        for chance_item_data in chance_item_list:
+            chance_item = json.loads(chance_item_data)
             if chance_item['op'] == item['op']:
                 same_count += 1
             else:
@@ -209,7 +210,7 @@ class ChancePolicy(BasePolicy):
         stock_open_info = self.stock_map[sid]
         order_event = stock_open_info['order']
         daily_cache_value = self.redis_conn.get("daily-"+ str(sid) + "-" + str(day))
-        daily_item = json.load(daily_cache_value) if daily_cache_value else None
+        daily_item = json.loads(daily_cache_value) if daily_cache_value else None
 
         # 反方向的操作机会时, 立即卖出
         if item is not None and item['chance']['op'] != order_event['chance']['op']:
