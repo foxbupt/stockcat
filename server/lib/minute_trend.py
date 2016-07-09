@@ -12,10 +12,10 @@ import datetime, time, random
 import redis
 
 class MinuteTrend(object):
-    # 操作定义: 0 等待 1 买入 2 卖出
+    # 操作定义: 0 等待 1 做多 2 做空
     OP_WAIT = 0
-    OP_BUY = 1
-    OP_SELL = 2
+    OP_LONG = 1
+    OP_SHORT = 2
 
     # 趋势定义: 1 下跌 2 震荡 3 上涨
     TREND_FALL = 1
@@ -56,7 +56,7 @@ class MinuteTrend(object):
         plan_config = {'time': 940, 'vary_portion': 3.00}
         chance_info = dict()
         buy_chance = MinuteTrend.get_chance(daily_item, self.trend_list, MinuteTrend.TREND_RISE, current_time, plan_config)
-        if buy_chance and buy_chance['op'] == MinuteTrend.OP_BUY:
+        if buy_chance and buy_chance['op'] == MinuteTrend.OP_LONG:
             chance_info = buy_chance
         else:
             chance_info = MinuteTrend.get_chance(daily_item, self.trend_list, MinuteTrend.TREND_FALL, current_time, plan_config)
@@ -109,7 +109,7 @@ class MinuteTrend(object):
             current_price = max(daily_item['close_price'], latest_trend_item[compare_key])
             # 短时间内涨幅超过>=3%, 直接操作
             if current_time <= plan_config['time'] and direction * daily_item['vary_portion'] >= plan_config['vary_portion']:
-                op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
+                op = MinuteTrend.OP_LONG if isrise else MinuteTrend.OP_SELL
                 stop_price = latest_trend_item[stop_key]
                 price_range = (current_price, current_price)
 
@@ -129,7 +129,7 @@ class MinuteTrend(object):
                     past_trend_price = max(last_item[compare_key], far_item[compare_key]) if far_item else last_item[compare_key]
                     past_stop_price = max(last_item[stop_key], far_item[stop_key]) if far_item else last_item[stop_key]
                     if (isrise and current_price >= past_trend_price) or (not isrise and current_price <= past_trend_price):
-                        op = MinuteTrend.OP_BUY if isrise else MinuteTrend.OP_SELL
+                        op = MinuteTrend.OP_LONG if isrise else MinuteTrend.OP_SHORT
                         price_range = (past_trend_price, current_price) if isrise else (current_price, past_trend_price)
                         stop_price = past_stop_price
             else:
@@ -410,6 +410,7 @@ if __name__ == "__main__":
         daily_item["high_price"] = max(price_list)
         daily_item['low_price'] = min(price_list)
         daily_item['close_price'] = close_price
+        daily_item['vary_portion'] = (close_price - daily_item['last_close_price']) / daily_item['last_close_price'] * 100
 
         (trend_stage, trend_list) = instance.core(daily_item, items[0 : offset])
         print index, items[offset-1:offset]

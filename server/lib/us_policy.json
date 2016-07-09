@@ -14,5 +14,15 @@
         "processor_list": [
             "serialize", "realtime_trend"
         ]
+	},
+	"chance": {
+        "queue": "chance-queue",
+        "process_count": 1,
+        "object": "chance_policy.ChancePolicy",
+        'loop_interval': 10,
+        'loop_function': "judge",
+        "processor_list": [
+            "serialize"
+        ]
 	}
 } 

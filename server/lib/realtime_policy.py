@@ -62,8 +62,6 @@ class RTPolicy(BasePolicy):
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
                 self.logger.debug("%s", format_log("trend_list", trend_list))
 
-            #TODO: 把买入(trend=3&op=1)或卖出操作(trend=1&op=2)放入chance-queue中
-
     '''
         @desc: 结合当日行情和分时价格行情分析趋势
         @param: item dict

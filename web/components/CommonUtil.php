@@ -30,10 +30,10 @@ class CommonUtil
     const TREND_NEAR_LOW = 1;
     const TREND_NEAR_HIGH = 2;
     
-    // 操作字段: 1 卖出  2 待定 3 买入
+    // 操作字段:  0 待定 1 卖出 2 买入
+    const OP_WAIT = 0;
     const OP_SELL = 1;
-    const OP_PEND = 2;
-    const OP_BUY = 3;
+    const OP_BUY = 2;
     
     // 格式化类型: 1 价格, 2 百分比, 3 千分位数值
     const FORMAT_TYPE_PRICE = 1;

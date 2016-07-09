@@ -52,8 +52,11 @@ class PolicyWorker():
         item_count = 0
         redis_config = self.config_info['REDIS']
         conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
+        # 默认调用loop间隔, 单位为s
+        loop_interval = self.worker_config['loop_interval'] if 'loop_interval' in self.worker_config else 10
 
         while self.loop:
+            last_timenumber = get_timenumber(self.location)
             try:
                 pop_data = conn.blpop(self.queue, 1)
                 if pop_data is None:
@@ -63,6 +66,13 @@ class PolicyWorker():
                     if cur_timenumber >= int(self.config_info[get_location_name(self.location).upper()]['close_time']):
                         logging.getLogger("policy").critical("op=market_closed time=%d", cur_timenumber)
                         break
+                    # 周期性调用loop函数进行任务处理
+                    elif cur_timenumber - last_timenumber >= loop_interval and 'loop_function' in self.worker_config:
+                        last_timenumber = cur_timenumber
+                        try:
+                            getattr(policy_object, self.worker_config['loop_function'])(self.location, self.day, cur_timenumber)
+                        except Exception as e:
+                            logging.getLogger("policy").exception("err=policy_call_loop name=%s processor=%s curtime=%d", self.name, self.worker_config['loop_function'], cur_timenumber)
                     else:
                         continue
 
