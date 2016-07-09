@@ -98,7 +98,7 @@ class PolicyWorker():
                         logging.getLogger("policy").exception("err=policy_call name=%s processor=%s", self.name, func_name)
                     else:
                         #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
-                        logging.getLogger("policy").debug("desc=policy_processor name=%s processor=%s sid=%d day=%d", self.name, func_name, item['sid'], item['day'])
+                        logging.getLogger("policy").debug("desc=policy_processor name=%s processor=%s sid=%d", self.name, func_name, item['sid'])
             except Exception as e:
                 logging.getLogger("policy").exception("err=pop_item name=%s", self.name)
 
