@@ -57,7 +57,7 @@ class ChancePolicy(BasePolicy):
 
         # 全局list, 倒序排列
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
-        self.logger.debug("desc=chance_item %s", format_log(item))
+        self.logger.debug("%s", format_log("chance_item", item))
 
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
@@ -188,7 +188,7 @@ class ChancePolicy(BasePolicy):
             order_event['open_price'] = open_price
             order_event['stop_price'] = stop_price
             self.stock_map[sid] = {'order': order_event, 'closed': False}
-            self.logger.info("desc=open_position %s", format_log(order_event))
+            self.logger.info("%s", format_log("desc=open_position", order_event))
 
     '''
     @desc 根据操作机会提示进行平仓
