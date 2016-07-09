@@ -101,7 +101,7 @@ class ChancePolicy(BasePolicy):
             # 该股票的同方向操作已经交易, 直接忽略
             elif sid in self.stock_map:
                 # 同方向超过12点的、相反方向的机会可用于尝试平仓
-                if item['chance']['op'] != self.stock_map[sid]['op'] or item['time'] > self.chance_config[location]['deadline_time']:
+                if item['chance']['op'] != self.stock_map[sid]['order']['op'] or item['time'] > self.chance_config[location]['deadline_time']:
                     self.close_postion(location, day, sid, item)
                     continue
                 # 相反的方向提示平仓
