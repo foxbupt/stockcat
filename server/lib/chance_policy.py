@@ -101,7 +101,8 @@ class ChancePolicy(BasePolicy):
             # 该股票的同方向操作已经交易, 直接忽略
             elif sid in self.stock_map:
                 # 同方向超过12点的、相反方向的机会可用于尝试平仓
-                if item['chance']['op'] != self.stock_map[sid]['order']['op'] or item['time'] > self.chance_config[location]['deadline_time']:
+                order_event = self.stock_map[sid]['order']
+                if item['chance']['op'] != order_event['chance']['op'] or item['time'] > self.chance_config[location]['deadline_time']:
                     self.close_postion(location, day, sid, item)
                     continue
                 # 相反的方向提示平仓
@@ -194,7 +195,7 @@ class ChancePolicy(BasePolicy):
             order_event['open_price'] = open_price
             order_event['stop_price'] = stop_price
             self.stock_map[sid] = {'order': order_event, 'closed': False}
-            self.logger.info("%s", format_log("desc=open_position", order_event))
+            self.logger.info("%s", format_log("open_position", order_event))
 
     '''
     @desc 根据操作机会提示进行平仓
