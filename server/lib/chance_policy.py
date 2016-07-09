@@ -45,10 +45,10 @@ class ChancePolicy(BasePolicy):
 
         chance_info = item['chance']
         daily_item = item['daily_item']
-        daily_policy_key = "daily-policy-" + str(sid) + "-" + str(item['day'])
-        daily_policy_info = self.redis_conn.hgetall(daily_policy_key)
+        day_vary_portion = (daily_item['close_price'] - daily_item['open_price']) / daily_item['open_price'] * 100
+
         # 日内涨幅 >= 6%不建议追高
-        if chance_info['op'] == MinuteTrend.OP_LONG and daily_policy_info['day_vary_portion'] >= 6.00:
+        if chance_info['op'] == MinuteTrend.OP_LONG and abs(day_vary_portion) >= 6.00:
             return
 
         # TODO: 从redis中获取大盘趋势
@@ -57,6 +57,7 @@ class ChancePolicy(BasePolicy):
 
         # 全局list, 倒序排列
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
+        self.logger.debug("desc=chance_item %s", format_log(item))
 
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
