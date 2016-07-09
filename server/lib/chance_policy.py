@@ -59,6 +59,10 @@ class ChancePolicy(BasePolicy):
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
         self.logger.debug("%s", format_log("chance_item", item))
 
+        chance_count = self.redis_conn.llen("chance-" + str(day))
+        if chance_count % 5 == 0:
+            self.rank(3, daily_item['day'], daily_item['time'])
+
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
     @param location int
@@ -83,7 +87,7 @@ class ChancePolicy(BasePolicy):
         item_list = []
 
         for data in data_list:
-            item = json.load(data)
+            item = json.loads(data)
             sid = item['sid']
             item_key = (item['sid'], item['time'])
             # 获取最新的价格信息
