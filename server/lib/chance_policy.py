@@ -170,12 +170,13 @@ class ChancePolicy(BasePolicy):
         chance_item_list = self.redis_conn.lrange(key, 0, -1)
         for chance_item_data in chance_item_list:
             chance_item = json.loads(chance_item_data)
-            if chance_item['op'] == item['op']:
+            if chance_item['chance']['op'] == item['chance']['op']:
                 same_count += 1
             else:
                 contray_count += 1
 
         # 直接买入
+        print same_count, contray_count
         if contray_count == 0 or same_count >= 2:
             # TODO: 调用PortfioManager进行持仓管理, 推送交易事件(order_event)
             order_event = {'sid': sid, 'day': day, 'code': item['code'], 'time': item['time']}
