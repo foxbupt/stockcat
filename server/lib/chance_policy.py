@@ -103,7 +103,7 @@ class ChancePolicy(BasePolicy):
                 # 同方向超过12点的、相反方向的机会可用于尝试平仓
                 order_event = self.stock_map[sid]['order']
                 if item['chance']['op'] != order_event['chance']['op'] or item['time'] > self.chance_config[location]['deadline_time']:
-                    self.close_postion(location, day, sid, item)
+                    self.close_position(location, day, sid, item)
                     continue
                 # 相反的方向提示平仓
                 else:
@@ -119,11 +119,13 @@ class ChancePolicy(BasePolicy):
                 self.logger.info("desc=ignore_contray_stock location=%d sid=%d code=%s day=%d dapan=%d time=%d op=%d",
                             location, sid, item['code'], day, dapan_trend, item['time'], item['chance']['op'])
                 continue
-            # 判断股票市值, 必须>=5亿刀
-            elif float(stock_info_map[sid]['capital']) * daily_item['close_price'] <= 50000:
-                self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f",
-                        location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info_map[sid]['capital'], daily_item['close_price'])
-                continue
+            # 判断股票市值, 必须>=5亿刀 <= 300亿刀
+            else:
+                market_cap = float(stock_info_map[sid]['capital']) * daily_item['close_price'] / 10000
+                if market_cap <= 5 or market_cap > 300:
+                    self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
+                        location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info_map[sid]['capital'], daily_item['close_price'], market_cap)
+                    continue
 
             item_list.append(item)
 
@@ -181,15 +183,16 @@ class ChancePolicy(BasePolicy):
         if contray_count == 0 or same_count >= 2:
             # TODO: 调用PortfioManager进行持仓管理, 推送交易事件(order_event)
             order_event = {'sid': sid, 'day': day, 'code': item['code'], 'time': item['time']}
-            open_price = (item['chance']['price_range'][0] + item['chance']['price_range'][1]) / 2
+            #open_price = (item['chance']['price_range'][0] + item['chance']['price_range'][1]) / 2
             stop_price = item['chance']['stop_price']
-            if item['daily_trend'] != MinuteTrend.TREND_WAVE :
-                if item['chance']['op'] == MinuteTrend.OP_LONG:
-                    open_price = item['chance']['price_range'][1]
-                    stop_price = min(stop_price, open_price * (1 - self.chance_config[location]['stop_portion']))
-                else:
-                    open_price = item['chance']['price_range'][0]
-                    stop_price = max(stop_price, open_price * (1 + self.chance_config[location]['stop_portion']))
+            #if item['daily_trend'] != MinuteTrend.TREND_WAVE :
+
+            if item['chance']['op'] == MinuteTrend.OP_LONG:
+                open_price = item['chance']['price_range'][1]
+                stop_price = min(stop_price, open_price * (1 - self.chance_config[location]['stop_portion'] / 100))
+            else:
+                open_price = item['chance']['price_range'][0]
+                stop_price = max(stop_price, open_price * (1 + self.chance_config[location]['stop_portion'] / 100))
 
             order_event['chance'] = item['chance']
             order_event['open_price'] = open_price
@@ -239,15 +242,4 @@ class ChancePolicy(BasePolicy):
         if need_close:
             self.stock_map[sid]['closed'] = True
             self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f stop_price=%.2f close_price=%.2f vary_portion=%.2f",
-                location, sid, order_event['code'], current_timenumber, order_event['chance']['op'], order_event['open_price'], order_event['stop_price'], order_event['close_price'], vary_portion)
-
-
-
-
-
-
-
-
-
-
-
+                location, sid, order_event['code'], current_timenumber, order_event['chance']['op'], order_event['open_price'], order_event['stop_price'], current_price, vary_portion)

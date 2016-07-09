@@ -19,10 +19,10 @@
         "queue": "chance-queue",
         "process_count": 1,
         "object": "chance_policy.ChancePolicy",
-        'loop_interval': 10,
-        'loop_function': "judge",
+        "loop_interval": 10,
+        "loop_function": "rank",
         "processor_list": [
-            "serialize"
+            "filter"
         ]
 	}
 } 
