@@ -71,6 +71,7 @@ class ChancePolicy(BasePolicy):
     @return
     '''
     def rank(self, location, day, cur_timenumber):
+        # 这里按时间倒序拉取最近20个操作, 会出现在前面排序靠后的操作, 在后面的时间被执行了, 需要加上时间范围限制
         data_list = self.redis_conn.lrange("chance-" + str(day), 0, 20)
         if data_list is None or len(data_list) == 0:
             pass
@@ -83,10 +84,20 @@ class ChancePolicy(BasePolicy):
             dapan_trend = MinuteTrend.TREND_RISE if (dapan_data['close_price'] - dapan_data['last_close_price']) >= 50 else MinuteTrend.TREND_FALL
 
         item_list = []
+        cur_timenumber = 0
         for data in data_list:
             item = json.loads(data)
             sid = item['sid']
             item_key = (item['sid'], item['time'])
+
+            if cur_timenumber == 0:
+                cur_timenumber = item['time']
+            # 超过20min则不执行
+            elif cur_timenumber - item['time'] >= 20:
+                self.logger.debug("desc=ignore_expired_chance location=%d sid=%d code=%s day=%d time=%d cur_time=%d",
+                                  location, sid, item['code'], day, item['time'], cur_timenumber)
+                continue
+
             # 获取最新的价格信息
             daily_cache_value = self.redis_conn.get("daily-"+ str(sid) + "-" + str(day))
             daily_item = json.loads(daily_cache_value) if daily_cache_value else item['daily_item']
