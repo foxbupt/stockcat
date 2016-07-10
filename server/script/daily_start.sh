@@ -11,7 +11,7 @@ main()
         location=$1
     fi                  
     # 获取上1次运行的location
-    last_location=`3 / $location`
+    last_location=`expr 3 / $location`
     
     day=`get_curday "$location"`
     if [ $# -ge 2 ]
@@ -25,6 +25,9 @@ main()
     if [ -f  /data/stockcat/service/service.log ]
     then
         mv /data/stockcat/service/service.log /data/stockcat/service/service_${lastday}_${last_location}.log 
+    fi 
+    if [ -f  /data/stockcat/service/dump.log ]
+    then
         mv /data/stockcat/service/dump.log /data/stockcat/service/dump_${lastday}_${last_location}.log    
     fi
     ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log

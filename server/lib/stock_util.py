@@ -109,6 +109,22 @@ def get_stock_list(db_config, type = 0, location = 1):
 
     return stock_list
 
+# 获取股票信息
+def get_stock_info(db_config, sid):
+    sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, capital, out_capital, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
+            month6_low, month3_high, month3_low from t_stock where status = 'Y' and sid = " + str(sid)
+    try:
+        db_conn = SqlUtil.get_db(db_config)
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        return None
+
+    stock_info = dict()
+    if len(record_list) > 0:
+        stock_info = record_list[0]
+    return stock_info
+
 '''
   @desc: 获取指定日期股票的总览数据
   @param db_config dict DB配置

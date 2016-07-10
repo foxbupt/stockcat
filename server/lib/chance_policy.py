@@ -11,7 +11,7 @@ from pyutil.util import safestr, format_log
 import redis
 from base_policy import BasePolicy
 from minute_trend import MinuteTrend
-from stock_util import get_stock_list
+from stock_util import get_stock_info
 
 '''
     @desc: 对所有操作机会进行筛选过滤排序, 决策最终执行的操作
@@ -61,13 +61,13 @@ class ChancePolicy(BasePolicy):
 
         chance_count = self.redis_conn.llen("chance-" + str(day))
         if chance_count % 5 == 0:
-            self.rank(3, daily_item['day'], daily_item['time'])
+            self.rank(3, daily_item['day'], item['time'])
 
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
     @param location int
     @param day int
-    @param cur_timenumber int
+    @param cur_timenumber int 格式为HHMM
     @return
     '''
     def rank(self, location, day, cur_timenumber):
@@ -82,10 +82,7 @@ class ChancePolicy(BasePolicy):
         if dapan_data:
             dapan_trend = MinuteTrend.TREND_RISE if (dapan_data['close_price'] - dapan_data['last_close_price']) >= 50 else MinuteTrend.TREND_FALL
 
-        # 获取所有股票列表
-        stock_info_map = get_stock_list(self.config_info["DB"], 1, location)
         item_list = []
-
         for data in data_list:
             item = json.loads(data)
             sid = item['sid']
@@ -121,7 +118,13 @@ class ChancePolicy(BasePolicy):
                 continue
             # 判断股票市值, 必须>=5亿刀 <= 300亿刀
             else:
-                market_cap = float(stock_info_map[sid]['capital']) * daily_item['close_price'] / 10000
+                cache_value = self.redis_conn.get("stock:info-" + str(sid))
+                if cache_value:
+                    stock_info = json.loads(cache_value)
+                else:
+                    stock_info = get_stock_info(self.config_info["DB"], sid)
+
+                market_cap = float(stock_info['capital']) * daily_item['close_price'] / 10000
                 if market_cap <= 5 or market_cap > 300:
                     self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
                         location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info_map[sid]['capital'], daily_item['close_price'], market_cap)
@@ -209,6 +212,7 @@ class ChancePolicy(BasePolicy):
     @return
     '''
     def close_position(self, location, day, sid, item):
+        print "enter_close location=" + str(location) + " day=" + str(day) + " sid=" + str(sid)
         if sid not in self.stock_map or self.stock_map[sid]['closed']:
             return
 
