@@ -146,7 +146,7 @@ class ChancePolicy(BasePolicy):
             item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
             print item_list
 
-            offset = min(len(item_list), 3)
+            offset = min(len(item_list), 2)
             for item in item_list[0:offset]:
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
                 if item['time'] > self.chance_config[location]['deadline_time'] or abs(item['trend_item']['vary_portion']/item['trend_item']['length']) < 0.10:
