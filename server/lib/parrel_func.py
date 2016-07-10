@@ -10,7 +10,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
-from stock_util import get_predict_volume
+from stock_util import get_predict_volume, get_timenumber
 import redis
 
 # 并行处理的基类
@@ -447,7 +447,7 @@ class ParrelUSDaily(ParrelFunc):
     # 获取股票当前价格及成交量等信息
     def core(self, item):
         scode = item
-        url = "http://hq.sinajs.cn/?_=" + str(random.random()) + "&list=" + scode
+        url = "http://hq.sinajs.cn/?ran=" + str(random.random()) + "&list=" + scode
         #print url
 
         try:
@@ -517,9 +517,12 @@ class ParrelUSDaily(ParrelFunc):
             item['high_price'] = float(fields[6])
             item['low_price'] = float(fields[7])
             item['close_price'] = close_price
-            # 当前时刻, 格式为HHMMSS
-            time_parts = fields[3].split(" ")
-            item['time'] = time_parts[1].replace(":", "")
+
+            # 当前时刻, 格式为HHMMSS, 这里新浪返回的时间是错的, 改成自己计算, 可能出现不实时的情况
+            #time_parts = fields[3].split(" ")
+            #item['time'] = time_parts[1].replace(":", "")
+            item['time'] = get_timenumber(3)
+
             item['vary_price'] = float(fields[4])
             item['vary_portion'] = float(fields[2])
             # 成交量单位为股

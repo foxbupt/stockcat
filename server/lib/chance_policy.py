@@ -57,7 +57,7 @@ class ChancePolicy(BasePolicy):
 
         # 全局list, 倒序排列
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
-        self.logger.debug("%s", format_log("chance_item", item))
+        #self.logger.debug("%s", format_log("chance_item", item))
 
         chance_count = self.redis_conn.llen("chance-" + str(day))
         if chance_count % 5 == 0:
@@ -242,6 +242,7 @@ class ChancePolicy(BasePolicy):
 
         stock_open_info = self.stock_map[sid]
         order_event = stock_open_info['order']
+        # TODO: 回测时daily_item中的为收盘价, 且item['daily_item']的价格并不是实时更新的
         daily_cache_value = self.redis_conn.get("daily-"+ str(sid) + "-" + str(day))
         daily_item = json.loads(daily_cache_value) if daily_cache_value else None
 
@@ -255,9 +256,18 @@ class ChancePolicy(BasePolicy):
 
         #TODO: 需要利用订单实际成交的价格来计算目前获利和止损
         current_timenumber = item['time'] if item is not None else int(daily_item['time']/100)
+        # TODO: 临时加的, 修正构造数据中time不对的问题
+        if current_timenumber < 930:
+            current_timenumber += 1200
+_
         current_price = daily_item['close_price']
         vary_portion = (current_price - order_event['open_price']) / order_event['open_price'] * 100
+        if order_event['chance']['op'] == MinuteTrend.OP_SHORT:
+            vary_portion = -1 * vary_portion
         need_close = False
+
+        self.logger.debug("%s location=%d day=%d current_time=%d current_price=%.2f vary_portion=%.2f",
+                format_log("close_detail", order_event), location, day, current_timenumber, current_price, vary_portion);
 
         # 需要平仓: 越过止损位/出现反方向趋势且获利达到最小要求/临近收盘且时间>=1530
         if (order_event['chance']['op'] == MinuteTrend.OP_LONG and current_price <= order_event['stop_price']) or (order_event['chance']['op'] == MinuteTrend.OP_SHORT and current_price >= order_event['stop_price']):
@@ -268,7 +278,7 @@ class ChancePolicy(BasePolicy):
             self.logger.info("desc=profit_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
                              location, sid, order_event['code'], day, order_event['chance']['op'], item['time'], order_event['open_price'], current_price, order_event['stop_price'], abs(vary_portion))
             need_close = True
-        elif current_timenumber >= 1530:
+        elif current_timenumber >= 1500:
             self.logger.info("desc=time_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
                              location, sid, order_event['code'], day, order_event['chance']['op'], current_timenumber, order_event['open_price'], current_price, order_event['stop_price'], abs(vary_portion))
             need_close = True
@@ -277,4 +287,5 @@ class ChancePolicy(BasePolicy):
         if need_close:
             self.stock_map[sid]['closed'] = True
             self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
-                location, sid, order_event['code'], current_timenumber, order_event['chance']['op'], order_event['open_price'], current_price, order_event['stop_price'], vary_portion)
+                location, sid, order_event['code'], day, current_timenumber, order_event['chance']['op'], order_event['open_price'], current_price, order_event['stop_price'], vary_portion)
+        print "exit_close sid=" + str(sid) + " current_time=" + str(current_timenumber) + " need_close=" + str(need_close)
