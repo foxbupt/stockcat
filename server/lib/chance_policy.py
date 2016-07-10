@@ -146,7 +146,8 @@ class ChancePolicy(BasePolicy):
             item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
             print item_list
 
-            offset = min(len(item_list), 2)
+            offset = min(len(item_list), 3)
+            limit_count = 2
             for item in item_list[0:offset]:
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
                 if item['time'] > self.chance_config[location]['deadline_time'] or abs(item['trend_item']['vary_portion']/item['trend_item']['length']) < 0.10:
@@ -155,8 +156,11 @@ class ChancePolicy(BasePolicy):
                 elif item['sid'] in self.item_map:
                     continue
 
-                self.open_position(location, day, item['sid'], item)
-                self.item_map[item['sid']] = item['time']
+                if limit_count > 0:
+                    open_result = self.open_position(location, day, item['sid'], item)
+                    if open_result:
+                        self.item_map[item['sid']] = item['time']
+                        limit_count -= 1
 
     '''
     @desc 根据操作机会进行交易建仓
@@ -164,11 +168,11 @@ class ChancePolicy(BasePolicy):
     @param day int
     @param sid int
     @param item chance_item
-    @return
+    @return boolean True 表示建仓成功 False 建仓失败
     '''
     def open_position(self, location, day, sid, item):
         # 获取该股票所有的操作机会
-        same_count = 0
+        same_count = 1
         contray_count = 0
 
         key = "chance-" + str(sid) + "-" + str(day)
@@ -176,6 +180,10 @@ class ChancePolicy(BasePolicy):
         chance_item_list = self.redis_conn.lrange(key, 0, -1)
         for chance_item_data in chance_item_list:
             chance_item = json.loads(chance_item_data)
+            # 忽略自己
+            if chance_item['time'] == item['time']:
+                continue
+
             if chance_item['chance']['op'] == item['chance']['op']:
                 same_count += 1
             else:
@@ -183,13 +191,14 @@ class ChancePolicy(BasePolicy):
 
         # 直接买入
         print same_count, contray_count
-        if contray_count == 0 or same_count >= 2:
+        if contray_count == 0 or same_count > contray_count:
             # TODO: 调用PortfioManager进行持仓管理, 推送交易事件(order_event)
             order_event = {'sid': sid, 'day': day, 'code': item['code'], 'time': item['time']}
             #open_price = (item['chance']['price_range'][0] + item['chance']['price_range'][1]) / 2
             stop_price = item['chance']['stop_price']
             #if item['daily_trend'] != MinuteTrend.TREND_WAVE :
 
+            # 开盘价目前暂时直接取最大的, 便于立即建仓
             if item['chance']['op'] == MinuteTrend.OP_LONG:
                 open_price = item['chance']['price_range'][1]
                 stop_price = min(stop_price, open_price * (1 - self.chance_config[location]['stop_portion'] / 100))
@@ -202,6 +211,9 @@ class ChancePolicy(BasePolicy):
             order_event['stop_price'] = stop_price
             self.stock_map[sid] = {'order': order_event, 'closed': False}
             self.logger.info("%s", format_log("open_position", order_event))
+            return True
+
+        return False
 
     '''
     @desc 根据操作机会提示进行平仓
@@ -214,6 +226,7 @@ class ChancePolicy(BasePolicy):
     def close_position(self, location, day, sid, item):
         print "enter_close location=" + str(location) + " day=" + str(day) + " sid=" + str(sid)
         if sid not in self.stock_map or self.stock_map[sid]['closed']:
+            self.logger.debug("desc=check_close location=%d sid=%d day=%d", location, sid, day);
             return
 
         stock_open_info = self.stock_map[sid]
@@ -226,6 +239,7 @@ class ChancePolicy(BasePolicy):
             if daily_item is None:
                 daily_item = item['daily_item']
         if daily_item is None:
+            self.logger.info("err=close_get_daily location=%d sid=%d code=%s day=%d", location, sid, order_event['code'], day);
             return
 
         #TODO: 需要利用订单实际成交的价格来计算目前获利和止损
@@ -236,10 +250,16 @@ class ChancePolicy(BasePolicy):
 
         # 需要平仓: 越过止损位/出现反方向趋势且获利达到最小要求/临近收盘且时间>=1530
         if (order_event['chance']['op'] == MinuteTrend.OP_LONG and current_price <= order_event['stop_price']) or (order_event['chance']['op'] == MinuteTrend.OP_SHORT and current_price >= order_event['stop_price']):
+            self.logger.info("desc=stop_close location=%d sid=%d code=%s day=%d op=%d current_price=%.2f stop_price=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], current_price, order_event['stop_price'])
             need_close = True
         elif item is not None and abs(vary_portion) >= self.chance_config[location]['profit_portion'][0]:
+            self.logger.info("desc=profit_close location=%d sid=%d code=%s day=%d op=%d time=%d current_price=%.2f open_price=%.2f vary_portion=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], item['time'], current_price, order_event['open_price'], abs(vary_portion))
             need_close = True
         elif current_timenumber >= 1530:
+            self.logger.info("desc=time_close location=%d sid=%d code=%s day=%d op=%d time=%d current_price=%.2f open_price=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], current_timenumber, current_price, order_event['open_price'])
             need_close = True
 
         #TODO: 调用订单平仓
