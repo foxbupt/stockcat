@@ -261,20 +261,20 @@ class ChancePolicy(BasePolicy):
 
         # 需要平仓: 越过止损位/出现反方向趋势且获利达到最小要求/临近收盘且时间>=1530
         if (order_event['chance']['op'] == MinuteTrend.OP_LONG and current_price <= order_event['stop_price']) or (order_event['chance']['op'] == MinuteTrend.OP_SHORT and current_price >= order_event['stop_price']):
-            self.logger.info("desc=stop_close location=%d sid=%d code=%s day=%d op=%d current_price=%.2f stop_price=%.2f",
-                             location, sid, order_event['code'], day, order_event['chance']['op'], current_price, order_event['stop_price'])
+            self.logger.info("desc=stop_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], current_timenumber, order_event['open_price'], current_price, order_event['stop_price'], abs(vary_portion))
             need_close = True
         elif item is not None and abs(vary_portion) >= self.chance_config[location]['profit_portion'][0]:
-            self.logger.info("desc=profit_close location=%d sid=%d code=%s day=%d op=%d time=%d current_price=%.2f open_price=%.2f vary_portion=%.2f",
-                             location, sid, order_event['code'], day, order_event['chance']['op'], item['time'], current_price, order_event['open_price'], abs(vary_portion))
+            self.logger.info("desc=profit_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], item['time'], order_event['open_price'], current_price, order_event['stop_price'], abs(vary_portion))
             need_close = True
         elif current_timenumber >= 1530:
-            self.logger.info("desc=time_close location=%d sid=%d code=%s day=%d op=%d time=%d current_price=%.2f open_price=%.2f",
-                             location, sid, order_event['code'], day, order_event['chance']['op'], current_timenumber, current_price, order_event['open_price'])
+            self.logger.info("desc=time_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
+                             location, sid, order_event['code'], day, order_event['chance']['op'], current_timenumber, order_event['open_price'], current_price, order_event['stop_price'], abs(vary_portion))
             need_close = True
 
         #TODO: 调用订单平仓
         if need_close:
             self.stock_map[sid]['closed'] = True
-            self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f stop_price=%.2f close_price=%.2f vary_portion=%.2f",
-                location, sid, order_event['code'], current_timenumber, order_event['chance']['op'], order_event['open_price'], order_event['stop_price'], current_price, vary_portion)
+            self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
+                location, sid, order_event['code'], current_timenumber, order_event['chance']['op'], order_event['open_price'], current_price, order_event['stop_price'], vary_portion)
