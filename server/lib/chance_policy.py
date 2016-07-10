@@ -127,7 +127,7 @@ class ChancePolicy(BasePolicy):
                 market_cap = float(stock_info['capital']) * daily_item['close_price'] / 10000
                 if market_cap <= 5 or market_cap > 300:
                     self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
-                        location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info_map[sid]['capital'], daily_item['close_price'], market_cap)
+                        location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info['capital'], daily_item['close_price'], market_cap)
                     continue
 
             item_list.append(item)

@@ -74,6 +74,8 @@ class PolicyWorker():
                         except Exception as e:
                             logging.getLogger("policy").exception("err=policy_call_loop name=%s processor=%s curtime=%d", self.name, self.worker_config['loop_function'], cur_timenumber)
                             continue
+                        else:
+                            continue
                     else:
                         continue
 
