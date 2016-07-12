@@ -112,7 +112,7 @@ def get_stock_list(db_config, type = 0, location = 1):
 # 获取股票信息
 def get_stock_info(db_config, sid):
     sql = "select id, code, name, type, pinyin, ecode, location, alias, company, business, capital, out_capital, profit, assets, dividend, hist_high, hist_low, year_high, year_low, month6_high, \
-            month6_low, month3_high, month3_low from t_stock where status = 'Y' and sid = " + str(sid)
+            month6_low, month3_high, month3_low from t_stock where status = 'Y' and id = " + str(sid)
     try:
         db_conn = SqlUtil.get_db(db_config)
         record_list = db_conn.query_sql(sql)
@@ -448,7 +448,7 @@ def get_current_day(location):
         
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage: " + sys.argv[0] + " <day>"
+        print "Usage: " + sys.argv[0] + " <day> <config>"
         sys.exit(1)
 
     day = sys.argv[1]
@@ -464,6 +464,9 @@ if __name__ == "__main__":
     config_info = Util.load_config(sys.argv[2])        
     db_config = config_info['DB']
     db_config['port'] = int(db_config['port'])
+
+    stock_info = get_stock_info(db_config, 9604)
+    print stock_info
 
     redis_config = config_info['REDIS']
     redis_config['port'] = int(redis_config['port'])

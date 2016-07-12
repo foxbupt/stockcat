@@ -259,7 +259,7 @@ class ChancePolicy(BasePolicy):
         # TODO: 临时加的, 修正构造数据中time不对的问题
         if current_timenumber < 930:
             current_timenumber += 1200
-_
+
         current_price = daily_item['close_price']
         vary_portion = (current_price - order_event['open_price']) / order_event['open_price'] * 100
         if order_event['chance']['op'] == MinuteTrend.OP_SHORT:
