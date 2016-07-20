@@ -21,17 +21,22 @@ class ImportDailyCommand extends CConsoleCommand
 		{
 			$filename = array_shift($filelist);
 			$lines = file($filename);
+			$count = 0;
 			
 			foreach ($lines as $line)
 			{
 				$data = json_decode($line, true);	
 				// print_r($data);			
 								
-				$result = self::addRecord($data);
+				$result = self::addRecord($data);    
+				if (1 == $result)
+				{
+				    $count += 1;
+				}
 				echo "op=import_stock_daily_data result=" . $result . " sid=" . $data['sid'] . ' code=' . $data['code'] . ' day=' . $data['day'] . "\n";
 			}	
 
-			echo "op=import_file_succ filename=" . $filename . "\n";
+			echo "op=import_file_succ count=${count} filename=" . $filename . "\n";
 		}
 		
 		echo "finish\n";
@@ -45,7 +50,7 @@ class ImportDailyCommand extends CConsoleCommand
 		
         $data['vary_price'] = sprintf("%.2f", (float)$data['vary_price']);
         $data['vary_portion'] = sprintf("%.2f", (float)$data['vary_portion']);
-        $data['exchange_portion'] = sprintf("%.2f", (float)$data['exchange_portion']);
+        $data['exchange_portion'] = sprintf("%.2f", min((float)$data['exchange_portion'], 100));
         $data['swing'] = sprintf("%.2f", (float)$data['swing']);
 
 		foreach ($data as $key => $value)
