@@ -5,7 +5,7 @@
 #date: 2014-06-24
 
 import os, sys, random, json, logging, math
-import datetime, requests, urllib2
+import datetime, time, requests, urllib2
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
 sys.path.append('../../../../server')
@@ -447,11 +447,12 @@ class ParrelUSDaily(ParrelFunc):
     # 获取股票当前价格及成交量等信息
     def core(self, item):
         scode = item
-        url = "http://hq.sinajs.cn/?ran=" + str(random.random()) + "&list=" + scode
-        #print url
+        cur_timestamp = int(time.time() * 1000)
+        url = "http://hq.sinajs.cn/rn=" +  str(cur_timestamp) + "&list=" + scode
+        print url
 
         try:
-            response = urllib2.urlopen(url, timeout=1)
+            response = urllib2.urlopen(url, timeout=5)
             content = response.read()
         except urllib2.HTTPError as e:
             self.logger.warning("err=get_stock_daily scode=%s code=%s", scode, str(e.code))
@@ -494,7 +495,7 @@ class ParrelUSDaily(ParrelFunc):
 
         fields = content.split(",")
         #print fields
-        if len(fields) < 28:
+        if len(fields) < 20:
             line_str = safestr(line)
             self.logger.error(format_log("daily_lack_fields", {'line': line_str, 'content': content}))
             return None
