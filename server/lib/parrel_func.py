@@ -538,7 +538,7 @@ class ParrelUSDaily(ParrelFunc):
             # 计算换手率
             if item['out_capital'] > 0:
                 item['exchange_portion'] = item['volume'] / item['out_capital'] * 100
-            item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 10
+            item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 100
         except IndexError:
             self.logger.error(format_log("parse_daily", {'content': content}))
             return None
