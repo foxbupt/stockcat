@@ -8,10 +8,12 @@ import sys, re, json, os
 import datetime, time
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
-import redis
+import redis, pymysql, numpy
+import pandas as pd
 from base_policy import BasePolicy
 from minute_trend import MinuteTrend
 from stock_util import get_stock_info
+
 
 '''
     @desc: 对所有操作机会进行筛选过滤排序, 决策最终执行的操作
@@ -150,28 +152,33 @@ class ChancePolicy(BasePolicy):
                     continue
                 self.close_position(location, day, sid, None)
 
-        # 按照多个维度进行倒序排列, 依次为(趋势单位长度的振幅、当日趋势、当日涨跌幅/开盘时间), 目前开盘时间写死
-        # TODO: 这里实际上基于股票多个维度的特征, 进行综合排序, 类似于搜索的排序, 需要抽取成通用的排序引擎
-        # TODO: 比如这里可以结合股票市值、最近5日/30日换手率、最近5日/30日振幅、股票日趋势
+        # 按照多个维度进行倒序排列
         if len(item_list) > 0:
-            item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
-            print item_list
+            #item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
+            #print item_list
+            chance_df = self.sort_chance(location, day, item_list)
+            print chance_df
 
-            offset = min(len(item_list), 3)
             limit_count = 2
-            for item in item_list[0:offset]:
+            for sid, row in chance_df.iterrows():
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
-                if item['time'] > self.chance_config[location]['deadline_time'] or abs(item['trend_item']['vary_portion']/item['trend_item']['length']) < 0.10:
+                if row['time'] > self.chance_config[location]['deadline_time'] or row['trend_strength'] < 0.10:
                     continue
-                # 排序选出来的可能存在重复, TODO: 这里需要对同1个股票去重, 选择最新的1个item操作机会进行交易
-                elif item['sid'] in self.item_map:
+                elif sid in self.item_map:
                     continue
 
                 if limit_count > 0:
+                    search_item_list = [item for item in item_list if item['sid'] == sid and item['time'] == row['time']]
+                    if len(search_item_list) != 1:
+                        continue
+
+                    item = search_item_list[0]
                     open_result = self.open_position(location, day, item['sid'], item)
                     if open_result:
                         self.item_map[item['sid']] = item['time']
                         limit_count -= 1
+                else:
+                    break
 
     '''
     @desc 根据操作机会进行交易建仓
@@ -289,3 +296,70 @@ class ChancePolicy(BasePolicy):
             self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
                 location, sid, order_event['code'], day, current_timenumber, order_event['chance']['op'], order_event['open_price'], current_price, order_event['stop_price'], vary_portion)
         print "exit_close sid=" + str(sid) + " current_time=" + str(current_timenumber) + " need_close=" + str(need_close)
+
+    '''
+    @desc 对操作机会的股票进行综合排序, 基于股票多个维度的特征,类似于搜索的排序
+          目前结合股票市值、最近5日/30日换手率、最近5日/30日振幅、股票日趋势
+        TODO: 后续抽取成通用的排序引擎, 短线/中线/长线的对应特征不一样
+    @param location int
+    @param day int
+    @param item_list list
+    @return DataFrame(sid -> dict)
+    '''
+    def sort_chance(self, location, day, item_list):
+        stock_chance_map = dict()
+        for item in item_list:
+            sid = item['sid']
+            trend_strength = abs(item['trend_item']['vary_portion']/item['trend_item']['length'])
+            vary_portion_strength = abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)
+            if sid not in stock_chance_map:
+                elem = dict()
+                elem['count'] = 1
+                elem['time'] = item['time']
+                elem['trend_strength'] = trend_strength
+                elem['vary_portion_strength'] = trend_strength
+                elem['daily_trend'] = item['daily_trend']
+                stock_chance_map[sid] = elem
+            else:
+                stock_chance_map[sid]['count'] += 1
+                stock_chance_map[sid]['trend_strength'] = max(trend_strength, stock_chance_map[sid]['trend_strength'])
+                stock_chance_map[sid]['vary_portion_strength'] = max(vary_portion_strength, stock_chance_map[sid]['vary_portion_strength'])
+
+        # 根据股票列表读取最近5天的股票动态信息
+        sid_list = stock_chance_map.keys()
+        charset = self.db_config['charset'] if 'charset' in self.db_config else 'utf8'
+        conn = pymysql.connect(self.db_config['host'], self.db_config['username'], self.db_config['password'], self.db_config.get('database'),int(self.db_config['port']), charset=charset)
+
+        sql = "select * from t_stock_dyn where sid in ({sid_list}) and day <= {day} order by day desc limit 5".format(sid_list=",".join(sid_list), day=day)
+        print sql
+        dyn_df = pd.read_sql_query(sql, conn, index_col="id")
+        for sid in sid_list:
+            stock_df = pd.query('sid=' + str(sid), index_col='day')
+            print stock_df
+            current_row = stock_df.loc[day]
+            vary_portion_series = stock_df['ma5_vary_portion']
+            swing_portion_series = stock_df['ma5_swing']
+            exchange_portion_series = stock_df['ma5_exchange_portion']
+
+            matched = True
+            # 最近5日平均涨跌幅<=2% 且5日平均涨跌幅最大值<3%
+            if abs(current_row['ma5_vary_portion']) <= 2 or vary_portion_series.max() < 3:
+                matched = False
+            # 最近5日平均振幅<=3% 且5日平均涨跌幅最大值<5%
+            elif abs(swing_portion_series.mean()) <= 3 or swing_portion_series.max() < 5:
+                matched = False
+            elif current_row['ma5_exchange_portion'] < 0.75 or exchange_portion_series.mean() < 1:
+                matched = False
+
+            if not matched:
+                self.logger.info("op=ignore_nonmatch_stock sid=%d location=%d day=%d %s", sid, location, day, format_log(current_row))
+                del stock_chance_map[sid]
+                continue
+
+            stock_chance_map[sid]['ma5_vary_portion'] = abs(current_row['ma5_vary_portion'])
+            stock_chance_map[sid]['ma5_swing'] = abs(current_row['ma5_swing'])
+            stock_chance_map[sid]['ma5_exchange_portion'] = current_row['ma5_exchange_portion']
+
+        chance_df = pd.DataFrame(stock_chance_map)
+        result_df = chance_df.sort_values(by=['trend_strength', 'ma5_swing', 'count', 'vary_portion_strength', 'ma5_exchange_portion', 'ma5_vary_portion'], ascending=False)
+        return result_df
