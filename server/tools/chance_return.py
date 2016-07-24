@@ -38,13 +38,14 @@ def chance_return(config_info, location, day, item):
     record_list = []
     try:
         sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 1".format(sid=item['sid'], day=day)
-        print sql
+        #print sql
         db_conn = SqlUtil.get_db(config_info['DB'])
         record_list = db_conn.query_sql(sql)
     except Exception as e:
         print e
         logging.getLogger("chance").error("err=get_stock_dyn sid=%d code=%s location=%d day=%d", item['sid'], item['code'], location, day)
     else:
+        #print record_list
         if len(record_list) == 1:
             stock_dyn = record_list[0]
             for key in ['ma5_swing', 'ma20_swing', 'ma5_vary_portion', 'ma20_vary_portion', 'ma5_exchange_portion', 'ma20_exchange_portion', 'volume_ratio']:
@@ -95,7 +96,7 @@ def core(config_info, queue, location, day):
         logging.getLogger("chance").info("%s", format_log("top_return", return_item))
 
     return_pd = pd.DataFrame(return_list)
-    print return_pd
+    #print return_pd
     filename = "./return_" + str(day) + "_" + str(location) + ".csv"
     return_pd.to_csv(filename, index=False)
 
