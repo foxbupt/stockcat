@@ -157,7 +157,10 @@ class ChancePolicy(BasePolicy):
             #item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
             #print item_list
             chance_df = self.sort_chance(location, day, item_list)
-            print chance_df
+            #print chance_df
+            if chance_df is None:
+                self.logger.info("desc=no_match_chance location=%d day=%d time_number=%d", location, day, cur_timenumber)
+                return
 
             limit_count = 2
             for sid, row in chance_df.iterrows():
@@ -327,16 +330,19 @@ class ChancePolicy(BasePolicy):
 
         # 根据股票列表读取最近5天的股票动态信息
         sid_list = stock_chance_map.keys()
-        charset = self.db_config['charset'] if 'charset' in self.db_config else 'utf8'
-        conn = pymysql.connect(self.db_config['host'], self.db_config['username'], self.db_config['password'], self.db_config.get('database'),int(self.db_config['port']), charset=charset)
+        db_config = self.config_info['DB']
+        charset = db_config['charset'] if 'charset' in db_config else 'utf8'
+        conn = pymysql.connect(db_config['host'], db_config['username'], db_config['password'], db_config.get('database'), int(db_config['port']), charset=charset)
 
-        sql = "select * from t_stock_dyn where sid in ({sid_list}) and day <= {day} order by day desc limit 5".format(sid_list=",".join(sid_list), day=day)
-        print sql
-        dyn_df = pd.read_sql_query(sql, conn, index_col="id")
+        columns = []
         for sid in sid_list:
-            stock_df = pd.query('sid=' + str(sid), index_col='day')
-            print stock_df
-            current_row = stock_df.loc[day]
+            sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 5".format(sid=sid, day=day)
+            print sql
+
+            stock_df = pd.read_sql_query(sql, conn, index_col="day")
+            #print stock_df
+
+            current_row = stock_df.iloc[0]
             vary_portion_series = stock_df['ma5_vary_portion']
             swing_portion_series = stock_df['ma5_swing']
             exchange_portion_series = stock_df['ma5_exchange_portion']
@@ -345,21 +351,28 @@ class ChancePolicy(BasePolicy):
             # 最近5日平均涨跌幅<=2% 且5日平均涨跌幅最大值<3%
             if abs(current_row['ma5_vary_portion']) <= 2 or vary_portion_series.max() < 3:
                 matched = False
-            # 最近5日平均振幅<=3% 且5日平均涨跌幅最大值<5%
+            # 最近5日平均振幅<2% 且5日平均振幅最大值<5%
             elif abs(swing_portion_series.mean()) <= 3 or swing_portion_series.max() < 5:
                 matched = False
-            elif current_row['ma5_exchange_portion'] < 0.75 or exchange_portion_series.mean() < 1:
+            elif current_row['ma5_exchange_portion'] < 0.75 or exchange_portion_series.max() < 1:
                 matched = False
 
             if not matched:
-                self.logger.info("op=ignore_nonmatch_stock sid=%d location=%d day=%d %s", sid, location, day, format_log(current_row))
+                self.logger.info("op=ignore_nonmatch_stock sid=%d location=%d day=%d %s", sid, location, day, str(current_row))
                 del stock_chance_map[sid]
                 continue
 
             stock_chance_map[sid]['ma5_vary_portion'] = abs(current_row['ma5_vary_portion'])
             stock_chance_map[sid]['ma5_swing'] = abs(current_row['ma5_swing'])
             stock_chance_map[sid]['ma5_exchange_portion'] = current_row['ma5_exchange_portion']
+            if len(columns) == 0:
+                columns = stock_chance_map[sid].keys()
 
-        chance_df = pd.DataFrame(stock_chance_map)
+        #print stock_chance_map
+        if len(stock_chance_map) == 0:
+            return None
+
+        chance_df = pd.DataFrame(stock_chance_map, index=stock_chance_map.keys(), columns = columns)
+        print chance_df
         result_df = chance_df.sort_values(by=['trend_strength', 'ma5_swing', 'count', 'vary_portion_strength', 'ma5_exchange_portion', 'ma5_vary_portion'], ascending=False)
         return result_df
