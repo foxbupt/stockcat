@@ -5,7 +5,7 @@
 #date: 2014-06-24
 
 import os, sys, random, json, logging, math
-import datetime, time, requests, urllib2
+import datetime, time, requests, urllib2, traceback
 from multiprocessing.dummy import Pool as ThreadPool
 #sys.path.append('../../../server')
 sys.path.append('../../../../server')
@@ -426,8 +426,6 @@ class ParrelUSDaily(ParrelFunc):
 
     def get_data(self):
         item_list = []
-        scode_list = [ self.get_callcode(scode) for scode in self.datamap['id2scode'].values() ]
-        stock_count = len(scode_list)
         #print stock_count
 
         if "dataset" in self.worker_config:
@@ -436,6 +434,9 @@ class ParrelUSDaily(ParrelFunc):
                 scode_dataset.append(self.get_callcode("us" + scode))
             item_list.append(",".join(scode_dataset))
         else:
+            scode_list = [ self.get_callcode(self.datamap['id2scode'][sid]) for sid in self.datamap['pool_list'] ]
+            stock_count = len(scode_list)
+
             offset = 0
             percount = 50
             while offset < stock_count:
@@ -463,7 +464,7 @@ class ParrelUSDaily(ParrelFunc):
 
         if content:
             content = safestr(content.decode('gbk'))
-            #self.logger.info("desc=daily_content content=%s", content)
+            self.logger.debug("desc=daily_content scode=%s content=%s", scode, content)
             lines = content.strip("\r\n").split(";")
 
             for line in lines:
@@ -522,7 +523,7 @@ class ParrelUSDaily(ParrelFunc):
             # 当前时刻, 格式为HHMMSS, 这里新浪返回的时间是错的, 改成自己计算, 可能出现不实时的情况
             #time_parts = fields[3].split(" ")
             #item['time'] = time_parts[1].replace(":", "")
-            item['time'] = get_timenumber(3)
+            item['time'] = str(get_timenumber(3))
 
             item['vary_price'] = float(fields[4])
             item['vary_portion'] = float(fields[2])
@@ -540,9 +541,11 @@ class ParrelUSDaily(ParrelFunc):
                 item['exchange_portion'] = item['volume'] / item['out_capital'] * 100
             item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 100
         except IndexError:
-            self.logger.error(format_log("parse_daily", {'content': content}))
+            self.logger.error(format_log("parse_daily_index", {'content': content}))
             return None
         except Exception as e:
+            traceback.print_exc() 
+            self.logger.error("err=parse_daily_ex exception=%s line=%s", str(e), line)
             return None
 
         if item['out_capital'] > 0:

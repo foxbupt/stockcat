@@ -34,7 +34,7 @@ class Scheduler(object):
         section = get_location_name(self.location).upper()
         market_content = open(self.config_info[section]["scheduler"]).read()
         market_config = json.loads(market_content)
-        print section, market_config
+        print section, market_config, self.location, self.day
 
         while True:
             try:
@@ -77,7 +77,7 @@ class Scheduler(object):
         self.prepare_data(market_config)
 
         for worker_config in market_config['fetch_list']:
-            worker = FetchWorker(market_config['location'], worker_config, self.config_info, self.datamap)
+            worker = FetchWorker(market_config['location'], self.day, worker_config, self.config_info, self.datamap)
             worker.start()
             self.worker_list.append(worker)
 

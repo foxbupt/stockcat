@@ -286,10 +286,10 @@ def get_stock_trendlist(db_config, sid, start_day, end_day):
 '''
 def get_predict_volume(cur_volume, cur_time, location):
     hour = int(cur_time[0:2])
-    min = int(cur_time[2:4])
-    #print hour, min
+    minute = int(cur_time[2:4])
+    #print hour, minute
 
-    daily_min = min
+    daily_min = minute
     if 1 == location:
         if hour >= 15:
             return cur_volume

@@ -10,10 +10,11 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
 
 class FetchWorker(threading.Thread):
-    def __init__(self, location, worker_config, config_info, datamap):
+    def __init__(self, location, day, worker_config, config_info, datamap):
         threading.Thread.__init__(self)
 
         self.location = location
+        self.day = day
         self.worker_config = worker_config
         self.name = self.worker_config['name']
         self.object_name = self.worker_config['object']
@@ -35,7 +36,6 @@ class FetchWorker(threading.Thread):
 
         # 运行次数
         run_count = 0
-        day =  int("{0:%Y%m%d}".format(datetime.date.today()))
 
         if not hasattr(threading.current_thread(), "_children"):
             threading.current_thread()._children = weakref.WeakKeyDictionary()
@@ -57,7 +57,7 @@ class FetchWorker(threading.Thread):
 
                 run_count += 1
                 if run_count == 1:
-                    parrel_object = object_creator(self.location, day, self.config_info, self.datamap, self.worker_config)
+                    parrel_object = object_creator(self.location, self.day, self.config_info, self.datamap, self.worker_config)
                     parrel_object.load()
 
                 cost_time = 0
@@ -71,7 +71,7 @@ class FetchWorker(threading.Thread):
                     cost_time = round(time.time() - before_timestamp, 1)
 
                 #print format_log("fetch_worker", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count, 'cost_time': cost_time})
-                logging.getLogger("fetch").debug("desc=fetch_worker_call name=%s object=%s interval=%d day=%d run_count=%d cost_time=%.1f", self.name, self.object_name, self.interval, day, run_count, cost_time)
+                logging.getLogger("fetch").debug("desc=fetch_worker_call name=%s object=%s interval=%d day=%d run_count=%d cost_time=%.1f", self.name, self.object_name, self.interval, self.day, run_count, cost_time)
                 time.sleep(self.interval)
             except Exception as e:
                 logging.getLogger("fetch").exception("err=fetch_call name=%s exception=%s", self.name, str(e))
@@ -79,7 +79,7 @@ class FetchWorker(threading.Thread):
                 logging.getLogger("fetch").critical("op=user_system_exit")
                 return
 
-        logging.getLogger("fetch").critical("op=worker_run_done name=%s object=%s interval=%d day=%d run_count=%d", self.name, self.object_name, self.interval, day, run_count)
+        logging.getLogger("fetch").critical("op=worker_run_done name=%s object=%s interval=%d day=%d run_count=%d", self.name, self.object_name, self.interval, self.day, run_count)
         #print format_log("worker_run_done", {'name':self.name, 'object':self.object_name, 'interval':self.interval, 'day': day, 'run_count':run_count})
 
 
