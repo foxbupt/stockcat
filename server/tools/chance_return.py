@@ -10,7 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log    
 sys.path.append('../lib/')
 from stock_util import get_hqdata, get_current_day
-import redis      
+import redis, pandas as pd     
 
 # 单个chance_item的收益回归分析
 def chance_return(config_info, location, day, item):    
@@ -76,7 +76,11 @@ def core(config_info, queue, location, day):
     return_list.sort(key=lambda x : (x['close_portion'], x['fall_portion']), reverse = True)
     for return_item in return_list[0:50]:
         logging.getLogger("chance").info("%s", format_log("top_return", return_item))
-    print return_list[0:30]
+
+    return_pd = pd.DataFrame(return_list)
+    print return_pd
+    filename = "./return_" + str(day) + "_" + str(location) + ".csv"
+    return_pd.to_csv(filename, index=False)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
