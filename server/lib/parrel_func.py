@@ -36,7 +36,7 @@ class ParrelFunc(object):
 
         if count > 1:
             pool = ThreadPool(count)
-            pool.map(self.core, self.item_list)
+            pool.map(self.core, self.item_list, chunksize=count)
             pool.close()
             pool.join()
         else:
@@ -99,18 +99,18 @@ class ParrelDaily(ParrelFunc):
 
     # 获取股票当前价格及成交量等信息
     def core(self, item):
-        scode = item
-        url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode
+        scode_list = item
+        url = "http://qt.gtimg.cn/r=" + str(random.random()) + "q=" + scode_list
         print url
 
         try:
             response = urllib2.urlopen(url, timeout=1)
             content = response.read()
         except urllib2.HTTPError as e:
-            self.logger.warning("err=get_stock_daily scode=%s code=%s", scode, str(e.code))
+            self.logger.warning("err=get_stock_daily scode_list=%s code=%s", scode_list, str(e.code))
             return 
         except urllib2.URLError as e:
-            self.logger.warning("err=get_stock_daily scode=%s reason=%s", scode, str(e.reason))
+            self.logger.warning("err=get_stock_daily scode_list=%s reason=%s", scode_list, str(e.reason))
             return
 
         if content:
