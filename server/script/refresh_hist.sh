@@ -47,7 +47,7 @@ main()
     fi
     echo "sql = $sql"
 
-    mysql -uwork -pslanissue -Ddb_stockcat --skip-column -e "$sql" >> ${result_filename}
+    mysql -uwork -pslanissue -Ddb_stockcat --skip-column-names -e "$sql" >> ${result_filename}
     field_high="${type}_high"
     field_low="${type}_low"
 
@@ -61,7 +61,7 @@ main()
     done
 
     mysql -uwork -pslanissue -Ddb_stockcat < ${sql_filename}
-    rm -f ${result_filename} ${sql_filename}
+    #rm -f ${result_filename} ${sql_filename}
 }
 
 cd ${0%/*}

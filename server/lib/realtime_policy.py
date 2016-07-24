@@ -48,7 +48,8 @@ class RTPolicy(BasePolicy):
         item_count = self.redis_conn.llen(rt_key)
         if item_count < 3:
             return
-        elif item_count % 5 == 0:
+        # 离线回归时全量的分时交易会作为一个item方进来, time是1600
+        elif item_count % 5 == 0 or item['items'][-1]['time'] == 1600 :
             # 暂定每5分钟调用分析一次, 后续根据时间段调整
             item_list = self.redis_conn.lrange(rt_key, 0, -1)
             minute_items = []
