@@ -61,6 +61,7 @@ class OfflineHandler:
         dyn_info['ma5_swing'] = swing_series[:5].mean()
         dyn_info['ma20_swing'] = swing_series[:20].mean()
 
+        # 由于振幅反映股票波动强弱, 涨跌幅反映走势与振幅是否一致，所以不使用绝对值
         vary_portion_series = sd_df['vary_portion']
         dyn_info['ma5_vary_portion'] = vary_portion_series[:5].mean()
         dyn_info['ma20_vary_portion'] = vary_portion_series[:20].mean()
@@ -68,8 +69,11 @@ class OfflineHandler:
         exchange_portion_series = sd_df['exchange_portion']
         dyn_info['ma5_exchange_portion'] = exchange_portion_series[:5].mean()
         dyn_info['ma20_exchange_portion'] = exchange_portion_series[:20].mean()
+
         # 计算量比
-        dyn_info['volume_ratio'] = exchange_portion_series[0] / dyn_info['ma5_exchange_portion']
+        volume_series = sd_df['volume']
+        dyn_info['volume_ratio'] = volume_series[0] / volume_series[1:6].mean()
+        dyn_info['volume_ratio_20'] = volume_series[0] / volume_series[1:21].mean()
 
         dyn_info['sid'] = sid
         dyn_info['day'] = day

@@ -34,6 +34,8 @@ class ChancePolicy(BasePolicy):
     dapan_map = {1: 2469, 3: 9609}
     # 建仓时间段
     chance_config = {3: {'open_time': 2130, 'deadline_time': 1200, 'stop_portion': 2.00, 'profit_portion': (3.00, 6.00)}}
+    # 忽略的股票: sid
+    ignore_set = dict()
     traded_count = 0
 
     '''
@@ -91,6 +93,8 @@ class ChancePolicy(BasePolicy):
             item = json.loads(data)
             sid = item['sid']
             item_key = (item['sid'], item['time'])
+            if sid in self.ignore_set:
+                continue
 
             if cur_timenumber == 0:
                 cur_timenumber = item['time']
@@ -139,6 +143,7 @@ class ChancePolicy(BasePolicy):
 
                 market_cap = float(stock_info['capital']) * daily_item['close_price'] / 10000
                 if market_cap <= 5 or market_cap > 300:
+                    self.ignore_set[sid] = True
                     self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
                         location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info['capital'], daily_item['close_price'], market_cap)
                     continue
@@ -157,11 +162,11 @@ class ChancePolicy(BasePolicy):
             #item_list.sort(key=lambda item: (abs(item['trend_item']['vary_portion']/item['trend_item']['length']), item['daily_trend'], abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)), reverse=True)
             #print item_list
             chance_df = self.sort_chance(location, day, item_list)
-            #print chance_df
             if chance_df is None:
                 self.logger.info("desc=no_match_chance location=%d day=%d time_number=%d", location, day, cur_timenumber)
                 return
 
+            self.logger.debug("desc=sort_chance location=%d day=%d time_number=%d chance=%s", location, day, cur_timenumber, chance_df.to_json())
             limit_count = 2
             for sid, row in chance_df.iterrows():
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
@@ -265,7 +270,7 @@ class ChancePolicy(BasePolicy):
             return
 
         #TODO: 需要利用订单实际成交的价格来计算目前获利和止损
-        current_timenumber = item['time'] if item is not None else int(daily_item['time']/100)
+        current_timenumber = item['time'] if item is not None else int(int(daily_item['time'])/100)
         # TODO: 临时加的, 修正构造数据中time不对的问题
         if current_timenumber < 930:
             current_timenumber += 1200
@@ -317,6 +322,7 @@ class ChancePolicy(BasePolicy):
             vary_portion_strength = abs(item['daily_item']['vary_portion']) / (item['time'] - 2130)
             if sid not in stock_chance_map:
                 elem = dict()
+                elem['code'] = item['code']
                 elem['count'] = 1
                 elem['time'] = item['time']
                 elem['trend_strength'] = trend_strength
@@ -337,28 +343,27 @@ class ChancePolicy(BasePolicy):
         columns = []
         for sid in sid_list:
             sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 5".format(sid=sid, day=day)
-            print sql
+            #print sql
 
             stock_df = pd.read_sql_query(sql, conn, index_col="day")
             #print stock_df
 
             current_row = stock_df.iloc[0]
-            vary_portion_series = stock_df['ma5_vary_portion']
             swing_portion_series = stock_df['ma5_swing']
+            '''
+            TODO: 考虑取最近5日的日数据, 用max来判断, ma5本身就是平均值
+            vary_portion_series = stock_df['ma5_vary_portion']
             exchange_portion_series = stock_df['ma5_exchange_portion']
+            '''
 
-            matched = True
-            # 最近5日平均涨跌幅<=2% 且5日平均涨跌幅最大值<3%
-            if abs(current_row['ma5_vary_portion']) <= 2 or vary_portion_series.max() < 3:
-                matched = False
-            # 最近5日平均振幅<2% 且5日平均振幅最大值<5%
-            elif abs(swing_portion_series.mean()) <= 3 or swing_portion_series.max() < 5:
-                matched = False
-            elif current_row['ma5_exchange_portion'] < 0.75 or exchange_portion_series.max() < 1:
-                matched = False
+            # 前5日的5日平均振幅都>=3, 跳过检查
+            skip_swing = False if swing_portion_series.mean() >= 3 or current_row['ma20_swing'] >= 3 else True
 
-            if not matched:
-                self.logger.info("op=ignore_nonmatch_stock sid=%d location=%d day=%d %s", sid, location, day, str(current_row))
+            # 日内交易强调波动性: 重点判断振幅和换手率, 涨跌幅弱化
+            # 最近5日平均涨跌幅<=1% 或 最近5日平均振幅 <= 2 或  最近5日平均换手率 < 0.75
+            if (skip_swing and current_row['ma5_swing'] <= 2) or abs(current_row['ma5_vary_portion']) <= 1 or current_row['ma5_exchange_portion'] < 0.75:
+                self.logger.info("op=ignore_nonmatch_stock sid=%d code=%s location=%d day=%d dyn=%s", sid, stock_chance_map[sid]['code'], location, day, current_row.to_json(orient="index"))
+                self.ignore_set[sid] = True
                 del stock_chance_map[sid]
                 continue
 
@@ -372,7 +377,7 @@ class ChancePolicy(BasePolicy):
         if len(stock_chance_map) == 0:
             return None
 
-        chance_df = pd.DataFrame(stock_chance_map, index=stock_chance_map.keys(), columns = columns)
-        print chance_df
+        chance_df = pd.DataFrame(stock_chance_map.values(), index=stock_chance_map.keys(), columns = columns)
+        #print chance_df
         result_df = chance_df.sort_values(by=['trend_strength', 'ma5_swing', 'count', 'vary_portion_strength', 'ma5_exchange_portion', 'ma5_vary_portion'], ascending=False)
         return result_df

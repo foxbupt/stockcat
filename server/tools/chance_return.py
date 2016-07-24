@@ -8,14 +8,13 @@ import sys, re, json, os
 import datetime, time, logging, logging.config
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log    
+from pyutil.sqlutil import SqlUtil, SqlConn
 sys.path.append('../lib/')
 from stock_util import get_hqdata, get_current_day
 import redis, pandas as pd     
 
 # 单个chance_item的收益回归分析
 def chance_return(config_info, location, day, item):    
-    #print item    
-    
     hqdata = get_hqdata(config_info['DB'], config_info['REDIS'], day, item['sid'])
     print hqdata['daily']
     
@@ -32,9 +31,27 @@ def chance_return(config_info, location, day, item):
     rise_portion = factor * (exit_price - enter_price) / enter_price * 100
     fall_portion = factor * (fall_price - enter_price) / enter_price * 100   
     
-    logging.getLogger("chance").info("%s", format_log("chance_item", item))
-    return {"sid": item['sid'], "code": item['code'], "time": item['time'], "op": chance_item['op'], "trend_length": trend_item['length'], "trend_portion": trend_item['vary_portion'], 
+    return_info = {"sid": item['sid'], "code": item['code'], "time": item['time'], "op": chance_item['op'], "trend_length": trend_item['length'], "trend_portion": trend_item['vary_portion'], 
             "enter": enter_price, "exit": exit_price, "fall": fall_price, "close_portion": rise_portion, "fall_portion": fall_portion, "vary_portion": hqdata['daily']['vary_portion']}
+
+    # TODO: 输出 dyn数据
+    record_list = []
+    try:
+        sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 1".format(sid=item['sid'], day=day)
+        print sql
+        db_conn = SqlUtil.get_db(config_info['DB'])
+        record_list = db_conn.query_sql(sql)
+    except Exception as e:
+        print e
+        logging.getLogger("chance").error("err=get_stock_dyn sid=%d code=%s location=%d day=%d", item['sid'], item['code'], location, day)
+    else:
+        if len(record_list) == 1:
+            stock_dyn = record_list[0]
+            for key in ['ma5_swing', 'ma20_swing', 'ma5_vary_portion', 'ma20_vary_portion', 'ma5_exchange_portion', 'ma20_exchange_portion', 'volume_ratio']:
+                return_info[key] = stock_dyn[key]
+
+    logging.getLogger("chance").info("%s", format_log("chance_item", item))
+    return return_info
   
 # 核心逻辑
 def core(config_info, queue, location, day):  
