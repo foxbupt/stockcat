@@ -36,7 +36,7 @@ class ParrelFunc(object):
 
         if count > 1:
             pool = ThreadPool(count)
-            pool.map(self.core, self.item_list, chunksize=count)
+            pool.map(self.core, self.item_list)
             pool.close()
             pool.join()
         else:
@@ -193,7 +193,7 @@ class ParrelDaily(ParrelFunc):
         except Exception:
             self.logger.exception("err=parse_daily_content line=%s content=%s", line, content)
             return None
-        
+
         return item
 
 # 并行抓取股票盘中每分钟的实时价格和成交量
