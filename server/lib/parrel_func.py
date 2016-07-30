@@ -137,59 +137,63 @@ class ParrelDaily(ParrelFunc):
 
     # 解析单个股票行情数据
     def parse_stock_daily(self, line):
-        parts = line.split("=")
-        #print line, parts
-        content = parts[1].strip('"')
-        #print content
-
-        fields = content.split("~")
-        #print fields
-        if len(fields) < 44:
-            line_str = safestr(line)
-            self.logger.error(format_log("daily_lack_fields", {'line': line_str, 'content': content}))
-            return None
-
-        # 当日停牌则不能存入
-        open_price = float(fields[5])
-        close_price = float(fields[3])
-        if open_price == 0.0 or close_price == 0.0:
-            return None
-
-        item = dict()
-
         try:
-            item['name'] = safestr(fields[1])
-            '''
-            stock_code = fields[2]
-            if self.location == 3: # 美股返回为usWUBA.N
-                code_parts = stock_code.split(".")
-                stock_code = code_parts[0]
-            '''
-            item['code'] = fields[2]
-            item['sid'] = int(self.datamap['code2id'][item['code']])
-            item['day'] = self.day
-            item['last_close_price'] = float(fields[4])
-            item['open_price'] = open_price
-            item['high_price'] = float(fields[33])
-            item['low_price'] = float(fields[34])
-            item['close_price'] = close_price
-            # 当前时刻, 格式为HHMMSS
-            item['time'] = fields[30][8:]
-            item['vary_price'] = float(fields[31])
-            item['vary_portion'] = float(fields[32])
-            # 成交量转化为手
-            item['volume'] = int(fields[36])
-            item['predict_volume'] = get_predict_volume(item['volume'], item['time'], self.location)
-            # 成交额转化为万元
-            item['amount'] = int(fields[37])
-            item['exchange_portion'] = fields[38]
-            item['pe'] = fields[39]
-            item['swing'] = fields[43]
-            item['out_capital'] = fields[44]
-        except IndexError:
-            self.logger.error(format_log("parse_daily", {'content': content}))
-            return None
+            parts = line.split("=")
+            #print line, parts
+            content = parts[1].strip('"')
+            #print content
 
+            fields = content.split("~")
+            #print fields
+            if len(fields) < 44:
+                line_str = safestr(line)
+                self.logger.error(format_log("daily_lack_fields", {'line': line_str, 'content': content}))
+                return None
+
+            # 当日停牌则不能存入
+            open_price = float(fields[5])
+            close_price = float(fields[3])
+            if open_price == 0.0 or close_price == 0.0:
+                return None
+
+            item = dict()
+
+            try:
+                item['name'] = safestr(fields[1])
+                '''
+                stock_code = fields[2]
+                if self.location == 3: # 美股返回为usWUBA.N
+                    code_parts = stock_code.split(".")
+                    stock_code = code_parts[0]
+                '''
+                item['code'] = fields[2]
+                item['sid'] = int(self.datamap['code2id'][item['code']])
+                item['day'] = self.day
+                item['last_close_price'] = float(fields[4])
+                item['open_price'] = open_price
+                item['high_price'] = float(fields[33])
+                item['low_price'] = float(fields[34])
+                item['close_price'] = close_price
+                # 当前时刻, 格式为HHMMSS
+                item['time'] = fields[30][8:]
+                item['vary_price'] = float(fields[31])
+                item['vary_portion'] = float(fields[32])
+                # 成交量转化为手
+                item['volume'] = int(fields[36])
+                item['predict_volume'] = get_predict_volume(item['volume'], item['time'], self.location)
+                # 成交额转化为万元
+                item['amount'] = int(fields[37])
+                item['exchange_portion'] = fields[38]
+                item['pe'] = fields[39]
+                item['swing'] = fields[43]
+                item['out_capital'] = fields[44]
+            except Exception:
+                self.logger.exception("err=parse_daily_index content=%s", content)
+                return None
+        except Exception:
+            self.logger.exception("err=parse_daily_content line=%s content=%s", line, content)
+            return None
+        
         return item
 
 # 并行抓取股票盘中每分钟的实时价格和成交量
@@ -236,58 +240,61 @@ class ParrelRealtime(ParrelFunc):
         	key = scode + "." + ecode_str
         	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
 
-        request_url = url.format(CODE=key)
         try:
-            response = requests.get(request_url, timeout=5)
-            content = response.text
-        except Exception as e:
-            self.logger.warning("err=get_stock_realtime sid=%d scode=%s err=%s", sid, scode, str(e))
-            return None
-
-        part = content.split("=")
-        hq_json = json.loads(part[1])
-        if hq_json["code"] == -1:
-            return
-
-      	data_json = hq_json['data'][key]['data']
-      	#print data_json
-      	
-        #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
-        date_str = data_json['date'].strip()
-        #返回的日期为当前日期，非美国时区的日期
-        data_day = int(date_str) if len(date_str) > 0 else self.day
-            
-        hq_item = list()
-        last_time = 0
-
-        if sid in self.time_map:
-            last_time = self.time_map[sid]
-
-        new_time = last_time
-        for line in data_json['data']:
-            fields = line.split(" ")
+            request_url = url.format(CODE=key)
             try:
-                if len(fields) < 3 or len(fields[0]) == 0:
-                    continue
-                # 直接用小时+分组成的时间, 格式为HHMM
-                time = int(fields[0][1:]) if fields[0].startswith("0") else int(fields[0])
-
-                if time <= last_time:
-                    continue
-
-                data_item = dict()
-                data_item['time'] = time
-                data_item['price'] = float(fields[1])
-                data_item['volume'] = int(fields[2])
-
-                if data_item['volume'] <= 0:
-                    continue
-
-                hq_item.append(data_item)
-                new_time = max(time, new_time)
+                response = requests.get(request_url, timeout=5)
+                content = response.text
             except Exception as e:
-                self.logger.warning("err=parse_stock_realtime sid=%d scode=%s line=%s err=%s", sid, scode, line, str(e))
-                continue
+                self.logger.exception("err=get_stock_realtime sid=%d scode=%s content=%s", sid, scode, content)
+                return None
+
+            part = content.split("=")
+            hq_json = json.loads(part[1])
+            if hq_json["code"] == -1:
+                return
+
+            data_json = hq_json['data'][key]['data']
+            #print data_json
+
+            #qt包含市场指数和明细, mx为最近2min的逐笔成交明细, price为分价数据
+            date_str = data_json['date'].strip()
+            #返回的日期为当前日期，非美国时区的日期
+            data_day = int(date_str) if len(date_str) > 0 else self.day
+
+            hq_item = list()
+            last_time = 0
+
+            if sid in self.time_map:
+                last_time = self.time_map[sid]
+
+            new_time = last_time
+            for line in data_json['data']:
+                fields = line.split(" ")
+                try:
+                    if len(fields) < 3 or len(fields[0]) == 0:
+                        continue
+
+                    # 直接用小时+分组成的时间, 格式为HHMM
+                    time = int(fields[0].lstrip("0"))
+                    if time <= last_time:
+                        continue
+
+                    data_item = dict()
+                    data_item['time'] = time
+                    data_item['price'] = float(fields[1])
+                    data_item['volume'] = int(fields[2])
+
+                    if data_item['volume'] <= 0:
+                        continue
+                    hq_item.append(data_item)
+                    new_time = max(time, new_time)
+                except Exception as e:
+                    self.logger.exception("err=parse_stock_realtime sid=%d scode=%s line=%s", sid, scode, line)
+                    continue
+        except Exception as ex:
+            self.logger.exception("err=get_stock_realtime sid=%d scode=%s url=%s", sid, scode, url)
+            return
 
         # 表示当天所有的成交量都为0, 当天停牌
         if len(hq_item) == 0:
@@ -540,12 +547,9 @@ class ParrelUSDaily(ParrelFunc):
             if item['out_capital'] > 0:
                 item['exchange_portion'] = item['volume'] / item['out_capital'] * 100
             item['swing'] = (item['high_price'] - item['low_price']) / item['last_close_price'] * 100
-        except IndexError:
-            self.logger.error(format_log("parse_daily_index", {'content': content}))
-            return None
         except Exception as e:
             traceback.print_exc() 
-            self.logger.error("err=parse_daily_ex exception=%s line=%s", str(e), line)
+            self.logger.exception("err=parse_daily_ex code=%s line=%s", stock_code, line)
             return None
 
         if item['out_capital'] > 0:
