@@ -66,7 +66,7 @@ class FetchWorker(threading.Thread):
                     try:
                         parrel_object.run()
                     except Exception as e:
-                        logging.getLogger("fetch").exception("err=parrel_run name=%s exception=%s", self.name, str(e))
+                        logging.getLogger("fetch").exception("err=parrel_run name=%s run_count=%d", self.name, run_count)
                         continue
                     cost_time = round(time.time() - before_timestamp, 1)
 

@@ -32,7 +32,7 @@ class ParrelFunc(object):
     def run(self):
         self.item_list = self.get_data()
         count = max(int(math.floor(len(self.item_list) / self.item_per_thread)), 1)
-        self.logger.info("desc=parrel_itemlist item_count=%d thread_count=%d item_list=%s", len(self.item_list), count, '|'.join([str(v) for v in self.item_list]))
+        self.logger.info("desc=parrel_itemlist item_count=%d thread_count=%d", len(self.item_list), count)
 
         if count > 1:
             pool = ThreadPool(count)
@@ -242,6 +242,7 @@ class ParrelRealtime(ParrelFunc):
 
         try:
             request_url = url.format(CODE=key)
+            content = ""
             try:
                 response = requests.get(request_url, timeout=5)
                 content = response.text
@@ -364,7 +365,7 @@ class ParrelTransaction(ParrelFunc):
         #print scode, url
 
         try:
-            response = urllib2.urlopen(url, timeout=1)
+            response = urllib2.urlopen(url, timeout=5)
             content = response.read()
         except urllib2.HTTPError as e:
             self.logger.warning("err=get_stock_transaction sid=%d scode=%s pno=%d code=%s", sid, scode, pno, str(e.code))
@@ -421,6 +422,9 @@ class ParrelTransaction(ParrelFunc):
             self.pos_map[sid] = (pno, new_id)
 
             self.conn.rpush("ts-queue", json.dumps({'sid': sid, 'day': self.day, 'items': transaction_list}))
+        else: # 没有新记录表明拉取完了
+            self.ignore_set.add(sid)
+            return
 
 # 并行从新浪美股抓取美股当日总览数据
 class ParrelUSDaily(ParrelFunc):
