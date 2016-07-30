@@ -155,7 +155,7 @@ class Scheduler(object):
                         pool_list.append(sid)
                     
         self.datamap['pool_list'] = pool_list
-        logging.getLogger("fetch").info("op=scheduler_pool day=%d last_open_day=%s location=%d pool_count=%d", self.day, last_open_day, self.location, len(pool_list))
+        logging.getLogger("fetch").info("op=scheduler_pool day=%d last_open_day=%s location=%d total_count=%d pool_count=%d", self.day, last_open_day, self.location, len(stock_list), len(pool_list))
     
         return
 
