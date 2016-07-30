@@ -37,7 +37,7 @@ main()
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php candle $location $day >> $result_path/candle_${location}.log
     
     # 更新动态信息
-    /usr/bin/python /home/fox/web/stockcat/server/lib/offline_handler.py $location $day >> $result_path/dyn_${location}.log
+    /usr/bin/python /home/fox/web/stockcat/server/lib/offline_handler.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/dyn_${location}.log 2>1
     
     echo "finish"
 }
