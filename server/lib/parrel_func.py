@@ -256,6 +256,10 @@ class ParrelRealtime(ParrelFunc):
                 return
 
             part = content.split("=")
+            if len(part) < 2 or part[1] is None:
+                self.logger.error("err=invalid_realtime_content sid=%d scode=%s content=%s", sid, scode, content)
+                return
+
             hq_json = json.loads(part[1])
             if hq_json["code"] == -1:
                 return
