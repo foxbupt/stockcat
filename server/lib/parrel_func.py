@@ -246,11 +246,14 @@ class ParrelRealtime(ParrelFunc):
             request_url = url.format(CODE=key)
             content = ""
             try:
-                response = requests.get(request_url, timeout=5)
-                content = response.text
-            except Exception as e:
-                self.logger.exception("err=get_stock_realtime sid=%d scode=%s content=%s", sid, scode, content)
-                return None
+                response = urllib2.urlopen(request_url, timeout=5)
+                content = response.read()
+            except urllib2.HTTPError as e:
+                self.logger.exception("err=get_stock_realtime sid=%d scode=%s code=%s", sid, scode, str(e.code))
+                return
+            except urllib2.URLError as e:
+                self.logger.exception("err=get_stock_realtime sid=%d scode=%s reason=%s", sid, scode, str(e.reason))
+                return
 
             part = content.split("=")
             hq_json = json.loads(part[1])
