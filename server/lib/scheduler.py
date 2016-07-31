@@ -11,6 +11,7 @@ from pyutil.util import Util, safestr
 from pyutil.sqlutil import SqlUtil, SqlConn
 from fetch_worker import FetchWorker
 from stock_util import get_stock_list, get_past_openday, time_diff, get_scode, get_timenumber, get_location_name, get_current_day
+import redis
 
 class Scheduler(object):
     worker_list = []
@@ -35,6 +36,9 @@ class Scheduler(object):
         market_content = open(self.config_info[section]["scheduler"]).read()
         market_config = json.loads(market_content)
         print section, market_config, self.location, self.day
+         # 连接REDIS
+        conn = redis.StrictRedis(self.redis_config['host'], int(self.redis_config['port']))
+        event_time = int(market_config['am_open'] / 100)
 
         while True:
             try:
@@ -66,7 +70,12 @@ class Scheduler(object):
                 elif self.state == 2:
                    self.resume()
 
+                # 发送time事件, time_interval默认配置成和interval一致, 离线回归时配大
+                time_item = {'location': self.location, 'day': self.day, 'time': event_time}
+                conn.rpush("time-queue", json.dumps(time_item))
+                event_time += int(int(self.config_info['FETCH']['time_interval']) / 60)
                 time.sleep(self.interval)
+
             # 捕获键盘输入的Ctrl+C 终止线程运行
             except (KeyboardInterrupt, SystemExit):
                 self.terminate()

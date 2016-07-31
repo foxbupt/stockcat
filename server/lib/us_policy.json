@@ -1,28 +1,29 @@
 {
 	"daily": {
-        "queue": "daily-queue",
+        "queue": ["daily-queue"],
         "process_count": 1,
         "object": "daily_policy.DailyPolicy",
-        "processor_list": [
+        "daily-queue": [
             "serialize", "rise_factor", "day_trend"
         ]
 	},
 	"realtime": {
-        "queue": "realtime-queue",
+        "queue": ["realtime-queue"],
         "process_count": 1,
         "object": "realtime_policy.RTPolicy",
-        "processor_list": [
+        "realtime-queue": [
             "serialize", "realtime_trend"
         ]
 	},
 	"chance": {
-        "queue": "chance-queue",
+        "queue": ["chance-queue", "time-queue"],
         "process_count": 1,
         "object": "chance_policy.ChancePolicy",
-        "loop_interval": 10,
-        "loop_function": "rank",
-        "processor_list": [
+        "chance-queue": [
             "filter"
+        ],
+        "time-queue": [
+            "rank"
         ]
 	}
 } 

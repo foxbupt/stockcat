@@ -52,8 +52,6 @@ class PolicyWorker():
         item_count = 0
         redis_config = self.config_info['REDIS']
         conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
-        # 默认调用loop间隔, 单位为s
-        loop_interval = self.worker_config['loop_interval'] if 'loop_interval' in self.worker_config else 10
 
         while self.loop:
             last_timenumber = get_timenumber(self.location)
@@ -66,7 +64,10 @@ class PolicyWorker():
                     if cur_timenumber >= int(self.config_info[get_location_name(self.location).upper()]['close_time']):
                         logging.getLogger("policy").critical("op=market_closed time=%d", cur_timenumber)
                         break
+                    else:
+                        continue
                     # 周期性调用loop函数进行任务处理
+                    '''
                     elif cur_timenumber - last_timenumber >= loop_interval and 'loop_function' in self.worker_config:
                         last_timenumber = cur_timenumber
                         try:
@@ -76,9 +77,9 @@ class PolicyWorker():
                             continue
                         else:
                             continue
-                    else:
-                        continue
+                 '''
 
+                queue_name = pop_data[0]
                 data = pop_data[1]
                 item = json.loads(data)
                 #print item
@@ -86,23 +87,24 @@ class PolicyWorker():
                     continue
 
                 if 'day' in item and item['day'] != self.day:
-                    logging.getLogger("policy").error("err=ignore_expired_item item_day=%d day=%d", item['day'], self.day)
+                    logging.getLogger("policy").error("err=ignore_expired_item queue=%s item_day=%d day=%d", queue_name, item['day'], self.day)
                     continue
 
                 item_count = item_count + 1
                 if item_count % 20 == 0: # 抽样输出日志便于线下测试
-                    logging.getLogger("policy").debug("desc=item_info count=%d processor=%s|%s", item_count, func_name, data); 
+                    logging.getLogger("policy").debug("desc=item_info count=%d queue=%s item=%s", item_count, queue_name, data);
 
-                for func_name in self.worker_config['processor_list']:
-                    try:
-                        getattr(policy_object, func_name)(item)
-                    except Exception as e:
-                        logging.getLogger("policy").exception("err=policy_call name=%s processor=%s", self.name, func_name)
-                    else:
-                        #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
-                        logging.getLogger("policy").debug("desc=policy_processor name=%s processor=%s sid=%d", self.name, func_name, item['sid'])
+                if queue_name in self.worker_config:
+                    for func_name in self.worker_config[queue_name]:
+                        try:
+                            getattr(policy_object, func_name)(item)
+                        except Exception as e:
+                            logging.getLogger("policy").exception("err=policy_call name=%s queue=%s processor=%s", self.name, queue_name, func_name)
+                        else:
+                            #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
+                            logging.getLogger("policy").debug("desc=policy_processor name=%s queue=%s processor=%s sid=%d item=%s", self.name, queue, func_name, item['sid'], data)
             except Exception as e:
-                logging.getLogger("policy").exception("err=pop_item name=%s", self.name)
+                logging.getLogger("policy").exception("err=pop_item name=%s queue=%s item=%s", self.name, queue, data)
 
         logging.getLogger("policy").critical("op=policy_worker_exit name=%s pid=%u", self.name, self.process.pid)
 

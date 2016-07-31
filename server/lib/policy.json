@@ -1,25 +1,25 @@
 {
 	"daily": {
-        "queue": "daily-queue",
+        "queue": ["daily-queue"],
         "process_count": 2,
         "object": "daily_policy.DailyPolicy",
-        "processor_list": [
+        "daily-queue": [
             "serialize", "rise_factor", "day_trend"
         ]
 	},
 	"realtime": {
-        "queue": "realtime-queue",
+        "queue": ["realtime-queue"],
         "process_count": 2,
         "object": "realtime_policy.RTPolicy",
-        "processor_list": [
+        "realtime-queue": [
             "serialize"
         ]
 	},
 	"transaction": {
-        "queue": "ts-queue",
+        "queue": ["ts-queue"],
         "process_count": 2,
         "object": "ts_policy.TSPolicy",
-        "processor_list": [
+        "ts-queue": [
             "serialize", "rapid_rise", "rapid_fall"
         ]
 	}
