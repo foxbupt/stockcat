@@ -28,17 +28,19 @@ class ParrelFunc(object):
         # 连接REDIS
         self.conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
         self.logger = logging.getLogger("fetch")
+        self.pool = None
 
     def run(self):
         self.item_list = self.get_data()
         count = max(int(math.floor(len(self.item_list) / self.item_per_thread)), 1)
         self.logger.info("desc=parrel_itemlist item_count=%d thread_count=%d", len(self.item_list), count)
+        if count > 1 and self.pool is None:
+            self.pool = ThreadPool(count)
 
-        if count > 1:
-            pool = ThreadPool(count)
-            pool.map(self.core, self.item_list)
-            pool.close()
-            pool.join()
+        if self.pool:
+            self.pool.map(self.core, self.item_list)
+            #self.pool.close()
+            #self.pool.join()
         else:
             map(self.core, self.item_list)
 
