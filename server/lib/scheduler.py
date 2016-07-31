@@ -38,7 +38,8 @@ class Scheduler(object):
         print section, market_config, self.location, self.day
          # 连接REDIS
         conn = redis.StrictRedis(self.redis_config['host'], int(self.redis_config['port']))
-        event_time = int(market_config['am_open'] / 100)
+        am_open_str = str(market_config['am_open'])
+        event_time = datetime.time(int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
 
         while True:
             try:
@@ -71,9 +72,11 @@ class Scheduler(object):
                    self.resume()
 
                 # 发送time事件, time_interval默认配置成和interval一致, 离线回归时配大
-                time_item = {'location': self.location, 'day': self.day, 'time': event_time}
+                now_time = event_time.hour * 10000 + event_time.min * 100 + event_time.second
+                time_item = {'location': self.location, 'day': self.day, 'time': now_time}
                 conn.rpush("time-queue", json.dumps(time_item))
-                event_time += int(int(self.config_info['FETCH']['time_interval']) / 60)
+
+                event_time += datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
                 time.sleep(self.interval)
 
             # 捕获键盘输入的Ctrl+C 终止线程运行
