@@ -246,22 +246,22 @@ class ParrelRealtime(ParrelFunc):
             request_url = url.format(CODE=key)
             content = ""
             try:
-                response = urllib2.urlopen(request_url, timeout=5)
-                content = response.read()
-            except urllib2.HTTPError as e:
-                self.logger.exception("err=get_stock_realtime sid=%d scode=%s code=%s", sid, scode, str(e.code))
-                return
-            except urllib2.URLError as e:
-                self.logger.exception("err=get_stock_realtime sid=%d scode=%s reason=%s", sid, scode, str(e.reason))
-                return
+                response = requests.get(request_url, timeout=5)
+                content = response.text
+            except Exception as e:
+                self.logger.exception("err=get_stock_realtime sid=%d scode=%s", sid, scode)
+                return None
 
-            part = content.split("=")
-            if len(part) < 2 or part[1] is None:
-                self.logger.error("err=invalid_realtime_content sid=%d scode=%s content=%s", sid, scode, content)
-                return
+            hq_json = None
+            if content.find("=") != -1:
+                part = content.split("=")
+                if len(part) >= 2 and part[1]:
+                    hq_json = json.loads(part[1])
+            else: #部分股票返回时没有=及前面部分, 直接是个json
+                hq_json = json.loads(content)
 
-            hq_json = json.loads(part[1])
-            if hq_json["code"] == -1:
+            if hq_json is None or hq_json["code"] == -1:
+                self.logger.error("err=invalid_realtime_content sid=%d scode=%s url=%s content=%s", sid, scode, url, content)
                 return
 
             data_json = hq_json['data'][key]['data']
