@@ -73,13 +73,17 @@ class Scheduler(object):
                    self.resume()
 
                 # 发送time事件, time_interval默认配置成和interval一致, 离线回归时配大
-                now_time = event_time.hour * 10000 + event_time.min * 100 + event_time.second
+                now_time = event_time.hour * 10000 + event_time.minute * 100 + event_time.second
                 time_item = {'location': self.location, 'day': self.day, 'time': now_time}
                 conn.rpush("time-queue", json.dumps(time_item))
 
                 event_time += datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
                 time.sleep(self.interval)
-
+            except Exception as e:   
+                self.terminate()
+                logging.getLogger("fetch").exception("err=catch_exception location=%d day=%d time=%d", self.location, self.day, cur_timenumber)
+                return
+                
             # 捕获键盘输入的Ctrl+C 终止线程运行
             except (KeyboardInterrupt, SystemExit):
                 self.terminate()
