@@ -47,7 +47,7 @@ class FetchWorker(threading.Thread):
                     # 已经运行结束时需要保存中间状态
                     if run_count > 0:
                         parrel_object.save()  
-                    parrel_object.terminate()
+                        parrel_object.terminate()
                     break
                 elif 2 == self.state:
                     if run_count > 0:
@@ -75,7 +75,8 @@ class FetchWorker(threading.Thread):
                 logging.getLogger("fetch").debug("desc=fetch_worker_call name=%s object=%s interval=%d day=%d run_count=%d cost_time=%.1f", self.name, self.object_name, self.interval, self.day, run_count, cost_time)
                 time.sleep(self.interval)
             except Exception as e:
-                logging.getLogger("fetch").exception("err=fetch_call name=%s exception=%s", self.name, str(e))
+                logging.getLogger("fetch").exception("err=fetch_call name=%s state=%d run_count=%d exception=%s", self.name, self.state, run_count, str(e))
+                return
             except (KeyboardInterrupt, SystemExit):
                 logging.getLogger("fetch").critical("op=user_system_exit")
                 return
