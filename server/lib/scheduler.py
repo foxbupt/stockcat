@@ -40,7 +40,7 @@ class Scheduler(object):
         conn = redis.StrictRedis(self.redis_config['host'], int(self.redis_config['port']))
         am_open_str = '{:0>6}'.format(market_config['am_open'])
         print "am_open_str=" + am_open_str
-        event_time = datetime.time(int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
+        event_time = datetime.datetime(int(self.day[0:4]), int(self.day[4:6]), int(self.day[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
 
         while True:
             try:
@@ -77,7 +77,7 @@ class Scheduler(object):
                 time_item = {'location': self.location, 'day': self.day, 'time': now_time}
                 conn.rpush("time-queue", json.dumps(time_item))
 
-                event_time += datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
+                event_time = event_time + datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
                 time.sleep(self.interval)
             except Exception as e:   
                 self.terminate()
