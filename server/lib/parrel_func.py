@@ -59,7 +59,13 @@ class ParrelFunc(object):
     # 中间暂停/结束运行时保存中间状态
     def save(self):
         pass
-
+    
+    # 终止运行
+    def terminate(self):
+        if self.pool:
+            self.pool.close()
+            self.pool.join()            
+        
     '''
     @desc: 导出抓取数据到日志中
     @param: curtime HHMMSS string

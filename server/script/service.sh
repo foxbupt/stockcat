@@ -80,13 +80,13 @@ main()
 start_scheduler()
 {
     cd $SERVICE_PATH
-    nohup $PYTHON_BIN scheduler.py fetch.ini "$@" 2>&1 &
+    nohup $PYTHON_BIN scheduler.py fetch.ini "$@" >> run.log 2>&1 &
 }
 
 start_policy()
 {
     cd $SERVICE_PATH
-    nohup $PYTHON_BIN policy_manager.py fetch.ini "$@" 2>&1 &
+    nohup $PYTHON_BIN policy_manager.py fetch.ini "$@" >> run.log 2>&1 &
 }
 
 stop_scheduler()

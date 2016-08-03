@@ -46,7 +46,8 @@ class FetchWorker(threading.Thread):
                 if 0 == self.state:
                     # 已经运行结束时需要保存中间状态
                     if run_count > 0:
-                        parrel_object.save()
+                        parrel_object.save()  
+                    parrel_object.terminate()
                     break
                 elif 2 == self.state:
                     if run_count > 0:
