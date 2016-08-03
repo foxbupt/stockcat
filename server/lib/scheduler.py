@@ -38,9 +38,11 @@ class Scheduler(object):
         print section, market_config, self.location, self.day
          # 连接REDIS
         conn = redis.StrictRedis(self.redis_config['host'], int(self.redis_config['port']))
+        
         am_open_str = '{:0>6}'.format(market_config['am_open'])
-        print "am_open_str=" + am_open_str
-        event_time = datetime.datetime(int(self.day[0:4]), int(self.day[4:6]), int(self.day[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
+        print "am_open_str=" + am_open_str     
+        daystr = str(self.day)
+        event_time = datetime.datetime(int(daystr[0:4]), int(daystr[4:6]), int(daystr[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
 
         while True:
             try:
