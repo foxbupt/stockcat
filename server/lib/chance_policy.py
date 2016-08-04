@@ -150,7 +150,7 @@ class ChancePolicy(BasePolicy):
             item_list.append(item)
 
         # 尝试对已建仓的股票进行平仓
-        if cur_timenumber > self.chance_config[location]['deadline_time']:
+        if location in self.chance_config and cur_timenumber > self.chance_config[location]['deadline_time']:
             for sid, stock_open_info in self.stock_map.items():
                 if stock_open_info['closed']:
                     continue
