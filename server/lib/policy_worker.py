@@ -89,7 +89,8 @@ class PolicyWorker():
                 if 'day' in item and item['day'] != self.day:
                     logging.getLogger("policy").error("err=ignore_expired_item queue=%s item_day=%d day=%d", queue_name, item['day'], self.day)
                     continue
-
+                
+                sid = item['sid'] if 'sid' in item else 0
                 item_count = item_count + 1
                 if item_count % 20 == 0: # 抽样输出日志便于线下测试
                     logging.getLogger("policy").debug("desc=item_info count=%d queue=%s item=%s", item_count, queue_name, data);
@@ -102,7 +103,7 @@ class PolicyWorker():
                             logging.getLogger("policy").exception("err=policy_call name=%s queue=%s processor=%s", self.name, queue_name, func_name)
                         else:
                             #print format_log("policy_processor", {'name': self.name, 'processor': func_name, 'sid': item['sid'], 'day': item['day']})
-                            logging.getLogger("policy").debug("desc=policy_processor name=%s queue=%s processor=%s sid=%d item=%s", self.name, queue_name, func_name, item['sid'], data)
+                            logging.getLogger("policy").debug("desc=policy_processor name=%s queue=%s processor=%s sid=%d item=%s", self.name, queue_name, func_name, sid, data)
             except Exception as e:
                 logging.getLogger("policy").exception("err=pop_item name=%s item=%s", self.name, data)
 
