@@ -58,6 +58,7 @@ class RTPolicy(BasePolicy):
 
             instance = MinuteTrend(sid)
             (trend_stage, trend_list) = instance.core(daily_item, minute_items)
+            self.logger.debug("%s", format_log("minute_trend", trend_stage))
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
