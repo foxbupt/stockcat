@@ -76,8 +76,9 @@ class Scheduler(object):
 
                 # 发送time事件, time_interval默认配置成和interval一致, 离线回归时配大
                 now_time = event_time.hour * 10000 + event_time.minute * 100 + event_time.second
-                time_item = {'location': self.location, 'day': self.day, 'time': now_time}
-                conn.rpush("time-queue", json.dumps(time_item))
+                if 3 == self.location:
+                    time_item = {'location': self.location, 'day': self.day, 'time': now_time}
+                    conn.rpush("time-queue", json.dumps(time_item))
 
                 event_time = event_time + datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
                 time.sleep(self.interval)

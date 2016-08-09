@@ -29,7 +29,12 @@ main()
     if [ -f  /data/stockcat/service/dump.log ]
     then
         mv /data/stockcat/service/dump.log /data/stockcat/service/dump_${lastday}_${last_location}.log    
+    fi   
+    if [ -f  /data/stockcat/service/fetch.log ]
+    then
+        mv /data/stockcat/service/fetch.log /data/stockcat/service/fetch_${lastday}_${last_location}.log    
     fi
+    
     ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
 
     open=`is_market_open "$day"`

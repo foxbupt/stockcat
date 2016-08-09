@@ -15,112 +15,116 @@ from minute_trend import MinuteTrend
 from stock_util import get_stock_info
 
 class PortfolioManager:
-	STATE_NONE = 0
-	STATE_WAIT_OPEN = 1
-	STATE_OPENED = 2
-	STATE_CLOSED = 3
-	
-	initial_money = 3000
-	rest_money = 0
-	port_config = dict()
-	port_statinfo = dict()
+    # 订单状态定义: 0 所有, 1 已下单建仓等待成交, 2 已建仓, 3 已平仓
+    STATE_ALL = 0
+    STATE_WAIT_OPEN = 1
+    STATE_OPENED = 2
+    STATE_CLOSED = 3
+
+    # 初始可用现金和剩余可用现金
+    initial_money = 3000
+    rest_money = 0
+    # 持仓组合的配置
+    port_config = dict()
+    # 组合管理运行时统计信息
+    port_statinfo = dict()
 
     code2id_map = dict()
-	
-	# 股票组合信息: sid -> {sid, code, op, count, state, open_price, open_cost, close_price, close_cost, profit}
-	# state: 1 等待成交 2 已成交 3 已关闭
-	order_stock = dict()
-	# 交易记录列表: sid -> [{sid, order_id, op, order_time, count, price, cost}, ...]
-	traded_records = dict()
-	
-	# 初始化接口, portfolio_config包含initial_money/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
-	def __init__(self, location, day, config_info, portfolio_config):
-		self.location = location
-		self.day = day
-		self.config_info = config_info
-		
-		self.port_config = portfolio_config
-		self.initial_money = self.port_config['initial_money']
-		self.rest_money = self.initial_money
 
-		self.logger = logging.getLogger("policy")
-		self.redis_conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
+    # 股票组合信息: sid -> {sid, code, op, count, state, open_price, open_cost, close_price, close_cost, profit}
+    # state: 1 等待成交 2 已成交 3 已关闭
+    order_stock = dict()
+    # 交易记录列表: sid -> [{sid, order_id, op, order_time, count, price, cost}, ...]
+    traded_records = dict()
+
+    # 初始化接口, portfolio_config包含initial_money/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
+    def __init__(self, location, day, config_info, portfolio_config):
+        self.location = location
+        self.day = day
+        self.config_info = config_info
+
+        self.port_config = portfolio_config
+        self.initial_money = self.port_config['initial_money']
+        self.rest_money = self.initial_money
+
+        self.logger = logging.getLogger("policy")
+        self.redis_conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
         #self.db_conn = SqlUtil.get_db(self.config_info["DB"])
 
-	'''
-		@desc 股票建仓
-		@param sid int
-		@param open_item dict(sid, code, name, day, time, op, open_price, stop_price)
-		@return 
-	'''	
-	def open(self, sid, open_item):
-		wait_open_map = self.get_portfolio(PortfolioManager.STATE_WAIT_OPEN)
-		if sid in wait_open_map:
-			return False
-		
-		# 暂时不允许已建仓的股票再建仓
-		opened_map = self.get_portfolio(PortfolioManager.STATE_OPENED)
-		if sid in opened_map and open_item['op'] == opened_map[sid]['op']:
-			return False
-		
-		min_count = 20	
-		# 剩下的钱不够
-		if self.rest_money <= 0 or self.rest_money < open_item['open_price'] * min_count:
-			return False
-			
-		# 判断可买的股票数
-		avail_money = min(self.rest_money, self.initial_money * self.port_config['max_stock_portion'])
-		avail_count = int(round(avail_money/open_item['open_price']))
-		# 考虑到手续费, 对于>=100的单数股, 按200取整
-		(base, mod) = divmod(avail_count, 200)
-		if mod >= 100:
-			avail_count = (base + 1) * 200
-		
-		# TODO: 推送下单消息, 设置建仓价格 + 止损价格
-		order_event = {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'count': avail_count, 'open_price': open_item['open_price'], 'stop_price': open_item['stop_price']}
-		self.redis_conn.rpush("order-queue", json.dumps(order_event))
-		self.logger.info("%s", format_log("open_order", order_event))
+    '''
+        @desc 股票建仓
+        @param sid int
+        @param open_item dict(sid, code, name, day, time, op, open_price, stop_price)
+        @return
+    '''
+    def open(self, sid, open_item):
+        wait_open_map = self.get_portfolio(PortfolioManager.STATE_WAIT_OPEN)
+        if sid in wait_open_map:
+            return False
 
-		order_event['state'] = self.STATE_WAIT_OPEN
-		self.order_stock[sid] = order_event
-		return True
-		
-	'''
-		@desc 股票平仓
-		@param sid int
-		@param close_item dict(sid, day, code, name, time, op, open_price, stop_price)
-		@return 
-	'''	
-	def close(self, sid, close_item):
-		opened_map = self.get_portfolio(PortfolioManager.STATE_OPENED)
-		if sid not in opened_map or close_item['op'] == opened_map[sid]['op']:
-			return False
+        # 暂时不允许已建仓的股票再建仓
+        opened_map = self.get_portfolio(PortfolioManager.STATE_OPENED)
+        if sid in opened_map and open_item['op'] == opened_map[sid]['op']:
+            return False
 
-		# TODO: 暂时仅考虑一次全部卖出
-		
-		# TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出
-		order_event = {'sid': sid, 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'count': opened_map['count'], 'close_price': close_item['close_price']}
-		self.redis_conn.rpush("order-queue", json.dumps(order_event))
-		self.logger.info("%s", format_log("close_order", order_event))
-		return True
-		
-	'''
-		@desc 获取指定state的组合信息 
-		@param state 取值参见STATE_XXX
-		@return dict
-	'''
-	def get_portfolio(self, state):
+        min_count = 20
+        # 剩下的钱不够
+        if self.rest_money <= 0 or self.rest_money < open_item['open_price'] * min_count:
+            return False
+
+        # 判断可买的股票数
+        avail_money = min(self.rest_money, self.initial_money * self.port_config['max_stock_portion'])
+        avail_count = int(round(avail_money/open_item['open_price']))
+        # 考虑到手续费, 对于>=100的单数股, 按200取整
+        (base, mod) = divmod(avail_count, 200)
+        if mod >= 100:
+            avail_count = (base + 1) * 200
+
+        # TODO: 推送下单消息, 设置建仓价格 + 止损价格
+        order_event = {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'count': avail_count, 'open_price': open_item['open_price'], 'stop_price': open_item['stop_price']}
+        self.redis_conn.rpush("order-queue", json.dumps(order_event))
+        self.logger.info("%s", format_log("open_order", order_event))
+
+        order_event['state'] = self.STATE_WAIT_OPEN
+        self.order_stock[sid] = order_event
+        return True
+
+    '''
+        @desc 股票平仓
+        @param sid int
+        @param close_item dict(sid, day, code, name, time, op, close_price, stop_price)
+        @return
+    '''
+    def close(self, sid, close_item):
+        opened_map = self.get_portfolio(PortfolioManager.STATE_OPENED)
+        if sid not in opened_map or close_item['op'] == opened_map[sid]['op']:
+            return False
+
+        # TODO: 暂时仅考虑一次全部卖出
+
+        # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出
+        order_event = {'sid': sid, 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'count': opened_map['count'], 'close_price': close_item['close_price']}
+        self.redis_conn.rpush("order-queue", json.dumps(order_event))
+        self.logger.info("%s", format_log("close_order", order_event))
+        return True
+
+    '''
+        @desc 获取指定state的组合信息
+        @param state 取值参见STATE_XXX
+        @return dict
+    '''
+    def get_portfolio(self, state):
         portfolio = dict()
 
-		for sid, order_info in self.order_stock.items():
-			if state == PortfolioManager.STATE_ALL or state == order_info['state']:
-				portfolio[sid] = order_info
+        for sid, order_info in self.order_stock.items():
+            if state == PortfolioManager.STATE_ALL or state == order_info['state']:
+                portfolio[sid] = order_info
         return portfolio
 
     '''
-		@desc: 根据订单成交信息更新组合信息
-		@param fill_event dict(order_id, code, op, count, price, cost, time)
-		@return boolean
+        @desc: 根据订单成交信息更新组合信息
+        @param fill_event dict(order_id, code, op, count, price, cost, time)
+        @return boolean
     '''
     def fill_order(self, fill_event):
         sid = self.code2sid(fill_event['code'])
@@ -170,3 +174,66 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         print "Usage:" + sys.argv[0] + " <location> <day> <config>"
         sys.exit(1)
+
+    portfolio_config = {"initial_money": 3000, "max_stock_count": 3, "max_stock_portion": 0.5, "max_trade_count": 8}
+    config_info = Util.load_config(sys.argv[3])
+
+    location = int(sys.argv[1])
+    day = int(sys.argv[2])
+    manager = PortfolioManager(location, day, config_info, portfolio_config)
+
+    sid = 2860
+    code = "WUBA"
+
+    open_item = dict()
+    open_item['sid'] = sid
+    open_item['code'] = code
+    open_item['day'] = day
+    open_item['time'] = 935
+    open_item['op'] = MinuteTrend.OP_LONG
+    open_item['open_price'] = 21.20
+    open_item['stop_price'] = 21.00
+
+    # 建仓下单
+    open_result = manager.open(sid, open_item)
+    portfolio_list = manager.get_portfolio(PortfolioManager.STATE_ALL)
+    print portfolio_list
+
+    # 建仓订单成交
+    fill_event = dict()
+    fill_event['order_id'] = 10012
+    fill_event['code'] = code
+    fill_event['op'] = MinuteTrend.OP_LONG
+    fill_event['count'] = 200
+    fill_event['price'] = 21.25
+    fill_event['cost'] = fill_event['count'] * fill_event['price']
+    fill_event['time'] = 940
+    manager.fill_order(fill_event)
+
+    # 平仓下单
+    close_item = dict()
+    close_item['sid'] = sid
+    close_item['code'] = code
+    close_item['day'] = day
+    close_item['time'] = 950
+    close_item['op'] = MinuteTrend.OP_SHORT
+    close_item['close_price'] = 22.00
+    close_result = manager.close(sid, close_item)
+
+    # 平仓订单成交
+    close_event = dict()
+    close_event['order_id'] = 10013
+    close_event['code'] = code
+    close_event['op'] = MinuteTrend.OP_SHORT
+    close_event['count'] = 200
+    close_event['price'] = 22.00
+    close_event['cost'] = fill_event['count'] * fill_event['price']
+    close_event['time'] = 1030
+    manager.fill_order(close_event)
+
+    for sid, order_info in manager.order_stock.items():
+        print format_log("order_info", order_info)
+        records = manager.traded_records[sid]
+        for record in records:
+            print format_log("trade_record", record)
+
