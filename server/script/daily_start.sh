@@ -18,9 +18,14 @@ main()
     then
         day=$2
     fi
-
-    lastday=`date -d "1 day ago" +%Y%m%d`    
     
+    if [ ${last_location} -eq 3 ]
+    then
+        lastday=`date -d "1 day ago" +%Y%m%d`    
+    else
+        lastday=$day
+    fi
+        
     # 日志按天切割 
     if [ -f  /data/stockcat/service/service.log ]
     then
