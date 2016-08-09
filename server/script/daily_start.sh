@@ -23,7 +23,7 @@ main()
     then
         lastday=`date -d "1 day ago" +%Y%m%d`    
     else
-        lastday=$day
+        lastday=`date +%Y%m%d`
     fi
         
     # 日志按天切割 
