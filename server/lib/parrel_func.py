@@ -32,7 +32,7 @@ class ParrelFunc(object):
 
     def run(self):
         self.item_list = self.get_data()
-        count = max(int(math.floor(len(self.item_list) / self.item_per_thread)), 1)
+        count = max(int(math.floor(len(self.item_list) / self.item_per_thread)), 2)
         self.logger.info("desc=parrel_itemlist item_count=%d thread_count=%d", len(self.item_list), count)
         if count > 1 and self.pool is None:
             self.pool = ThreadPool(count)
