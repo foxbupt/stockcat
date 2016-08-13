@@ -49,7 +49,7 @@ class PolicyWorker():
         object_creator = getattr(module, object_name)
         # 构造policy对象并初始化
         policy_object = object_creator(self.config_info, self.datamap)
-        policy_object.initialize()
+        policy_object.initialize(self.location, self.day)
 
         item_count = 0
         redis_config = self.config_info['REDIS']

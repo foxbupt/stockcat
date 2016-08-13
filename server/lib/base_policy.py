@@ -22,6 +22,6 @@ class BasePolicy(object):
         self.logger = logging.getLogger("policy")
 
     # 预留初始化接口
-    def initialize(self):
+    def initialize(self, location, day):
         pass
 

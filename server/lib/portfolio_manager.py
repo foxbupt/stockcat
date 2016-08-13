@@ -31,10 +31,10 @@ class PortfolioManager:
     # 股票code到id的映射map: code -> sid
     code2id_map = dict()
 
-    # 股票组合信息: sid -> {sid, code, op, count, state, open_price, open_cost, close_price, close_cost, profit}
+    # 股票组合信息: sid -> {sid, code, op, quantity, state, open_price, open_cost, close_price, close_cost, profit}
     # state: 1 等待成交 2 已成交 3 已关闭
     order_stock = dict()
-    # 交易记录列表: sid -> [{sid, order_id, op, order_time, count, price, cost}, ...]
+    # 交易记录列表: sid -> [{sid, order_id, op, order_time, quantity, price, cost}, ...]
     traded_map = dict()
 
     # 初始化接口, portfolio_config包含initial_money/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
@@ -85,8 +85,8 @@ class PortfolioManager:
         if mod >= 100:
             avail_count = (base + 1) * 200
 
-        # TODO: 推送下单消息, 设置建仓价格 + 止损价格
-        order_event = {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'count': avail_count, 'open_price': open_item['open_price'], 'stop_price': open_item['stop_price']}
+        # TODO: 推送下单消息, 设置建仓价格 + 止损价格, 设置下单类型为限价单
+        order_event =  {'sid': sid, 'order_type': 'LMT', 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'quantity': avail_count, 'price': open_item['open_price'], 'stop_price': open_item['stop_price']}
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
 
         self.logger.info("%s avail_money=%d", format_log("open_order", order_event), avail_money)
@@ -112,9 +112,10 @@ class PortfolioManager:
         # TODO: 暂时仅考虑一次全部卖出
 
         # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出, 后续支持order_type指定订单类型(市价/限价)
-        order_event = {'sid': sid, 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'count': opened_map[sid]['count']}
+        order_event = {'sid': sid, 'order_type': 'MKT', 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'quantity': opened_map[sid]['count']}
         if 'close_price' in close_item:
             order_event['close_price'] = close_item['close_price']
+            # TODO: 设置订单类型为触及市价
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
 
         # 更新订单状态
@@ -124,7 +125,7 @@ class PortfolioManager:
 
     '''
         @desc: 根据订单成交信息更新组合信息
-        @param fill_event dict(order_id, code, op, count, price, cost, time)
+        @param fill_event dict(order_id, code, op, quantity, price, cost, time)
         @return sid int
     '''
     def fill_order(self, fill_event):
@@ -142,18 +143,18 @@ class PortfolioManager:
         #print order_info
         if order_info['state'] == PortfolioManager.STATE_WAIT_OPEN and order_info['op'] == fill_event['op']:
             order_info['state'] = PortfolioManager.STATE_OPENED
-            order_info['count'] = fill_event['count']
+            order_info['quantity'] = fill_event['quantity']
             order_info['open_price'] = fill_event['price']
             order_info['open_cost'] = fill_event['cost']
         elif order_info['state'] == PortfolioManager.STATE_OPENED and order_info['op'] != fill_event['op']:
-            order_info['count'] = order_info['count'] - fill_event['count']
+            order_info['quantity'] = order_info['quantity'] - fill_event['quantity']
             order_info['close_price'] = fill_event['price']
             order_info['close_cost'] = fill_event['cost']
-            if order_info['count'] <= 0:
+            if order_info['quantity'] <= 0:
                 order_info['state'] = PortfolioManager.STATE_CLOSED
 
         # TODO: 追加交易记录
-        trade_info = { 'code': fill_event['code'], 'op': fill_event['op'], 'count': fill_event['count'], 'order_id': fill_event['order_id'], 'price': fill_event['price'], 'cost': fill_event['cost']}
+        trade_info = { 'code': fill_event['code'], 'op': fill_event['op'], 'quantity': fill_event['quantity'], 'order_id': fill_event['order_id'], 'price': fill_event['price'], 'cost': fill_event['cost']}
         trade_info['sid'] = sid
         trade_info['order_time'] = fill_event['time']
 

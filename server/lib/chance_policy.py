@@ -39,9 +39,9 @@ class ChancePolicy(BasePolicy):
     ignore_set = dict()
     traded_count = 0
 
-    def initialize(self):
+    def initialize(self, location, day):
         portfolio_config = {"initial_money": 3000, "max_stock_count": 3, "max_stock_portion": 0.5, "max_trade_count": 8}
-        self.portfolio = PortfolioManager(self.location, self.day, self.config_info, portfolio_config)
+        self.portfolio = PortfolioManager(location, day, self.config_info, portfolio_config)
 
     '''
     @desc 过滤不合适的操作机会
