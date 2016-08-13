@@ -21,3 +21,7 @@ class BasePolicy(object):
         self.db_conn = SqlUtil.get_db(self.config_info["DB"])
         self.logger = logging.getLogger("policy")
 
+    # 预留初始化接口
+    def initialize(self):
+        pass
+

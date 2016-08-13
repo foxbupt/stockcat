@@ -8,18 +8,17 @@ import sys, re, json, os
 import datetime, time, logging, logging.config
 sys.path.append('../../../../server')
 from pyutil.util import Util, safestr, format_log
-import redis, pymysql, numpy
-import pandas as pd
-from base_policy import BasePolicy
+import redis
 from minute_trend import MinuteTrend
-from stock_util import get_stock_info
+
 
 class PortfolioManager:
-    # 订单状态定义: 0 所有, 1 已下单建仓等待成交, 2 已建仓, 3 已平仓
+    # 订单状态定义: 0 所有, 1 已下单建仓等待成交, 2 已建仓, 3  已下单平仓等待成交 4 已平仓
     STATE_ALL = 0
     STATE_WAIT_OPEN = 1
     STATE_OPENED = 2
-    STATE_CLOSED = 3
+    STATE_WAIT_CLOSE = 3
+    STATE_CLOSED = 4
 
     # 初始可用现金和剩余可用现金
     initial_money = 3000
@@ -36,7 +35,7 @@ class PortfolioManager:
     # state: 1 等待成交 2 已成交 3 已关闭
     order_stock = dict()
     # 交易记录列表: sid -> [{sid, order_id, op, order_time, count, price, cost}, ...]
-    traded_records = dict()
+    traded_map = dict()
 
     # 初始化接口, portfolio_config包含initial_money/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
     def __init__(self, location, day, config_info, portfolio_config):
@@ -55,7 +54,7 @@ class PortfolioManager:
     '''
         @desc 股票建仓
         @param sid int
-        @param open_item dict(sid, code, name, day, time, op, open_price, stop_price)
+        @param open_item dict(sid, code, day, time, op, open_price, stop_price)
         @return
     '''
     def open(self, sid, open_item):
@@ -67,7 +66,7 @@ class PortfolioManager:
         # 暂时不允许已建仓的股票再建仓
         opened_map = self.get_portfolio(PortfolioManager.STATE_OPENED)
         if sid in opened_map and open_item['op'] == opened_map[sid]['op']:
-            self.logger.info("%s", format_log("stock_order_opened", opend_map[sid]))
+            self.logger.info("%s", format_log("stock_order_opened", opened_map[sid]))
             return False
 
         min_count = 20
@@ -98,7 +97,7 @@ class PortfolioManager:
     '''
         @desc 股票平仓
         @param sid int
-        @param close_item dict(sid, day, code, name, time, op, close_price, stop_price)
+        @param close_item dict(sid, day, code, op, close_price)
         @return
     '''
     def close(self, sid, close_item):
@@ -112,27 +111,32 @@ class PortfolioManager:
 
         # TODO: 暂时仅考虑一次全部卖出
 
-        # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出
-        order_event = {'sid': sid, 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'count': opened_map[sid]['count'], 'close_price': close_item['close_price']}
+        # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出, 后续支持order_type指定订单类型(市价/限价)
+        order_event = {'sid': sid, 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'count': opened_map[sid]['count']}
+        if 'close_price' in close_item:
+            order_event['close_price'] = close_item['close_price']
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
+
+        # 更新订单状态
+        opened_map[sid]['state'] = PortfolioManager.STATE_WAIT_CLOSE
         self.logger.info("%s", format_log("close_order", order_event))
         return True
 
     '''
         @desc: 根据订单成交信息更新组合信息
         @param fill_event dict(order_id, code, op, count, price, cost, time)
-        @return boolean
+        @return sid int
     '''
     def fill_order(self, fill_event):
         sid = self.code2sid(fill_event['code'])
         if sid == 0:
             self.logger.error("err=invalid_code code=%s", fill_event['code'])
-            return False
+            return 0
 
         order_info = self.order_stock[sid]
         if order_info['state'] == PortfolioManager.STATE_CLOSED:
             self.logger.info("%s", format_log("ignore_closed_order", order_info))
-            return False
+            return 0
 
         # TODO: 暂时不支持追加买入/卖出订单, 或者做多平仓后做空
         #print order_info
@@ -153,12 +157,12 @@ class PortfolioManager:
         trade_info['sid'] = sid
         trade_info['order_time'] = fill_event['time']
 
-        if sid not in self.traded_records:
-            self.traded_records[sid] = list()
-        self.traded_records[sid].append(trade_info)
+        if sid not in self.traded_map:
+            self.traded_map[sid] = list()
+        self.traded_map[sid].append(trade_info)
 
         self.logger.info("%s", format_log("fill_order", trade_info))
-        return True
+        return sid
 
     '''
         @desc: 根据股票代码获取对应sid
@@ -193,7 +197,7 @@ class PortfolioManager:
         @return list
     '''
     def get_trade_records(self, sid):
-        return self.traded_records[sid] if sid in self.traded_records else None
+        return self.traded_map[sid] if sid in self.traded_map else None
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:

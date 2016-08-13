@@ -47,7 +47,9 @@ class PolicyWorker():
         (module_name, object_name) = self.worker_config['object'].split(".")
         module = __import__(module_name)
         object_creator = getattr(module, object_name)
+        # 构造policy对象并初始化
         policy_object = object_creator(self.config_info, self.datamap)
+        policy_object.initialize()
 
         item_count = 0
         redis_config = self.config_info['REDIS']
