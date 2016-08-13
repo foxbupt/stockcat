@@ -19,6 +19,7 @@ main()
         day=$2
     fi
     
+    echo "location=$location day=$day"
     if [ ${last_location} -eq 3 ]
     then
         lastday=`date -d "1 day ago" +%Y%m%d`    
@@ -58,6 +59,7 @@ main()
     echo "finish"
 }
 
+#set -x
 cd ${0%/*}
 . ./comm.inc
 main "$@"

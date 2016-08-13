@@ -8,7 +8,8 @@ import sys, re, json, os
 import datetime, time
 import redis
 sys.path.append('../../../../server')
-from pyutil.util import safestr, format_log
+import ib, ib.ext
+from pyutil.util import Util, safestr, format_log
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
 from ib.opt import ibConnection, message
@@ -17,6 +18,7 @@ from base_policy import BasePolicy
 from minute_trend import MinuteTrend
 
 class ExecutionHandler(BasePolicy):
+
     # 抽象订单执行
     def execute_order(self, item):
         pass
@@ -30,8 +32,8 @@ class IBHandler(ExecutionHandler):
     fill_map = {}
 
     def initialize(self, location, day):
-        self.location = self.location
-        self.day = self.day
+        self.location = location
+        self.day = day
 
         self.tws_conn = self.create_tws_connection()
         self.order_id = self.create_initial_order_id()
@@ -160,7 +162,7 @@ if __name__ == "__main__":
     day = int(sys.argv[2])
 
     ib_handler = IBHandler(config_info, dict())
-    ib_handler.init(location, day)
+    ib_handler.initialize(location, day)
 
     sid = 2748
     code = "WUBA"
