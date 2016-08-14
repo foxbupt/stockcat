@@ -231,13 +231,10 @@ class ChancePolicy(BasePolicy):
                 contray_count += 1
 
         # 直接买入
-        print same_count, contray_count
+        #print same_count, contray_count
         if contray_count == 0 or same_count > contray_count:
-            # TODO: 调用PortfioManager进行持仓管理, 推送交易事件(order_event)
             order_event = {'sid': sid, 'day': day, 'code': item['code'], 'time': item['time']}
-            #open_price = (item['chance']['price_range'][0] + item['chance']['price_range'][1]) / 2
             stop_price = item['chance']['stop_price']
-            #if item['daily_trend'] != MinuteTrend.TREND_WAVE :
 
             # 开盘价目前暂时直接取最大的, 便于立即建仓
             if item['chance']['op'] == MinuteTrend.OP_LONG:
@@ -246,6 +243,10 @@ class ChancePolicy(BasePolicy):
             else:
                 open_price = item['chance']['price_range'][0]
                 stop_price = max(stop_price, open_price * (1 + self.chance_config[location]['stop_portion'] / 100))
+
+            # <=1000时建仓, 取区间的中间价格作为建仓价
+            if item['time'] <= 1000:
+                open_price = (item['chance']['price_range'][0] + item['chance']['price_range'][1]) / 2
 
             order_event['open_price'] = open_price
             order_event['stop_price'] = stop_price
@@ -268,7 +269,6 @@ class ChancePolicy(BasePolicy):
     @return
     '''
     def close_position(self, location, day, cur_timenumber, sid, item):
-        print "enter_close location=" + str(location) + " day=" + str(day) + " sid=" + str(sid)
         if sid not in self.stock_map or self.stock_map[sid]['state'] >= PortfolioManager.STATE_WAIT_CLOSE:
             self.logger.debug("desc=stock_closed_already location=%d sid=%d day=%d", location, sid, day);
             return
@@ -299,9 +299,11 @@ class ChancePolicy(BasePolicy):
         if (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
             reason = "stop"
             need_close = True
+        # 获利平仓
         elif item is not None and abs(vary_portion) >= self.chance_config[location]['profit_portion'][0]:
             reason = "profit"
             need_close = True
+        # 超过指定时间平仓
         elif cur_timenumber >= 1500:
             reason = "time"
             need_close = True
@@ -327,6 +329,7 @@ class ChancePolicy(BasePolicy):
     '''
     def sort_chance(self, location, day, item_list):
         stock_chance_map = dict()
+
         for item in item_list:
             sid = item['sid']
             trend_strength = abs(item['trend_item']['vary_portion']/item['trend_item']['length'])
@@ -400,7 +403,7 @@ class ChancePolicy(BasePolicy):
             return None
 
         chance_df = pd.DataFrame(stock_chance_map.values(), index=stock_chance_map.keys(), columns = columns)
-        print chance_df
+        #print chance_df
         result_df = chance_df.sort_values(by=['trend_strength', 'ma5_swing', 'count', 'vary_portion_strength', 'ma5_exchange_portion', 'ma5_vary_portion'], ascending=False)
         return result_df
 
