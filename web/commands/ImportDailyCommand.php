@@ -10,12 +10,13 @@ class ImportDailyCommand extends CConsoleCommand
 {
 	public function run($args)
 	{
-		if (count($args) < 1)
+		if (count($args) < 2)
 		{
-			echo "Usage: php -c /etc/php.ini importstockhist <filename>\n";
+			echo "Usage: php -c /etc/php.ini importdaily <location> <filename>\n";
 			exit(1);
 		}
 		
+        $location = array_shift($args);
 		$filelist = $args;
 		while (count($filelist) > 0)
 		{
@@ -28,7 +29,7 @@ class ImportDailyCommand extends CConsoleCommand
 				$data = json_decode($line, true);	
 				// print_r($data);			
 								
-				$result = self::addRecord($data);    
+				$result = self::addRecord($location, $data);    
 				if (1 == $result)
 				{
 				    $count += 1;
@@ -43,7 +44,7 @@ class ImportDailyCommand extends CConsoleCommand
 	}
 	
 	// 添加一行历史数据
-	public static function addRecord($data)
+	public static function addRecord($location, $data)
 	{
 		$record = new StockData();
 		unset($data['code']);
@@ -51,7 +52,11 @@ class ImportDailyCommand extends CConsoleCommand
         $data['vary_price'] = sprintf("%.2f", (float)$data['vary_price']);
         $data['vary_portion'] = sprintf("%.2f", (float)$data['vary_portion']);
         $data['exchange_portion'] = sprintf("%.2f", min((float)$data['exchange_portion'], 100));
-        $data['swing'] = sprintf("%.2f", (float)$data['swing']);
+        // sina拉取的swing振幅需要乘以10
+        if (3 == $location)
+        {
+            $data['swing'] = sprintf("%.2f", (float)$data['swing'] * 10);
+        }
 
 		foreach ($data as $key => $value)
 		{

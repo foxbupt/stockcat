@@ -46,7 +46,7 @@ main()
     fi
 
     # 导入数据
-    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php importDaily $result_path/$filename >> $WEB_PATH/import_daily.log
+    $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php importDaily 1 $result_path/$filename >> $WEB_PATH/import_daily.log
 
     echo "finish"
 }
