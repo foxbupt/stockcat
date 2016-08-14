@@ -42,7 +42,8 @@ class Scheduler(object):
         am_open_str = '{:0>6}'.format(market_config['am_open'])
         print "am_open_str=" + am_open_str     
         daystr = str(self.day)
-        event_time = datetime.datetime(int(daystr[0:4]), int(daystr[4:6]), int(daystr[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
+        event_time = datetime.datetime(int(daystr[0:4]), int(daystr[4:6]), int(daystr[6:8]), 9, int(am_open_str[2:4]), int(am_open_str[4:6]))
+        #event_time = datetime.datetime(int(daystr[0:4]), int(daystr[4:6]), int(daystr[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
         #print event_time
 
         while True:
@@ -82,7 +83,7 @@ class Scheduler(object):
                     time_item = {'location': self.location, 'day': self.day, 'time': now_time}
                     conn.rpush("time-queue", json.dumps(time_item))
 
-                event_time = event_time + datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
+                event_time = event_time + datetime.timedelta(minutes=int(int(config_info['FETCH']['time_interval']) / 60))
                 #print event_time
                 time.sleep(self.interval)
             except Exception as e:   

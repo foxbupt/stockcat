@@ -29,12 +29,12 @@ from portfolio_manager import PortfolioManager
 class ChancePolicy(BasePolicy):
     # 保存操作过的item, 可用sid -> time来唯一标识每个item
     item_map = dict()
-    # 持仓操作的股票 sid -> {order_event, closed}
+    # 持仓操作的股票 sid -> order_info
     stock_map = dict()
     # 大盘sid: location -> sid, A股选择上证指数, 美股为道琼斯指数
     dapan_map = {1: 2469, 3: 9609}
     # 建仓时间段
-    chance_config = {3: {'open_time': 2130, 'deadline_time': 1600, 'stop_portion': 2.00, 'profit_portion': (3.00, 6.00)}}
+    chance_config = {3: {'open_time': 2130, 'deadline_time': 1500, 'stop_portion': 2.00, 'profit_portion': (3.00, 6.00)}}
     # 忽略的股票: sid
     ignore_set = dict()
     traded_count = 0
@@ -108,7 +108,7 @@ class ChancePolicy(BasePolicy):
             # 超过20min则不执行
             hour_diff = int(cur_timenumber / 100) - int(item['time'] / 100)
             min_diff = int(cur_timenumber % 100) - int(item['time'] % 100)
-            if hour_diff * 60 + min_diff >= 20:
+            if hour_diff * 60 + min_diff > 20:
                 self.logger.debug("desc=ignore_expired_chance location=%d sid=%d code=%s day=%d time=%d cur_time=%d",
                                   location, sid, item['code'], day, item['time'], cur_timenumber)
                 continue
@@ -126,22 +126,28 @@ class ChancePolicy(BasePolicy):
                 # 同方向超过12点的、相反方向的机会可用于尝试平仓
                 stock_order = self.stock_map[sid]
                 if (stock_order['state'] == PortfolioManager.STATE_OPENED) and (item['chance']['op'] != stock_order['op'] or item['time'] > self.chance_config[location]['deadline_time']):
-                    self.close_position(location, day, sid, item)
+                    self.close_position(location, day, cur_timenumber, sid, item)
                     continue
                 # 同方向进行忽略
                 else:
                     self.logger.info("desc=chance_exist location=%d sid=%d code=%s day=%d time=%d", location, sid, item['code'], day, item['time'])
                     continue
-            # 价格高于max(昨日收盘价, 当日开盘价), 不建议做空, 考虑到当日高开后低走下跌, 这种情况下低于开盘价也OK
-            elif item['chance']['op'] == MinuteTrend.OP_SHORT and daily_item['close_price'] >= max(daily_item['last_close_price'], daily_item['open_price']):
-                self.logger.info("desc=short_not_match location=%d sid=%d code=%s day=%d time=%d op=%d close_price=%.2f",
-                                 location, sid, item['code'], day, item['time'], item['chance']['op'], daily_item['close_price'])
-                continue
+
+            # 价格高于max(昨日收盘价, 当日开盘价)*(1-2%), 不建议做空, 考虑到当日高开后低走下跌, 这种情况下低于开盘价也OK
+            elif item['chance']['op'] == MinuteTrend.OP_SHORT: 
+                base_price = max(daily_item['last_close_price'], daily_item['open_price'])
+                vary_portion = (daily_item['close_price'] - base_price) / base_price * 100
+                if vary_portion >= -2.0:
+                    self.logger.info("desc=short_not_match location=%d sid=%d code=%s day=%d time=%d op=%d close_price=%.2f base_price=%.2f vary_portion=%.2f",
+                                 location, sid, item['code'], day, item['time'], item['chance']['op'], daily_item['close_price'], base_price, vary_portion)
+                    continue
+
             # 操作机会随着大盘趋势演变, 还有可能进入视野
             elif (dapan_trend == MinuteTrend.TREND_RISE and item['chance']['op'] == MinuteTrend.OP_SHORT) or (dapan_trend == MinuteTrend.TREND_FALL and item['chance']['op'] == MinuteTrend.OP_LONG):
                 self.logger.info("desc=ignore_contray_stock location=%d sid=%d code=%s day=%d dapan=%d time=%d op=%d",
                             location, sid, item['code'], day, dapan_trend, item['time'], item['chance']['op'])
                 continue
+
             # 判断股票市值, 必须>=5亿刀 <= 300亿刀
             else:
                 cache_value = self.redis_conn.get("stock:info-" + str(sid))
@@ -263,8 +269,8 @@ class ChancePolicy(BasePolicy):
     '''
     def close_position(self, location, day, cur_timenumber, sid, item):
         print "enter_close location=" + str(location) + " day=" + str(day) + " sid=" + str(sid)
-        if sid not in self.stock_map or self.stock_map[sid]['closed']:
-            self.logger.debug("desc=check_close location=%d sid=%d day=%d", location, sid, day);
+        if sid not in self.stock_map or self.stock_map[sid]['state'] >= PortfolioManager.STATE_WAIT_CLOSE:
+            self.logger.debug("desc=stock_closed_already location=%d sid=%d day=%d", location, sid, day);
             return
 
         stock_order = self.stock_map[sid]
@@ -285,10 +291,8 @@ class ChancePolicy(BasePolicy):
         vary_portion = (current_price - stock_order['open_price']) / stock_order['open_price'] * 100
         if stock_order['op'] == MinuteTrend.OP_SHORT:
             vary_portion = -1 * vary_portion
-        need_close = False
 
-        self.logger.debug("%s location=%d day=%d current_time=%d current_price=%.2f vary_portion=%.2f",
-                format_log("close_detail", stock_order), location, day, cur_timenumber, current_price, vary_portion);
+        need_close = False
 
         # 需要平仓: 越过止损位/出现反方向趋势且获利达到最小要求/临近收盘且时间>=1530
         if (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
@@ -304,15 +308,17 @@ class ChancePolicy(BasePolicy):
                              location, sid, stock_order['code'], day, stock_order['op'], cur_timenumber, stock_order['open_price'], current_price, stock_order['stop_price'], abs(vary_portion))
             need_close = True
 
+        self.logger.debug("%s location=%d day=%d current_time=%d current_price=%.2f vary_portion=%.2f need_close=%s",
+                format_log("close_detail", stock_order), location, day, cur_timenumber, current_price, vary_portion, str(need_close));
+
         #TODO: 调用订单平仓, 这里需要注意下单平仓后, 成交之前重复下单
         if need_close:
-            close_item = {'sid': sid, 'day': day, 'code': daily_item['code']}
+            close_item = {'sid': sid, 'day': day, 'code': daily_item['code'], 'time': cur_timenumber}
             close_item['op'] = MinuteTrend.OP_SHORT if stock_order['op'] == MinuteTrend.OP_LONG else MinuteTrend.OP_LONG
             self.portfolio.close(sid, close_item)
 
             self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
                 location, sid, stock_order['code'], day, cur_timenumber, stock_order['op'], stock_order['open_price'], current_price, stock_order['stop_price'], vary_portion)
-        print "exit_close sid=" + str(sid) + " current_time=" + str(cur_timenumber) + " need_close=" + str(need_close)
 
     '''
     @desc 对操作机会的股票进行综合排序, 基于股票多个维度的特征,类似于搜索的排序
@@ -345,7 +351,7 @@ class ChancePolicy(BasePolicy):
 
         # 根据股票列表读取最近5天的股票动态信息
         sid_list = stock_chance_map.keys()
-        print sid_list
+        #print sid_list
 
         db_config = self.config_info['DB']
         charset = db_config['charset'] if 'charset' in db_config else 'utf8'
@@ -358,7 +364,7 @@ class ChancePolicy(BasePolicy):
                 #print sql
 
                 stock_df = pd.read_sql_query(sql, conn, index_col="day")
-                print stock_df
+                #print stock_df
                 if stock_df.empty:
                     del stock_chance_map[sid]
                     continue
@@ -393,7 +399,7 @@ class ChancePolicy(BasePolicy):
                 self.logger.exception("err=sort_with_dyn sid=%d", sid)
                 continue
 
-        print stock_chance_map, columns
+        #print stock_chance_map, columns
         if len(stock_chance_map) == 0:
             return None
 
@@ -409,6 +415,3 @@ class ChancePolicy(BasePolicy):
     '''
     def fill_order(self, item):
         sid = self.portfolio.fill_order(item)
-        # 更新股票列表
-        if sid > 0 :
-            self.stock_map[sid]['closed'] = True

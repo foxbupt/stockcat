@@ -17,12 +17,20 @@ main()
         day=$2
     fi
 
+	open=`is_market_open "$day"`
+    echo "day=$day open=$open"
+    if [ "$open" == "0" ]
+    then
+        exit
+    fi
+
     result_path=$STOCK_SCRAPY_PATH/data/$day
     log="analyze_${location}_${day}.log"
     echo "location=$location day=$day log=$log"
 
+    cd /home/fox/web/stockcat/server/lib/
     # 更新每日的最高价/最低价, 记录价格突破的股票
-    /usr/bin/python /home/fox/web/stockcat/server/lib/daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_${location}_highlow.log 
+    /usr/bin/python ./daily_refresh.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/refresh_${location}_highlow.log 
 
     # 分析出连续上涨的股票
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php analyze $location $day 10 >> $result_path/$log
@@ -37,7 +45,7 @@ main()
     $PHP_BIN -c /etc/php.ini $WEB_PATH/console_entry.php candle $location $day >> $result_path/candle_${location}.log
     
     # 更新动态信息
-    /usr/bin/python /home/fox/web/stockcat/server/lib/offline_handler.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/dyn_${location}.log 2>1
+    /usr/bin/python ./offline_handler.py /home/fox/web/stockcat/server/lib/config.ini $location $day >> $result_path/dyn_${location}.log 2>1
     
     echo "finish"
 }

@@ -23,6 +23,7 @@ class PortfolioManager:
     # 初始可用现金和剩余可用现金
     initial_money = 3000
     rest_money = 0
+
     # 持仓组合的配置
     port_config = dict()
     # 组合管理运行时统计信息
@@ -37,7 +38,7 @@ class PortfolioManager:
     # 交易记录列表: sid -> [{sid, order_id, op, order_time, quantity, price, cost}, ...]
     traded_map = dict()
 
-    # 初始化接口, portfolio_config包含initial_money/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
+    # 初始化接口, portfolio_config包含initial_money/max_short_stock(最多做空股票只数)/max_trade_count(最多交易次数)/max_stock_count(允许最多的股票个数)/max_stock_portion(单只股票市值最大占比)
     def __init__(self, location, day, config_info, portfolio_config):
         self.location = location
         self.day = day
@@ -69,36 +70,30 @@ class PortfolioManager:
             self.logger.info("%s", format_log("stock_order_opened", opened_map[sid]))
             return False
 
-        min_count = 20
-        # 剩下的钱不够
-        if self.rest_money <= 0 or self.rest_money < open_item['open_price'] * min_count:
-            self.logger.info("op=no_enough_money sid=%d code=%d rest_money=%d open_price=%.2f min_count=%d", sid, open_item['code'], rest_money, open_item['open_price'], min_count)
+        quantity = self.cal_quantity(sid, open_item['op'], open_item['open_price'])
+        if quantity <= 0:
+            self.logger.info("op=no_enough_money sid=%d code=%s op=%d rest_money=%d open_price=%.2f min_count=%d", 
+                sid, open_item['code'], open_item['op'], self.rest_money, open_item['open_price'], min_count)
             return False
 
-        # 判断可买的股票数
-        avail_money = min(self.rest_money, self.initial_money * self.port_config['max_stock_portion'])
-        avail_count = int(round(avail_money/open_item['open_price']))
-
-        # 考虑到手续费, 对于>=100的单数股, 按200取整
-        (base, mod) = divmod(avail_count, 200)
-        print avail_money, avail_count, base, mod 
-        if mod >= 100:
-            avail_count = (base + 1) * 200
-
         # TODO: 推送下单消息, 设置建仓价格 + 止损价格, 设置下单类型为限价单
-        order_info =  {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'quantity': avail_count, 'stop_price': open_item['stop_price']}
+        order_info =  {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'quantity': quantity, 'stop_price': open_item['stop_price']}
         order_event = dict(order_info)
         order_event['order_type'] = "LMT"
         order_event['price'] = open_item['open_price']
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
 
         order_event['time'] = open_item['time']
-        self.logger.info("%s avail_money=%d", format_log("open_order", order_event), avail_money)
+        self.logger.info("%s cost=%d", format_log("open_order", order_event), cost)
 
         # 更新剩余的现金
-        self.rest_money = self.rest_money - avail_money
+        sign = 1 if open_item['op'] == MinuteTrend.OP_LONG else -1
+        cost = sign * quantity * open_item['open_price']
+        self.rest_money = max(self.rest_money - cost, 0)
+
         order_info['open_price'] = open_item['open_price']
-        order_info['state'] = self.STATE_WAIT_OPEN
+        #order_info['state'] = self.STATE_WAIT_OPEN
+        order_info['state'] = self.STATE_OPENED
         self.order_stock[sid] = order_info
 
         return True
@@ -106,7 +101,7 @@ class PortfolioManager:
     '''
         @desc 股票平仓
         @param sid int
-        @param close_item dict(sid, day, code, op, close_price)
+        @param close_item dict(sid, day, code, op, price)
         @return
     '''
     def close(self, sid, close_item):
@@ -122,15 +117,57 @@ class PortfolioManager:
 
         # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出, 后续支持order_type指定订单类型(市价/限价)
         order_event = {'sid': sid, 'order_type': 'MKT', 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'quantity': opened_map[sid]['quantity']}
-        if 'close_price' in close_item:
-            order_event['close_price'] = close_item['close_price']
+        if 'price' in close_item:
+            order_event['price'] = close_item['price']
             # TODO: 设置订单类型为触及市价
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
+
+        # TODO: 封装到fill_order里更新
+        sign = 1 if open_item['op'] == MinuteTrend.OP_LONG else -1
+        cost = sign * opened_map[sid]['quantity'] * close_item['price']
+        self.rest_money += cost
 
         # 更新订单状态
         opened_map[sid]['state'] = PortfolioManager.STATE_WAIT_CLOSE
         self.logger.info("%s", format_log("close_order", order_event))
         return True
+
+    '''
+        @desc: 计算股票操作的数量
+        @param sid int 
+        @param op int 
+        @param price float
+        @return int
+    '''
+    def cal_quantity(self, sid, op, price):
+        quantity = 0
+        min_quantity = 20
+
+        # 做多交易
+        if op == MinuteTrend.OP_LONG:
+            # 剩下的钱不够
+            if self.rest_money <= 0 or self.rest_money < price * min_quantity:
+                return 0
+
+            # 判断可买的股票数
+            avail_money = min(self.rest_money, self.initial_money * self.port_config['max_stock_portion'])
+            quantity = int(round(avail_money/price))
+
+        # 做空交易
+        else if self.port_config['max_short_stock'] > 0:
+            avail_money = self.initial_money * self.port_config['max_stock_portion'] 
+            if self.rest_money > 0 and self.rest_money < avail_money:
+                avail_money = max(self.rest_money, price * min_quantity)
+
+            quantity = int(round(avail_money / price))
+            self.port_config['max_short_stock'] -= 1
+         
+        # 考虑到手续费, 对于>=100的单数股, 统一按200取整
+        (base, mod) = divmod(quantity, 200)
+        if mod >= 100:
+            quantity = (base + 1) * 200
+
+        return quantity
 
     '''
         @desc: 根据订单成交信息更新组合信息
@@ -164,8 +201,7 @@ class PortfolioManager:
                 order_info['profit'] = order_info['close_cost'] - order_info['open_cost']
                 order_info['profit_portion'] = (order_info['close_cost'] - order_info['open_cost']) / order_info['open_cost'] * 100
 
-        # TODO: 追加交易记录
-        trade_info = { 'code': fill_event['code'], 'op': fill_event['op'], 'quantity': fill_event['quantity'], 'order_id': fill_event['order_id'], 'price': fill_event['price'], 'cost': fill_event['cost']}
+        trade_info = {'code': fill_event['code'], 'op': fill_event['op'], 'quantity': fill_event['quantity'], 'order_id': fill_event['order_id'], 'price': fill_event['price'], 'cost': fill_event['cost']}
         trade_info['sid'] = sid
         trade_info['order_time'] = fill_event['time']
 
