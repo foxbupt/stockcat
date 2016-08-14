@@ -43,6 +43,7 @@ class Scheduler(object):
         print "am_open_str=" + am_open_str     
         daystr = str(self.day)
         event_time = datetime.datetime(int(daystr[0:4]), int(daystr[4:6]), int(daystr[6:8]), int(am_open_str[0:2]), int(am_open_str[2:4]), int(am_open_str[4:6]))
+        #print event_time
 
         while True:
             try:
@@ -76,11 +77,13 @@ class Scheduler(object):
 
                 # 发送time事件, time_interval默认配置成和interval一致, 离线回归时配大
                 now_time = event_time.hour * 10000 + event_time.minute * 100 + event_time.second
+                #print now_time
                 if 3 == self.location:
                     time_item = {'location': self.location, 'day': self.day, 'time': now_time}
                     conn.rpush("time-queue", json.dumps(time_item))
 
                 event_time = event_time + datetime.timedelta(seconds=int(config_info['FETCH']['time_interval']))
+                #print event_time
                 time.sleep(self.interval)
             except Exception as e:   
                 self.terminate()

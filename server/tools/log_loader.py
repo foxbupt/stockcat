@@ -110,6 +110,8 @@ class LogLoader:
                 
                 count += 1
                 conn.rpush(queue, json.dumps(item))
+                if count % 5 == 0:
+                    time.sleep(10)
         except Exception as e:
             print "err=loadfile filename=" + filename, " pattern=" + pattern + " queue=" + queue  
             return 

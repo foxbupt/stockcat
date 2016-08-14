@@ -5,7 +5,7 @@
 #date: 2016/07/02
 
 import sys, re, json, os
-import datetime, time
+import datetime, time, traceback
 sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 import redis, pymysql, numpy
@@ -34,7 +34,7 @@ class ChancePolicy(BasePolicy):
     # 大盘sid: location -> sid, A股选择上证指数, 美股为道琼斯指数
     dapan_map = {1: 2469, 3: 9609}
     # 建仓时间段
-    chance_config = {3: {'open_time': 2130, 'deadline_time': 1200, 'stop_portion': 2.00, 'profit_portion': (3.00, 6.00)}}
+    chance_config = {3: {'open_time': 2130, 'deadline_time': 1600, 'stop_portion': 2.00, 'profit_portion': (3.00, 6.00)}}
     # 忽略的股票: sid
     ignore_set = dict()
     traded_count = 0
@@ -70,7 +70,7 @@ class ChancePolicy(BasePolicy):
 
         chance_count = self.redis_conn.llen("chance-" + str(day))
         if chance_count % 5 == 0:
-            self.rank({'location':3, 'day': daily_item['day'], 'time': item['time']})
+            self.rank({'location':3, 'day': daily_item['day'], 'time': item['time'] * 100})
 
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
@@ -80,7 +80,7 @@ class ChancePolicy(BasePolicy):
     def rank(self, item):
         location = item['location']
         day = item['day']
-        cur_timenumber = item['time']
+        cur_timenumber = int(item['time'] / 100)
 
         # 这里按时间倒序拉取最近20个操作, 会出现在前面排序靠后的操作, 在后面的时间被执行了, 需要加上时间范围限制
         data_list = self.redis_conn.lrange("chance-" + str(day), 0, 20)
@@ -106,7 +106,9 @@ class ChancePolicy(BasePolicy):
                 continue
 
             # 超过20min则不执行
-            if cur_timenumber - item['time'] >= 20:
+            hour_diff = int(cur_timenumber / 100) - int(item['time'] / 100)
+            min_diff = int(cur_timenumber % 100) - int(item['time'] % 100)
+            if hour_diff * 60 + min_diff >= 20:
                 self.logger.debug("desc=ignore_expired_chance location=%d sid=%d code=%s day=%d time=%d cur_time=%d",
                                   location, sid, item['code'], day, item['time'], cur_timenumber)
                 continue
@@ -244,7 +246,7 @@ class ChancePolicy(BasePolicy):
             order_event['op'] = item['chance']['op']
 
             # 调用PortfioManager进行建仓
-            open_result = self.portfolio_manager.open(sid, order_event)
+            open_result = self.portfolio.open(sid, order_event)
             self.logger.info("%s open_result=%s", format_log("open_position", order_event), str(open_result))
             return True
 
@@ -306,7 +308,7 @@ class ChancePolicy(BasePolicy):
         if need_close:
             close_item = {'sid': sid, 'day': day, 'code': daily_item['code']}
             close_item['op'] = MinuteTrend.OP_SHORT if stock_order['op'] == MinuteTrend.OP_LONG else MinuteTrend.OP_LONG
-            self.portfolio_manager.close(sid, close_item)
+            self.portfolio.close(sid, close_item)
 
             self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
                 location, sid, stock_order['code'], day, cur_timenumber, stock_order['op'], stock_order['open_price'], current_price, stock_order['stop_price'], vary_portion)
@@ -343,49 +345,60 @@ class ChancePolicy(BasePolicy):
 
         # 根据股票列表读取最近5天的股票动态信息
         sid_list = stock_chance_map.keys()
+        print sid_list
+
         db_config = self.config_info['DB']
         charset = db_config['charset'] if 'charset' in db_config else 'utf8'
         conn = pymysql.connect(db_config['host'], db_config['username'], db_config['password'], db_config.get('database'), int(db_config['port']), charset=charset)
 
         columns = []
         for sid in sid_list:
-            sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 5".format(sid=sid, day=day)
-            #print sql
+            try:
+                sql = "select * from t_stock_dyn where sid = {sid} and day < {day} order by day desc limit 5".format(sid=sid, day=day)
+                #print sql
 
-            stock_df = pd.read_sql_query(sql, conn, index_col="day")
-            #print stock_df
+                stock_df = pd.read_sql_query(sql, conn, index_col="day")
+                print stock_df
+                if stock_df.empty:
+                    del stock_chance_map[sid]
+                    continue
 
-            current_row = stock_df.iloc[0]
-            swing_portion_series = stock_df['ma5_swing']
-            '''
-            TODO: 考虑取最近5日的日数据, 用max来判断, ma5本身就是平均值
-            vary_portion_series = stock_df['ma5_vary_portion']
-            exchange_portion_series = stock_df['ma5_exchange_portion']
-            '''
+                current_row = stock_df.iloc[0]
+                swing_portion_series = stock_df['ma5_swing']
+                '''
+                TODO: 考虑取最近5日的日数据, 用max来判断, ma5本身就是平均值
+                vary_portion_series = stock_df['ma5_vary_portion']
+                exchange_portion_series = stock_df['ma5_exchange_portion']
+                '''
 
-            # 前5日的5日平均振幅都>=3, 跳过检查
-            skip_swing = False if swing_portion_series.mean() >= 3 or current_row['ma20_swing'] >= 3 else True
+                # 前5日的5日平均振幅都>=3, 跳过检查
+                skip_swing = False if swing_portion_series.mean() >= 3 or current_row['ma20_swing'] >= 3 else True
 
-            # 日内交易强调波动性: 重点判断振幅和换手率, 涨跌幅弱化
-            # 最近5日平均涨跌幅<=1% 或 最近5日平均振幅 <= 2 或  最近5日平均换手率 < 0.75
-            if (skip_swing and current_row['ma5_swing'] <= 2) or abs(current_row['ma5_vary_portion']) <= 1 or current_row['ma5_exchange_portion'] < 0.75:
-                self.logger.info("op=ignore_nonmatch_stock sid=%d code=%s location=%d day=%d dyn=%s", sid, stock_chance_map[sid]['code'], location, day, current_row.to_json(orient="index"))
-                self.ignore_set[sid] = True
-                del stock_chance_map[sid]
+                # 日内交易强调波动性: 重点判断振幅和换手率, 涨跌幅弱化
+                # 最近5日平均涨跌幅<=1% 或 最近5日平均振幅 <= 2 或  最近5日平均换手率 < 0.75
+                if (skip_swing and current_row['ma5_swing'] <= 2) or abs(current_row['ma5_vary_portion']) <= 1 or current_row['ma5_exchange_portion'] < 0.75:
+                    self.logger.info("op=ignore_nonmatch_stock sid=%d code=%s location=%d day=%d dyn=%s", sid, stock_chance_map[sid]['code'], location, day, current_row.to_json(orient="index"))
+                    self.ignore_set[sid] = True
+                    del stock_chance_map[sid]
+                    continue
+
+                stock_chance_map[sid]['ma5_vary_portion'] = abs(current_row['ma5_vary_portion'])
+                stock_chance_map[sid]['ma5_swing'] = abs(current_row['ma5_swing'])
+                stock_chance_map[sid]['ma5_exchange_portion'] = current_row['ma5_exchange_portion']
+                if len(columns) == 0:
+                    columns = stock_chance_map[sid].keys()
+
+            except Exception as e:
+                traceback.print_exc() 
+                self.logger.exception("err=sort_with_dyn sid=%d", sid)
                 continue
 
-            stock_chance_map[sid]['ma5_vary_portion'] = abs(current_row['ma5_vary_portion'])
-            stock_chance_map[sid]['ma5_swing'] = abs(current_row['ma5_swing'])
-            stock_chance_map[sid]['ma5_exchange_portion'] = current_row['ma5_exchange_portion']
-            if len(columns) == 0:
-                columns = stock_chance_map[sid].keys()
-
-        #print stock_chance_map
+        print stock_chance_map, columns
         if len(stock_chance_map) == 0:
             return None
 
         chance_df = pd.DataFrame(stock_chance_map.values(), index=stock_chance_map.keys(), columns = columns)
-        #print chance_df
+        print chance_df
         result_df = chance_df.sort_values(by=['trend_strength', 'ma5_swing', 'count', 'vary_portion_strength', 'ma5_exchange_portion', 'ma5_vary_portion'], ascending=False)
         return result_df
 
@@ -395,7 +408,7 @@ class ChancePolicy(BasePolicy):
     @return None
     '''
     def fill_order(self, item):
-        sid = self.portfolio_manager.fill_order(item)
+        sid = self.portfolio.fill_order(item)
         # 更新股票列表
         if sid > 0 :
             self.stock_map[sid]['closed'] = True

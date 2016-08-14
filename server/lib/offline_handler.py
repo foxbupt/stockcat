@@ -4,7 +4,7 @@
 #desc: 离线数据处理, 目前用来更新t_stock_dyn表
 #date: 2016/07/23
 
-import sys, re, json, os, datetime, time
+import sys, re, json, os, datetime, time, traceback
 import numpy, pymysql
 import pandas as pd
 sys.path.append('../../../../server')
@@ -50,30 +50,34 @@ class OfflineHandler:
         if day not in sd_df.index:
             return None
 
-        price_series = sd_df['close_price']
-        dyn_info['ma5_price'] = price_series[:5].mean()
-        dyn_info['ma10_price'] = price_series[:10].mean()
-        dyn_info['ma20_price'] = price_series[:20].mean()
-        dyn_info['ma60_price'] = price_series[:60].mean()
-        dyn_info['ma120_price'] = price_series.mean()
+        try:
+            price_series = sd_df['close_price']
+            dyn_info['ma5_price'] = price_series[:5].mean()
+            dyn_info['ma10_price'] = price_series[:10].mean()
+            dyn_info['ma20_price'] = price_series[:20].mean()
+            dyn_info['ma60_price'] = price_series[:60].mean()
+            dyn_info['ma120_price'] = price_series.mean()
 
-        swing_series = sd_df['swing']
-        dyn_info['ma5_swing'] = swing_series[:5].mean()
-        dyn_info['ma20_swing'] = swing_series[:20].mean()
+            swing_series = sd_df['swing']
+            dyn_info['ma5_swing'] = swing_series[:5].mean()
+            dyn_info['ma20_swing'] = swing_series[:20].mean()
 
-        # 由于振幅反映股票波动强弱, 涨跌幅反映走势与振幅是否一致，所以不使用绝对值
-        vary_portion_series = sd_df['vary_portion']
-        dyn_info['ma5_vary_portion'] = vary_portion_series[:5].mean()
-        dyn_info['ma20_vary_portion'] = vary_portion_series[:20].mean()
+            # 由于振幅反映股票波动强弱, 涨跌幅反映走势与振幅是否一致，所以不使用绝对值
+            vary_portion_series = sd_df['vary_portion']
+            dyn_info['ma5_vary_portion'] = vary_portion_series[:5].mean()
+            dyn_info['ma20_vary_portion'] = vary_portion_series[:20].mean()
 
-        exchange_portion_series = sd_df['exchange_portion']
-        dyn_info['ma5_exchange_portion'] = exchange_portion_series[:5].mean()
-        dyn_info['ma20_exchange_portion'] = exchange_portion_series[:20].mean()
+            exchange_portion_series = sd_df['exchange_portion']
+            dyn_info['ma5_exchange_portion'] = exchange_portion_series[:5].mean()
+            dyn_info['ma20_exchange_portion'] = exchange_portion_series[:20].mean()
 
-        # 计算量比
-        volume_series = sd_df['volume']
-        dyn_info['volume_ratio'] = volume_series[0] / volume_series[1:6].mean()
-        dyn_info['volume_ratio_20'] = volume_series[0] / volume_series[1:21].mean()
+            # 计算量比
+            volume_series = sd_df['volume']
+            dyn_info['volume_ratio'] = volume_series.iloc[0] / volume_series[1:6].mean()
+            dyn_info['volume_ratio_20'] = volume_series.iloc[0] / volume_series[1:21].mean()
+        except Exception as e:
+            traceback.print_exc()     
+            return None 
 
         dyn_info['sid'] = sid
         dyn_info['day'] = day

@@ -86,12 +86,21 @@ class PortfolioManager:
             avail_count = (base + 1) * 200
 
         # TODO: 推送下单消息, 设置建仓价格 + 止损价格, 设置下单类型为限价单
-        order_event =  {'sid': sid, 'order_type': 'LMT', 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'quantity': avail_count, 'price': open_item['open_price'], 'stop_price': open_item['stop_price']}
+        order_info =  {'sid': sid, 'day': open_item['day'], 'code': open_item['code'], 'op': open_item['op'], 'quantity': avail_count, 'stop_price': open_item['stop_price']}
+        order_event = dict(order_info)
+        order_event['order_type'] = "LMT"
+        order_event['price'] = open_item['open_price']
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
 
+        order_event['time'] = open_item['time']
         self.logger.info("%s avail_money=%d", format_log("open_order", order_event), avail_money)
-        order_event['state'] = self.STATE_WAIT_OPEN
-        self.order_stock[sid] = order_event
+
+        # 更新剩余的现金
+        self.rest_money = self.rest_money - avail_money
+        order_info['open_price'] = open_item['open_price']
+        order_info['state'] = self.STATE_WAIT_OPEN
+        self.order_stock[sid] = order_info
+
         return True
 
     '''
@@ -112,7 +121,7 @@ class PortfolioManager:
         # TODO: 暂时仅考虑一次全部卖出
 
         # TODO: 推送下单消息, 默认为市价卖出, 设置close_price时极为触及市价卖出, 后续支持order_type指定订单类型(市价/限价)
-        order_event = {'sid': sid, 'order_type': 'MKT', 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'quantity': opened_map[sid]['count']}
+        order_event = {'sid': sid, 'order_type': 'MKT', 'day': close_item['day'], 'code': close_item['code'], 'op': close_item['op'], 'quantity': opened_map[sid]['quantity']}
         if 'close_price' in close_item:
             order_event['close_price'] = close_item['close_price']
             # TODO: 设置订单类型为触及市价
@@ -146,12 +155,14 @@ class PortfolioManager:
             order_info['quantity'] = fill_event['quantity']
             order_info['open_price'] = fill_event['price']
             order_info['open_cost'] = fill_event['cost']
-        elif order_info['state'] == PortfolioManager.STATE_OPENED and order_info['op'] != fill_event['op']:
+        elif order_info['state'] == PortfolioManager.STATE_WAIT_CLOSE and order_info['op'] != fill_event['op']:
             order_info['quantity'] = order_info['quantity'] - fill_event['quantity']
             order_info['close_price'] = fill_event['price']
             order_info['close_cost'] = fill_event['cost']
             if order_info['quantity'] <= 0:
                 order_info['state'] = PortfolioManager.STATE_CLOSED
+                order_info['profit'] = order_info['close_cost'] - order_info['open_cost']
+                order_info['profit_portion'] = (order_info['close_cost'] - order_info['open_cost']) / order_info['open_cost'] * 100
 
         # TODO: 追加交易记录
         trade_info = { 'code': fill_event['code'], 'op': fill_event['op'], 'quantity': fill_event['quantity'], 'order_id': fill_event['order_id'], 'price': fill_event['price'], 'cost': fill_event['cost']}
@@ -235,9 +246,9 @@ if __name__ == "__main__":
     fill_event['order_id'] = 10012
     fill_event['code'] = code
     fill_event['op'] = MinuteTrend.OP_LONG
-    fill_event['count'] = 80
+    fill_event['quantity'] = 80
     fill_event['price'] = 21.25
-    fill_event['cost'] = fill_event['count'] * fill_event['price']
+    fill_event['cost'] = fill_event['quantity'] * fill_event['price']
     fill_event['time'] = 940
     fill_open_result = manager.fill_order(fill_event)
     print fill_open_result
@@ -260,9 +271,9 @@ if __name__ == "__main__":
     close_event['order_id'] = 10013
     close_event['code'] = code
     close_event['op'] = MinuteTrend.OP_SHORT
-    close_event['count'] = 80
+    close_event['quantity'] = 80
     close_event['price'] = 22.00
-    close_event['cost'] = fill_event['count'] * fill_event['price']
+    close_event['cost'] = close_event['quantity'] * close_event['price']
     close_event['time'] = 1030
     manager.fill_order(close_event)
 
