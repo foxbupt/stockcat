@@ -40,7 +40,7 @@ class ChancePolicy(BasePolicy):
     traded_count = 0
 
     def initialize(self, location, day):
-        portfolio_config = {"initial_money": 3000, "max_stock_count": 3, "max_stock_portion": 0.5, "max_trade_count": 8}
+        portfolio_config = {"initial_money": 3000, "max_short_stock": 2, "max_stock_count": 3, "max_stock_portion": 0.5, "max_trade_count": 8}
         self.portfolio = PortfolioManager(location, day, self.config_info, portfolio_config)
 
     '''
@@ -180,7 +180,7 @@ class ChancePolicy(BasePolicy):
                 self.logger.info("desc=no_match_chance location=%d day=%d time_number=%d", location, day, cur_timenumber)
                 return
 
-            self.logger.debug("desc=sort_chance location=%d day=%d time_number=%d chance=%s", location, day, cur_timenumber, chance_df.to_json())
+            self.logger.info("desc=sort_chance location=%d day=%d time_number=%d chance=%s", location, day, cur_timenumber, chance_df.to_json())
             limit_count = 2
             for sid, row in chance_df.iterrows():
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
@@ -293,32 +293,28 @@ class ChancePolicy(BasePolicy):
             vary_portion = -1 * vary_portion
 
         need_close = False
+        reason = ""
 
         # 需要平仓: 越过止损位/出现反方向趋势且获利达到最小要求/临近收盘且时间>=1530
         if (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
-            self.logger.info("desc=stop_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
-                             location, sid, stock_order['code'], day, stock_order['op'], cur_timenumber, stock_order['open_price'], current_price, stock_order['stop_price'], abs(vary_portion))
+            reason = "stop"
             need_close = True
         elif item is not None and abs(vary_portion) >= self.chance_config[location]['profit_portion'][0]:
-            self.logger.info("desc=profit_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
-                             location, sid, stock_order['code'], day, stock_order['op'], item['time'], stock_order['open_price'], current_price, stock_order['stop_price'], abs(vary_portion))
+            reason = "profit"
             need_close = True
         elif cur_timenumber >= 1500:
-            self.logger.info("desc=time_close location=%d sid=%d code=%s day=%d op=%d time=%d open_price=%.2f current_price=%.2f stop_price=%.2f vary_portion=%.2f",
-                             location, sid, stock_order['code'], day, stock_order['op'], cur_timenumber, stock_order['open_price'], current_price, stock_order['stop_price'], abs(vary_portion))
+            reason = "time"
             need_close = True
 
-        self.logger.debug("%s location=%d day=%d current_time=%d current_price=%.2f vary_portion=%.2f need_close=%s",
-                format_log("close_detail", stock_order), location, day, cur_timenumber, current_price, vary_portion, str(need_close));
+        item_json = "" if item is None else json.dumps(item)
+        self.logger.info("%s need_close=%s reason=%s location=%d day=%d time=%d current_price=%.2f vary_portion=%.2f item=%s",
+                    format_log("close_detail", stock_order), str(need_close), reason, location, day, cur_timenumber, current_price, abs(vary_portion), item_json)
 
         #TODO: 调用订单平仓, 这里需要注意下单平仓后, 成交之前重复下单
         if need_close:
-            close_item = {'sid': sid, 'day': day, 'code': daily_item['code'], 'time': cur_timenumber}
+            close_item = {'sid': sid, 'day': day, 'code': daily_item['code'], 'time': cur_timenumber, 'price': current_price}
             close_item['op'] = MinuteTrend.OP_SHORT if stock_order['op'] == MinuteTrend.OP_LONG else MinuteTrend.OP_LONG
             self.portfolio.close(sid, close_item)
-
-            self.logger.info("desc=close_position location=%d sid=%d code=%s day=%d time=%d op=%d open_price=%.2f close_price=%.2f stop_price=%.2f vary_portion=%.2f",
-                location, sid, stock_order['code'], day, cur_timenumber, stock_order['op'], stock_order['open_price'], current_price, stock_order['stop_price'], vary_portion)
 
     '''
     @desc 对操作机会的股票进行综合排序, 基于股票多个维度的特征,类似于搜索的排序
@@ -415,3 +411,14 @@ class ChancePolicy(BasePolicy):
     '''
     def fill_order(self, item):
         sid = self.portfolio.fill_order(item)
+
+    # 输出持仓组合的盈收状况
+    def finish(self):
+        order_map = self.portfolio.get_portfolio(PortfolioManager.STATE_ALL)
+        for sid, order_info in order_map.items():
+            print format_log("order_info", order_info)
+            records = self.portfolio.get_trade_records(sid)
+            for record in records:
+                print format_log("trade_record", record)
+
+

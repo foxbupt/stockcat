@@ -25,3 +25,7 @@ class BasePolicy(object):
     def initialize(self, location, day):
         pass
 
+    # 预留结束接口, 用于退出前做的动作
+    def finish(self):
+        pass
+

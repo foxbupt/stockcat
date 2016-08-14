@@ -50,7 +50,6 @@ class PortfolioManager:
 
         self.logger = logging.getLogger("order")
         self.redis_conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
-        #self.db_conn = SqlUtil.get_db(self.config_info["DB"])
 
     '''
         @desc 股票建仓
@@ -72,8 +71,8 @@ class PortfolioManager:
 
         quantity = self.cal_quantity(sid, open_item['op'], open_item['open_price'])
         if quantity <= 0:
-            self.logger.info("op=no_enough_money sid=%d code=%s op=%d rest_money=%d open_price=%.2f min_count=%d", 
-                sid, open_item['code'], open_item['op'], self.rest_money, open_item['open_price'], min_count)
+            self.logger.info("op=no_enough_money sid=%d code=%s op=%d rest_money=%d open_price=%.2f", 
+                sid, open_item['code'], open_item['op'], self.rest_money, open_item['open_price'])
             return False
 
         # TODO: 推送下单消息, 设置建仓价格 + 止损价格, 设置下单类型为限价单
@@ -81,15 +80,16 @@ class PortfolioManager:
         order_event = dict(order_info)
         order_event['order_type'] = "LMT"
         order_event['price'] = open_item['open_price']
-        self.redis_conn.rpush("order-queue", json.dumps(order_event))
-
-        order_event['time'] = open_item['time']
-        self.logger.info("%s cost=%d", format_log("open_order", order_event), cost)
+        push_result = self.redis_conn.rpush("order-queue", json.dumps(order_event))
+        print push_result
 
         # 更新剩余的现金
         sign = 1 if open_item['op'] == MinuteTrend.OP_LONG else -1
         cost = sign * quantity * open_item['open_price']
         self.rest_money = max(self.rest_money - cost, 0)
+
+        order_event['time'] = open_item['time']
+        self.logger.info("%s cost=%d", format_log("open_order", order_event), cost)
 
         order_info['open_price'] = open_item['open_price']
         #order_info['state'] = self.STATE_WAIT_OPEN
@@ -101,7 +101,7 @@ class PortfolioManager:
     '''
         @desc 股票平仓
         @param sid int
-        @param close_item dict(sid, day, code, op, price)
+        @param close_item dict(sid, day, code, time, op, price)
         @return
     '''
     def close(self, sid, close_item):
@@ -123,12 +123,13 @@ class PortfolioManager:
         self.redis_conn.rpush("order-queue", json.dumps(order_event))
 
         # TODO: 封装到fill_order里更新
-        sign = 1 if open_item['op'] == MinuteTrend.OP_LONG else -1
-        cost = sign * opened_map[sid]['quantity'] * close_item['price']
-        self.rest_money += cost
+        #sign = 1 if open_item['op'] == MinuteTrend.OP_LONG else -1
+        #cost = sign * opened_map[sid]['quantity'] * close_item['price']
+        #self.rest_money += cost
 
         # 更新订单状态
         opened_map[sid]['state'] = PortfolioManager.STATE_WAIT_CLOSE
+        order_event['time'] = close_item['time']
         self.logger.info("%s", format_log("close_order", order_event))
         return True
 
@@ -141,12 +142,12 @@ class PortfolioManager:
     '''
     def cal_quantity(self, sid, op, price):
         quantity = 0
-        min_quantity = 20
+        min_cost = 1000
 
         # 做多交易
         if op == MinuteTrend.OP_LONG:
             # 剩下的钱不够
-            if self.rest_money <= 0 or self.rest_money < price * min_quantity:
+            if self.rest_money <= 0 or self.rest_money < min_cost:
                 return 0
 
             # 判断可买的股票数
@@ -154,10 +155,10 @@ class PortfolioManager:
             quantity = int(round(avail_money/price))
 
         # 做空交易
-        else if self.port_config['max_short_stock'] > 0:
+        elif self.port_config['max_short_stock'] > 0:
             avail_money = self.initial_money * self.port_config['max_stock_portion'] 
             if self.rest_money > 0 and self.rest_money < avail_money:
-                avail_money = max(self.rest_money, price * min_quantity)
+                avail_money = max(self.rest_money, min_cost)
 
             quantity = int(round(avail_money / price))
             self.port_config['max_short_stock'] -= 1

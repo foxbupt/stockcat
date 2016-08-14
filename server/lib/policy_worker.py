@@ -109,5 +109,6 @@ class PolicyWorker():
             except Exception as e:
                 logging.getLogger("policy").exception("err=pop_item name=%s item=%s", self.name, data)
 
+        policy_object.finish() 
         logging.getLogger("policy").critical("op=policy_worker_exit name=%s pid=%u", self.name, self.process.pid)
 
