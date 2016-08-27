@@ -169,4 +169,5 @@ if __name__ == "__main__":
 
         if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
             print "op=chance_info ", trend_stage['time'], trend_stage['chance'], trend_stage['trend_item']
+        print "-----------"
     print "finish"

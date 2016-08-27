@@ -369,6 +369,7 @@ class TrendHelper(object):
             last_stage = stage_list[-2] if len(stage_list) >= 2 else None
             if last_stage:
                 trend = last_stage['trend']
+                current_stage = last_stage
             else:
                 return pivot_info
         else:
@@ -378,20 +379,25 @@ class TrendHelper(object):
         item_support_price = price_list[current_stage["start"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["end"]]
 
         # 上涨趋势时: 阻力/支撑位都是end, 下跌趋势时阻力是start, 支撑位是end
-        # TODO: 阻力/支撑位是不是用high_price/low_price更合理
+        # TODO: 阻力/支撑位是不是用high_price/low_price更合理, 这段逻辑待重构优化, 理论上阻力位/支撑位与上涨/下跌趋势无关
         same_trend_list = TrendHelper.rfind_same_trend(stage_list, len(stage_list) - 1, trend)
         if same_trend_list:
             for trend_item in same_trend_list:
+                if trend_item['end'] == current_stage['end']:
+                    continue
+
                 if trend == TrendHelper.TREND_RISE:
-                    if price_list[trend_item["end"]]  >= item_resist_price and resist_price == 0:
-                        resist_price = price_list[trend_item["end"]]
-                    elif price_list[trend_item["end"]] >= item_resist_price and support_price == 0:
-                        support_price = price_list[trend_item["end"]]
+                    if price_list[trend_item["end"]]  >= item_resist_price:
+                        resist_price = price_list[trend_item["end"]] if resist_price == 0 else min(resist_price, price_list[trend_item["end"]])
+                    elif price_list[trend_item["end"]] >= item_support_price:
+                        support_price = price_list[trend_item["end"]] if support_price == 0 else max(support_price, price_list[trend_item["end"]])
                 else:
-                    if price_list[trend_item["start"]]  >= item_resist_price and resist_price == 0:
-                        resist_price = price_list[trend_item["start"]]
-                    if price_list[trend_item["end"]] <= item_support_price and support_price == 0:
-                        support_price = price_list[trend_item["end"]]
+                    if price_list[trend_item["start"]]  >= item_resist_price:
+                        resist_price = price_list[trend_item["start"]] if resist_price == 0 else min(resist_price, price_list[trend_item["start"]])
+                    elif price_list[trend_item["start"]] <= item_support_price:
+                        support_price = price_list[trend_item["start"]] if support_price == 0 else max(support_price, price_list[trend_item["start"]])
+                    elif price_list[trend_item["end"]] <= item_support_price:
+                        support_price = price_list[trend_item["end"]] if support_price == 0 else max(support_price, price_list[trend_item["end"]])
         else:
             support_price = item_support_price #if current_stage['direction'] == TrendHelper.DIRECTION_UP else 0
             resist_price = item_resist_price #if current_stage['direction'] == TrendHelper.DIRECTION_DOWN else 0
@@ -402,7 +408,7 @@ class TrendHelper(object):
         high_price = max(price_list[current_stage["end"]], price_list[current_stage["start"]])
         low_price = min(price_list[current_stage["end"]], price_list[current_stage["start"]])
         pivot_info['resist_vary_portion'] = (resist_price - high_price) / high_price * 100 if resist_price > 0 else 0
-        pivot_info['support_vary_portion'] = (support_price - low_price) / low_price * 100 if support_price > 0 else 0
+        pivot_info['support_vary_portion'] = abs((support_price - low_price) / low_price * 100) if support_price > 0 else 0
 
         return pivot_info
 
@@ -462,10 +468,19 @@ class TrendHelper(object):
             if len(key_list) > 0:
                 key_item = key_list[0]
             else:
+
                 # 找出趋势长度最大的两段趋势 和 最近的一段趋势节点, 比较其trend和顺序
                 length_sorted_list = sorted(latest_stage_list, key=lambda x: x['length'], reverse = True)
                 max_item = length_sorted_list[0]
                 second_item = length_sorted_list[1]
+
+                # 存在2段长度相同的趋势节点, 忽略震荡趋势的节点
+                if max_item['length'] == second_item['length']:
+                    if max_item['trend'] == TrendHelper.TREND_WAVE:
+                        max_item = second_item
+                        second_item = length_sorted_list[2] if len(length_sorted_list) >= 3 else length_sorted_list[0]
+                    elif second_item['trend'] == TrendHelper.TREND_WAVE:
+                        second_item = length_sorted_list[2] if len(length_sorted_list) >= 3 else length_sorted_list[1]
 
                 is_max_latest = (max_item['start'] > second_item['start'])
                 # core_item 代表核心趋势的趋势段, active_item 代表当前趋势的趋势段
@@ -477,12 +492,14 @@ class TrendHelper(object):
                     core_item = max_item
                     active_item = max_item
                 else:
-                    core_item = max_item if abs(max_item['vary_portion']) >= abs(second_item['vary_portion']) else second_item
-                    active_item = max_item if is_max_latest else second_item
                     past_item = latest_stage_list[-1]
+                    core_item = max_item if abs(max_item['vary_portion']) >= abs(second_item['vary_portion']) else second_item
+                    if abs(core_item['vary_portion']) < abs(past_item['vary_portion']):
+                        core_item = past_item
+
                     # active_item非最后一段趋势且最后一段趋势为上涨/下跌时, 认为它代表当前趋势
-                    if active_item['end'] < past_item['end'] and active_item == TrendHelper.TREND_WAVE:
-                        active_item = past_item
+                    non_wave_list = filter(lambda item: item['trend'] != TrendHelper.TREND_WAVE, latest_stage_list)
+                    active_item = non_wave_list[-1]
 
                 explain_info['core_item'] = core_item
                 explain_info['active_item'] = active_item
@@ -505,11 +522,12 @@ class TrendHelper(object):
             trend_config['trend_vary_type'] = "portion"
         (trend_list, stage_list) = TrendHelper.parse(price_list, trend_config, True)
 
+        latest_trend = dict()
         daily_trend = TrendHelper.get_trend_by_price(price_list[0], price_list[-1], trend_config['daily_vary_portion'], trend_config['trend_vary_type'])
-
         if stage_list:
             pivot_info = TrendHelper.get_pivot(price_list, stage_list, trend_config)
-            latest_trend = TrendHelper.explain_latest_trend(price_list, trend_config, (trend_list, stage_list), trend_config['latest_count'])
+            if len(price_list) >= int(trend_config['latest_count'] / 2):
+                latest_trend = TrendHelper.explain_latest_trend(price_list, trend_config, (trend_list, stage_list), trend_config['latest_count'])
         else:
             pivot_info = None
             latest_trend = None
@@ -547,11 +565,13 @@ if __name__ == "__main__":
         daily_item['vary_portion'] = (close_price - daily_item['last_close_price']) / daily_item['last_close_price'] * 100
 
         trend_info = TrendHelper.core(price_list, trend_config)
-        trend_snapshot_list.append((index, trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']))
         print index, "-------------------------"
         print trend_info['pivot']
-        print trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']
-        print trend_info['latest_trend']['core_item'], trend_info['latest_trend']['active_item']
+        if trend_info['latest_trend']:
+            trend_snapshot_list.append((index, trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']))
+            print trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']
+            print trend_info['latest_trend']['core_item'], trend_info['latest_trend']['active_item']
+
         #print trend_info['latest_trend']['latest_stage_list']
         print "-------"
         for trend_item in trend_info['trend_list']:
@@ -562,4 +582,5 @@ if __name__ == "__main__":
 
     for item in trend_snapshot_list:
         print item
+
     print "finish"
