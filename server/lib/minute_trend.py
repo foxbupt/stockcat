@@ -34,7 +34,7 @@ class MinuteTrend(object):
         if len(minute_items) < 3:
             return None
 
-        trend_config = {'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
+        trend_config = {'trend_vary_type': 'portion', 'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
 
         # TODO: 当len(minute_items) >= 60时, 保存上次解析结果的下标, 从最后一段趋势开始解析, 优化过程
         # 存在问题: parse中解析的部分结果, 需要和之前的趋势统一放到一起进行归并处理
