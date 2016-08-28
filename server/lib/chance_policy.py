@@ -266,6 +266,9 @@ class ChancePolicy(BasePolicy):
             # 调用PortfioManager进行建仓
             open_result = self.portfolio.open(sid, order_event)
             self.logger.info("%s open_result=%s", format_log("open_position", order_event), str(open_result))
+
+            # 建仓的机会push到单独的队列中
+            self.redis_conn.rpush("order-chance", json.dumps(item))
             return True
 
         return False
