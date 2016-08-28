@@ -189,7 +189,7 @@ class ChancePolicy(BasePolicy):
             limit_count = 2
             for sid, row in chance_df.iterrows():
                 # 超过建仓时间 或者 趋势强度 < 0.10, 不考虑建仓
-                if row['time'] > self.chance_config[location]['deadline_time'] or row['trend_strength'] < 0.10:
+                if row['time'] > self.chance_config[location]['open_deadline_time'] or row['trend_strength'] < 0.10:
                     continue
                 elif sid in self.item_map:
                     continue
