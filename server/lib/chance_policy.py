@@ -50,7 +50,7 @@ class ChancePolicy(BasePolicy):
     traded_count = 0
 
     def initialize(self, location, day):
-        portfolio_config = {"initial_money": 3000, "max_short_stock": 2, "max_stock_count": 3, "max_stock_portion": 0.5, "max_trade_count": 8}
+        portfolio_config = {"initial_money": 4000, "max_short_stock": 2, "max_stock_count": 4, "max_stock_portion": 0.5, "max_trade_count": 8, "trade_period": {"interval": 30, "threshold": 2}}
         self.portfolio = PortfolioManager(location, day, self.config_info, portfolio_config)
 
     '''
