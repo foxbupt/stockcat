@@ -37,7 +37,7 @@ class PortfolioManager:
     order_stock = dict()
     # 交易记录列表: sid -> [{sid, order_id, op, order_time, quantity, price, cost}, ...]
     traded_map = dict()
-    # 当前持仓市值: total/cash/commission/{code -> cost}
+    # 当前持仓市值: total/cash/commission/{sid -> cost}
     holdings = dict()
 
     '''
@@ -59,8 +59,8 @@ class PortfolioManager:
 
         self.logger = logging.getLogger("order")
         self.redis_conn = redis.StrictRedis(self.config_info['REDIS']['host'], int(self.config_info['REDIS']['port']))
-        self.holdings = {'total': self.initial_money, 'cash': self.initial_money, 'commission': 0}
-        self.port_statinfo = {'trade_period': dict(), 'max_stock_count': 0, 'max_short_count': 0, 'max_trade_count': 0}
+        self.holdings = {'total': self.initial_money, 'cash': self.initial_money, 'commission': 0, 'market': {}}
+        self.port_statinfo = {'trade_period': dict(), 'max_stock_count': 0, 'max_short_stock': 0, 'max_trade_count': 0}
 
     '''
         @desc 股票建仓
@@ -82,7 +82,7 @@ class PortfolioManager:
 
         # 建仓是否允许
         if not self.check_allow("OPEN", open_item):
-            self.logger.info("%s %s", format_log("open_not_allowed", self.open_item), json.dumps(self.port_statinfo))
+            self.logger.info("%s %s", format_log("open_not_allowed", open_item), json.dumps(self.port_statinfo))
             return False
 
         # TODO: cash仅在成交后才会扣减, 实际通过IB下单时, 会出现成交前多只股票都可以下单
@@ -155,9 +155,13 @@ class PortfolioManager:
         self.logger.info("%s", format_log("close_order", order_event))
 
         # TODO: 目前手动构造成交订单
-        fill_event = {'code': order_event['code'], 'op': order_event['op'], 'quantity': opened_map[sid]['quantity'], 'price': order_event['price'], 'cost': order_event['price'] * opened_map[sid]['quantity'], 'time': close_item['time']}
+        sign = 1 if close_item['op'] == MinuteTrend.OP_SHORT else -1
+        close_cost = sign * order_event['price'] * order_event['quantity']
+
+        fill_event = {'code': order_event['code'], 'op': order_event['op'], 'quantity': opened_map[sid]['quantity'], 'price': order_event['price'], 'cost': close_cost, 'time': close_item['time']}
         fill_event['order_id'] = random.randint(100, 500)
         self.fill_order(fill_event)
+
         return True
 
     '''
@@ -286,7 +290,10 @@ class PortfolioManager:
         cost = sign * fill_event['cost']
         commission = max(1, round(fill_event['quantity'] / 200))
 
-        self.holdings[sid] += cost
+        if sid not in self.holdings['market']:
+            self.holdings['market'][sid] = 0
+        self.holdings['market'][sid] += cost
+
         self.holdings['commission'] += commission
         self.holdings['cash'] -= (cost + commission)
         self.holdings['total'] -= (cost + commission)
@@ -298,14 +305,17 @@ class PortfolioManager:
     '''
     def update_stat(self, type, item):
         if type == "OPEN":
-            (hour, min) = divmod(item['time'], 100)
-            (div, mod) = divmod(min, self.port_config['trade_period']['interval'])
-            key = str(hour) + str(div * self.port_config['trade_period']['interval'])
+            (hour, minute) = divmod(item['time'], 100)
+            (div, mod) = divmod(minute, self.port_config['trade_period']['interval'])
+            key = "%02d%02d" % (hour, div * self.port_config['trade_period']['interval'])
 
+            if key not in self.port_statinfo['trade_period']:
+                self.port_statinfo['trade_period'][key] = 0
             self.port_statinfo['trade_period'][key] += 1
+
             self.port_statinfo['max_stock_count'] += 1
             if item['op'] == MinuteTrend.OP_SHORT:
-                self.port_statinfo['max_short_count'] += 1
+                self.port_statinfo['max_short_stock'] += 1
         elif type == "FILL":
             self.port_statinfo['max_trade_count'] += 1
 
@@ -321,12 +331,13 @@ class PortfolioManager:
 
         if type == "OPEN":
             if self.port_statinfo['max_stock_count'] >= self.port_config['max_stock_count'] or \
-            (item['op'] == MinuteTrend.OP_SHORT and self.port_statinfo['max_short_count'] >= self.port_config['max_short_count']):
+            (item['op'] == MinuteTrend.OP_SHORT and self.port_statinfo['max_short_stock'] >= self.port_config['max_short_stock']):
                 return False
 
-            (hour, min) = divmod(item['time'], 100)
-            (div, mod) = divmod(min, self.port_config['trade_period']['interval'])
-            key = str(hour) + str(div * self.port_config['trade_period']['interval'])
+            (hour, minute) = divmod(item['time'], 100)
+            (div, mod) = divmod(minute, self.port_config['trade_period']['interval'])
+            key = "%02d%02d" % (hour, div * self.port_config['trade_period']['interval'])
+
             period_count = self.port_statinfo['trade_period'][key] if key in self.port_statinfo['trade_period'] else 0
             if period_count >= self.port_config['trade_period']['threshold']:
                 return False

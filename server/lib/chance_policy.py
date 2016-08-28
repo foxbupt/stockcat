@@ -66,8 +66,8 @@ class ChancePolicy(BasePolicy):
         daily_item = item['daily_item']
         day_vary_portion = (daily_item['close_price'] - daily_item['open_price']) / daily_item['open_price'] * 100
 
-        # 日内涨幅 >= 6%不建议追高
-        if chance_info['op'] == MinuteTrend.OP_LONG and abs(day_vary_portion) >= 6.00:
+        # 日内涨幅 >= 6%且操作时间在10:20之后, 不建议追高
+        if chance_info['op'] == MinuteTrend.OP_LONG and item['time'] >= 1020 and abs(day_vary_portion) >= 6.00:
             return
 
         # TODO: 从redis中获取大盘趋势
@@ -76,7 +76,7 @@ class ChancePolicy(BasePolicy):
 
         # 全局list, 倒序排列
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
-        #self.logger.debug("%s", format_log("chance_item", item))
+        self.logger.debug("%s", format_log("chance_item", item))
 
         '''
         # 通过time-queue的时间来调度, 不需要
@@ -94,12 +94,19 @@ class ChancePolicy(BasePolicy):
         day = item['day']
         cur_timenumber = int(item['time'] / 100)
 
-        # 这里按时间倒序拉取最近20个操作, 会出现在前面排序靠后的操作, 在后面的时间被执行了, 需要加上时间范围限制
-        data_list = self.redis_conn.lrange("chance-" + str(day), 0, 20)
-        if data_list is None or len(data_list) == 0 or len(data_list) == self.last_chance_count:
-            pass
+        # 从持仓管理组合中获取快照信息
+        self.stock_map = self.portfolio.get_portfolio(PortfolioManager.STATE_ALL)
 
-        self.last_chance_count = len(data_list)
+        # 判断是否有新增操作机会, 没有新增则不需要拉取chance进行排序建仓
+        data_list = []
+        chance_count = self.redis_conn.llen("chance-" + str(day))
+        if chance_count > self.last_chance_count:
+            # 这里按时间倒序拉取最近20个操作, 会出现在前面排序靠后的操作, 在后面的时间被执行了, 需要加上时间范围限制
+            data_list = self.redis_conn.lrange("chance-" + str(day), 0, 20)
+            if data_list is None or len(data_list) == 0: 
+                return
+
+        self.last_chance_count = chance_count
         dapan_trend = TrendHelper.TREND_WAVE
         dapan_sid = self.chance_config[location]['index_stock']
         daily_cache_value = self.redis_conn.get("daily-"+ str(dapan_sid) + "-" + str(day))
@@ -107,9 +114,6 @@ class ChancePolicy(BasePolicy):
 
         if dapan_data:
             dapan_trend = TrendHelper.TREND_RISE if (dapan_data['close_price'] - dapan_data['last_close_price']) >= 50 else TrendHelper.TREND_FALL
-
-        # 从持仓管理组合中获取快照信息
-        self.stock_map = self.portfolio.get_portfolio(PortfolioManager.STATE_ALL)
 
         item_list = []
         for data in data_list:
@@ -159,19 +163,18 @@ class ChancePolicy(BasePolicy):
                 continue
 
             # 判断股票市值, 必须>=5亿刀 <= 300亿刀
+            cache_value = self.redis_conn.get("stock:info-" + str(sid))
+            if cache_value:
+                stock_info = json.loads(cache_value)
             else:
-                cache_value = self.redis_conn.get("stock:info-" + str(sid))
-                if cache_value:
-                    stock_info = json.loads(cache_value)
-                else:
-                    stock_info = get_stock_info(self.config_info["DB"], sid)
+                stock_info = get_stock_info(self.config_info["DB"], sid)
 
-                market_cap = float(stock_info['capital']) * daily_item['close_price'] / 10000
-                if market_cap <= 5 or market_cap > 300:
-                    self.ignore_set[sid] = True
-                    self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
-                        location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info['capital'], daily_item['close_price'], market_cap)
-                    continue
+            market_cap = float(stock_info['capital']) * daily_item['close_price'] / 10000
+            if market_cap <= 5 or market_cap > 300:
+                self.ignore_set[sid] = True
+                self.logger.info("desc=ignore_small_cap location=%d sid=%d code=%s day=%d time=%d op=%d capital=%s close_price=%.2f market_cap=%.2f",
+                    location, sid, item['code'], day, item['time'], item['chance']['op'], stock_info['capital'], daily_item['close_price'], market_cap)
+                continue
 
             item_list.append(item)
 
@@ -283,6 +286,9 @@ class ChancePolicy(BasePolicy):
 
         stock_order = self.stock_map[sid]
         daily_item = self.get_stock_currentinfo(sid, day)
+        if daily_item is None:
+            return
+
         current_price = daily_item['close_price']
         stock_time = daily_item['time']
 
@@ -302,15 +308,15 @@ class ChancePolicy(BasePolicy):
                     reason = "profit"
                     break
         # 止损平仓: 越过止损位
-        elif (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
+        if not need_close and (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
             reason = "stop"
             need_close = True
         # 超过指定时间平仓
-        elif stock_time >= self.chance_config[location]['close_deadline_time']:
+        if not need_close and stock_time >= self.chance_config[location]['close_deadline_time']:
             reason = "time"
             need_close = True
         # TODO: 出现反方向机会时, 需要结合最近30min趋势来分析是否平仓, 暂时立即平仓
-        elif item is not None and item['chance']['op'] != stock_order['op']:
+        if not need_close and item is not None and item['chance']['op'] != stock_order['op']:
             reason = "pivot"
             need_close = True
 
@@ -440,16 +446,20 @@ class ChancePolicy(BasePolicy):
 
         daily_cache_value = self.redis_conn.get("daily-"+ str(sid) + "-" + str(day))
         daily_item = json.loads(daily_cache_value) if daily_cache_value else None
-        if daily_item is None:
-            return None
-
-        info = daily_item
-        info['time'] = int(daily_item['time'] / 100)
 
         key = "rt-" + str(sid) + "-" + str(day)
         last_item = None
         if self.redis_conn.llen(key) > 0:
             last_item = json.loads(self.redis_conn.lindex(key, -1))
+
+        if daily_item is None and last_item is None:
+            self.logger.info("err=get_daily_item sid=%d day=%d", sid, day)
+            return None
+        elif daily_item:
+            info = daily_item
+            info['time'] = int(int(daily_item['time']) / 100)
+        elif last_item:
+            info = last_item
 
         if last_item and last_item['time'] > info['time']:
             info['close_price'] = last_item['price']

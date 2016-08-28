@@ -4,7 +4,7 @@
 #desc: 交易订单执行及查询
 #date: 2016/08/13
 
-import sys, re, json, os
+import sys, re, json, os, random
 import datetime, time
 import redis
 sys.path.append('../../../../server')
@@ -62,8 +62,8 @@ class IBHandler(ExecutionHandler):
 
 
     # 创建ib网关连接
-    def create_tws_connection(self):
-        tws_conn = ibConnection()
+    def create_tws_connection(self, port=4001):
+        tws_conn = ibConnection('localhost', port)
         tws_conn.connect()
         return tws_conn
 
@@ -72,8 +72,9 @@ class IBHandler(ExecutionHandler):
         @return int
     '''
     def create_initial_order_id(self):
-        order_id_str = str(self.day) + "001"
-        return int(order_id_str)
+        cur_time = time.time()
+        #return int(cur_time % 1000)
+        return 1000 + random.randint(0, 100)
 
     def register_handlers(self):
         self.tws_conn.register(self._error_handler, 'Error')
@@ -145,6 +146,7 @@ class IBHandler(ExecutionHandler):
         ib_order = self.create_order(order_type, quantity, direction)
 
         # 传递订单执行
+        print self.order_id
         self.tws_conn.placeOrder(self.order_id, ib_contract, ib_order)
         # 等待订单执行
         time.sleep(10)
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     code = "WUBA"
 
     # 建仓
-    open_order = {'sid': sid, 'order_type': 'MKT', 'day': day, 'code': code, 'op': MinuteTrend.OP_LONG, 'quantity': 100, "price": 53.00}
+    open_order = {'sid': sid, 'order_type': 'MKT', 'day': day, 'code': code, 'op': MinuteTrend.OP_LONG, 'quantity': 100, "price": 48.00}
     ib_handler.execute_order(open_order)
 
     time.sleep(30)
@@ -177,4 +179,6 @@ if __name__ == "__main__":
     close_order = {'sid': sid, 'order_type': 'MKT', 'day': day, 'code': code, 'op': MinuteTrend.OP_SHORT, 'quantity': 100}
     ib_handler.execute_order(close_order)
 
-    time.sleep(60)
+    while True:
+        time.sleep(30)
+    print "finish"
