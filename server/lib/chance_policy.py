@@ -32,6 +32,7 @@ class ChancePolicy(BasePolicy):
     item_map = dict()
     # 持仓操作的股票 sid -> order_info
     stock_map = dict()
+    last_chance_count = 0
 
     '''
         机会配置: location -> chance_config
@@ -77,10 +78,12 @@ class ChancePolicy(BasePolicy):
         self.redis_conn.lpush("chance-" + str(day), json.dumps(item))
         #self.logger.debug("%s", format_log("chance_item", item))
 
+        '''
+        # 通过time-queue的时间来调度, 不需要
         chance_count = self.redis_conn.llen("chance-" + str(day))
         if chance_count % 5 == 0:
             self.rank({'location':3, 'day': daily_item['day'], 'time': item['time'] * 100})
-
+        '''
     '''
     @desc 定时运行对目前的操作机会进行综合排序, 每次取出最近前20个, 得到top3
     @param item {location, day, time}, time格式为HHMM
@@ -93,9 +96,10 @@ class ChancePolicy(BasePolicy):
 
         # 这里按时间倒序拉取最近20个操作, 会出现在前面排序靠后的操作, 在后面的时间被执行了, 需要加上时间范围限制
         data_list = self.redis_conn.lrange("chance-" + str(day), 0, 20)
-        if data_list is None or len(data_list) == 0:
+        if data_list is None or len(data_list) == 0 or len(data_list) == self.last_chance_count:
             pass
 
+        self.last_chance_count = len(data_list)
         dapan_trend = TrendHelper.TREND_WAVE
         dapan_sid = self.chance_config[location]['index_stock']
         daily_cache_value = self.redis_conn.get("daily-"+ str(dapan_sid) + "-" + str(day))
