@@ -42,6 +42,7 @@ main()
     fi
     
     ./del_key.sh "*${lastday}*" >> /data/stockcat/service/start_${day}.log
+    ./del_key.sh "*chance*" >> /data/stockcat/service/start_${day}.log
 
     open=`is_market_open "$day"`
     echo "day=$day open=$open"
