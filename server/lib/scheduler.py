@@ -138,7 +138,7 @@ class Scheduler(object):
     # 准备公共数据集
     def prepare_data(self, market_config):
         # 获取所有的股票列表
-        stock_list = get_stock_list(self.db_config, 1, self.location)
+        stock_list = get_stock_list(self.db_config, 0, self.location)
         self.datamap['stock_list'] = stock_list
         #print len(self.datamap['stock_list'])
 
