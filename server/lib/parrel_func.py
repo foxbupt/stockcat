@@ -241,15 +241,15 @@ class ParrelRealtime(ParrelFunc):
         
         if 1 == self.location:
             key = scode
-       	    url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
+            url = "http://web.ifzq.gtimg.cn/appstock/app/minute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
         elif 3 == self.location:
-        	stock_info = self.datamap['stock_list'][sid]
+            stock_info = self.datamap['stock_list'][sid]
             if 1 == int(stock_info['type']):
                 ecode_str = "OQ" if 4 == int(stock_info['ecode']) else "N"
                 key = scode + "." + ecode_str
             else:
                 key = scode
-        	url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
+            url = "http://web.ifzq.gtimg.cn/appstock/app/UsMinute/query?_var=min_data_{CODE}&code={CODE}&r=" + str(random.random())
 
         try:
             request_url = url.format(CODE=key)
