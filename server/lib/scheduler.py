@@ -153,12 +153,14 @@ class Scheduler(object):
         self.datamap['id2scode'] = id2scode_map
         #print len(self.datamap['id2scode'])
 
+        # 美股取过去一周的股票池
+        past_days = 5 if self.location == 3 else 1
         last_open_day = get_past_openday(str(self.day), 1)
         print last_open_day
         pool_list = []
         try:
             db_conn = SqlUtil.get_db(self.db_config)
-            sql = "select sid from t_stock_pool where day = " + last_open_day + " and status = 'Y'"
+            sql = "select sid from t_stock_pool where day >= " + last_open_day + " and status = 'Y'"
             print sql
             record_list = db_conn.query_sql(sql)
         except Exception as e:
@@ -167,7 +169,7 @@ class Scheduler(object):
 
         for stock_data in record_list:
             sid = int(stock_data['sid'])
-            if sid in stock_list:
+            if sid in stock_list and sid not in pool_list:
                 pool_list.append(sid)
         
         if 3 == self.location and 'cnlist' in market_config:

@@ -568,7 +568,7 @@ if __name__ == "__main__":
         print index, "-------------------------"
         print trend_info['pivot']
         if trend_info['latest_trend']:
-            trend_snapshot_list.append((index, trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']))
+            trend_snapshot_list.append((index, trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend'], close_price, trend_info['pivot']))
             print trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend']
             print trend_info['latest_trend']['core_item'], trend_info['latest_trend']['active_item']
 
