@@ -85,7 +85,8 @@ class RTPolicy(BasePolicy):
 
         # 存储(core_trend, active_trend, item_count, length) 到趋势队列中
         if trend_info['latest_trend']:
-            trend_overview = {"trend": (trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['trend']), "count": item_count}
+            trend_overview = {"count": item_count}
+            trend_overview['trend'] = (trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['trend'])
             if 'pivot' in trend_info and trend_info['pivot']:
                 trend_overview['pivot'] = trend_info['pivot']
 
