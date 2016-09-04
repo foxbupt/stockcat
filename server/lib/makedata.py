@@ -7,6 +7,8 @@
 import sys, re, json, os
 import datetime, time, traceback
 import redis
+sys.path.append('../../../../server')
+from pyutil.util import Util, safestr, format_log
 
 def loaddata(filename):
     datamap = {}
@@ -48,10 +50,13 @@ def loaddata(filename):
                 if "daily" == type:
                     datamap['daily'][sid].append(item)
                 elif "realtime" == type:
-                    last_time = datamap['realtime'][sid][-1]['time'] if len(datamap['realtime'][sid]) > 0 else 0
+                    last_item = datamap['realtime'][sid][-1] if len(datamap['realtime'][sid]) > 0 else None
+                    last_time = 0 if last_item is None else last_item['items'][-1]['time']
+                    queue_item = {"sid": item['sid'], "day": item['day'], 'items': []}
                     for realtime_item in item['items']:
                         if last_time == 0 or realtime_item['time'] > last_time:
-                            datamap['realtime'][sid].append(realtime_item)
+                            queue_item['items'].append(realtime_item)
+                    datamap['realtime'][sid].append(queue_item)
 
             except Exception as ex:
                 traceback.print_exc()
@@ -65,30 +70,40 @@ def loaddata(filename):
     return datamap
     
 def pushdata(config_info, datamap, stock_id=0):
-    redis_conn = redis.StrictRedis(config_info['REDIS']['host'], config_info['REDIS']['port'])  
-    for sid, daily_list in datamap['daily'].items():
-        if stock_id > 0 and sid != stock_id:
-            continue 
-        for daily_item in daily_list:
-            redis_conn.rpush("daily-queue", json.dumps(daily_item))
-            
-    for sid, realtime_list in datamap['realtime'].items():
-        if stock_id > 0 and sid != stock_id:
-            continue
-            
-        if len(realtime_list) > 1:
-            for item in realtime_list.items():
-                redis_conn.rpush("realtime-queue", json.dumps(item))
-        else:
-            item = realtime_list.popitem()
-            count = len(item['items'])
-            offset = 0
-            while offset < count:
+    redis_conn = redis.StrictRedis(config_info['REDIS']['host'], config_info['REDIS']['port'])
+    stock_set = set(stock_id) if stock_id > 0 else set(datamap['daily'].keys())
+    offset = 0
+
+    while True:
+        if 0 == len(stock_set):
+            break
+
+        offset += 5
+        finished_set = set()
+
+        for sid in stock_set:
+            for daily_item in datamap['daily'][sid][offset: offset + 5]:
+                redis_conn.rpush("daily-queue", json.dumps(daily_item))
+
+            realtime_list = datamap['realtime'][sid]
+            realtime_count = len(realtime_list)
+            if realtime_count > 1:
+                for item in realtime_list[offset: offset + 5]:
+                    redis_conn.rpush("realtime-queue", json.dumps(item))
+            else:
+                item = realtime_list[0]
+                realtime_count = len(item['items'])
                 loop_item = {"sid": item['sid'], "day": item['day']}
-                loop_item["items"] = item['items'][offset : min(offset + 5, count)] 
-                print offset, count
-                offset += 5
+                loop_item["items"] = item['items'][offset : min(offset + 5, realtime_count)]
                 redis_conn.rpush("realtime-queue", json.dumps(loop_item))
+
+            print "op=pushdata sid=%d offset=%d realtime_count=%d" % (sid, offset, realtime_count)
+            if offset >= len(datamap['daily'][sid]) and offset >= realtime_count:
+                finished_set.add(sid)
+
+        stock_set = stock_set - finished_set
+        time.sleep(1)
+    print "finish"
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

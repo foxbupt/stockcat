@@ -59,7 +59,7 @@ class RTPolicy(BasePolicy):
             for item_json in item_list:
                 minute_items.append(json.loads(item_json))
 
-            instance = MinuteTrend(sid, day)
+            instance = MinuteTrend(sid)
             (trend_stage, trend_info) = instance.core(daily_item, minute_items)
             self.logger.debug("%s", format_log("minute_trend", trend_stage))
             self.logger.debug("%s", format_log("trend_parse", trend_info))
@@ -141,66 +141,3 @@ class RTPolicy(BasePolicy):
                 return MinuteTrend.OP_WAIT
         else:
             return MinuteTrend.OP_MAP[trend[0]]
-
-    '''
-        @desc: 结合当日行情和分时价格行情分析趋势 TODO: 待优化
-        @param: item dict
-            设置trend/op到daily-policy key中
-            操作字段(op): 1 卖出  2 待定 3 买入
-            趋势/波段方向(trend): 1 下跌 2 震荡 3 上涨
-    '''
-    def day_trend(self, item):
-        trend = op = 0
-
-        daily_key = "daily-" + str(item['sid']) + "-" + str(item['day'])
-        daily_cache_value = self.redis_conn.get(daily_key);
-        if daily_cache_value is None:
-            return
-
-        daily_item = json.loads(daily_cache_value)
-        daily_policy_key = "daily-policy-" + str(item['sid']) + "-" + str(item['day'])
-        daily_policy_info = self.redis_conn.hgetall(daily_policy_key)
-
-        rt_key = "rt-" + str(item['sid']) + "-" + str(item['day'])
-        minute_items = self.redis_conn.lrange(rt_key, 0, -1)
-
-        day_vary_portion = (daily_item['close_price'] - daily_item['open_price']) / daily_item['open_price'] * 100
-        open_vary = daily_item['close_price'] - daily_item['open_price']
-        max_vary = daily_item['high_price'] - daily_item['close_price']
-        min_vary = daily_item['close_price'] - daily_item['low_price']
-
-        # 开盘即涨停
-        if daily_item['close_price'] == daily_item['open_price'] and daily_item['vary_portion'] >= 9.6:
-            trend = 3
-            op = 2
-        elif abs(day_vary_portion) < 2:
-            trend = 2
-            op = 2
-            volume_ratio = daily_policy_info['volume_ratio']
-            # 缩量下跌震荡或放量上涨震荡, 考虑买入
-            if (volume_ratio <= 0.5 and day_vary_portion <= 0) or (volume_ratio >= 2 and day_vary_portion > 0):
-                op = 3
-
-        elif daily_item['vary_price'] > 0.0:
-            if max_vary == 0.0 or max_vary < min_vary:
-                trend = 3
-            else:
-                trend = 1
-        else:
-            if min_vary == 0.0 or min_vary < max_vary:
-                trend = 1
-            else:
-                trend = 3
-
-        if trend == 1:
-            op = 1
-        elif trend == 3:
-            op = 3
-
-        trend_info = {'trend': trend, 'op': op}
-        self.redis_conn.hmset(daily_policy_key, trend_info)
-
-        trend_info['sid'] = item['sid']
-        trend_info['day'] = item['day']
-        self.logger.info("%s", format_log("daily_day_trend", trend_info))
-
