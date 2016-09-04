@@ -67,7 +67,8 @@ class RTPolicy(BasePolicy):
             self.logger.debug("%s", format_log("trend_parse", trend_info))
 
             trend_detail = self.refresh_trend(sid, day, minute_items, trend_info)
-            self.logger.debug("%s sid=%d day=%d item_count=%d time=%d", format_log("trend_detail", trend_detail), sid, day, item_count, now_time)
+            if 'trend' in trend_detail:
+                self.logger.info("%s sid=%d day=%d item_count=%d time=%d", format_log("trend_detail", trend_detail), sid, day, item_count, now_time)
 
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 trend_stage['trend_detail'] = trend_detail
@@ -101,7 +102,7 @@ class RTPolicy(BasePolicy):
             if trend_node_count > 0:
                 last_trend_value = self.redis_conn.lindex(trend_key, -1)
                 last_trend_node = json.loads(last_trend_value)
-                print last_trend_node, trend_overview
+                #print last_trend_node, trend_overview
 
                 # 与上一段趋势相同, 延长长度, 把最后一个节点pop出来
                 if last_trend_node['trend'][0] == trend_overview['trend'][0] and last_trend_node['trend'][1] == trend_overview['trend'][1]:
