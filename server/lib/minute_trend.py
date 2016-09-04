@@ -51,7 +51,7 @@ class MinuteTrend(object):
         trend_info = TrendHelper.core(price_list, trend_config)
         self.trend_list = trend_info['trend_list']
         daily_trend = trend_info['daily_trend']
-        #print self.trend_list
+        print self.trend_list
 
         latest_trend_item = self.trend_list[-1]
         if latest_trend_item['length'] < 3 and len(self.trend_list) >= 2:

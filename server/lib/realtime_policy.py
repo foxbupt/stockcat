@@ -44,6 +44,7 @@ class RTPolicy(BasePolicy):
         daily_key = "daily-" + str(sid) + "-" + str(day)
         daily_cache_value = self.redis_conn.get(daily_key);
         if daily_cache_value is None:
+            self.logger.error("err=fetch_daily sid=%d day=%d", sid, day)
             return
 
         daily_item = json.loads(daily_cache_value)	
@@ -51,8 +52,8 @@ class RTPolicy(BasePolicy):
         item_count = self.redis_conn.llen(rt_key)
         if item_count < 3:
             return
-        # 离线回归时全量的分时交易会作为一个item方进来, time是1600
-        elif item_count % 5 == 0 or item['items'][-1]['time'] == 1600 :
+
+        if item_count % 5 == 0: 
             # 暂定每5分钟调用分析一次, 后续根据时间段调整
             item_list = self.redis_conn.lrange(rt_key, 0, -1)
             minute_items = []
@@ -65,7 +66,7 @@ class RTPolicy(BasePolicy):
             self.logger.debug("%s", format_log("trend_parse", trend_info))
 
             trend_detail = self.refresh_trend(sid, day, minute_items, trend_info)
-            self.logger.debug("%s", format_log("trend_detail", trend_detail))
+            self.logger.debug("%s sid=%d day=%d", format_log("trend_detail", trend_detail), sid, day)
 
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
@@ -86,7 +87,7 @@ class RTPolicy(BasePolicy):
         # 存储(core_trend, active_trend, item_count, length) 到趋势队列中
         if trend_info['latest_trend']:
             trend_overview = {"count": item_count}
-            trend_overview['trend'] = (trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['trend'])
+            trend_overview['trend'] = (trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['active_item']['trend'])
             if 'pivot' in trend_info and trend_info['pivot']:
                 trend_overview['pivot'] = trend_info['pivot']
 
@@ -96,13 +97,14 @@ class RTPolicy(BasePolicy):
             last_trend_node = None
 
             if trend_node_count > 0:
-                last_trend_value = self.redis_conn.lrange(trend_key, -1, -1)
+                last_trend_value = self.redis_conn.lindex(trend_key, -1)
                 last_trend_node = json.loads(last_trend_value)
+                print last_trend_node, trend_overview
+
                 # 与上一段趋势相同, 延长长度, 把最后一个节点pop出来
-                if last_trend_node['trend'] == trend_overview['trend']:
-                    last_trend_node['length'] = last_trend_node['length'] + item_count - last_trend_node['count']
-                    last_trend_node['count'] = item_count
-                    last_trend_node['pivot'] = trend_overview['pivot']
+                if last_trend_node['trend'][0] == trend_overview['trend'][0] and last_trend_node['trend'][1] == trend_overview['trend'][1]:
+                    trend_overview['length'] = last_trend_node['length'] + item_count - last_trend_node['count']
+                    trend_overview['count'] = item_count
                     self.redis_conn.rpop(trend_key)
                 # 与上一段趋势不相同, 表明趋势发生了变化, 需要关注已有持仓和新的建仓机会
                 else:
@@ -131,7 +133,7 @@ class RTPolicy(BasePolicy):
         trend = trend_node['trend']
         op = MinuteTrend.OP_MAP[trend[1]]
 
-        if last_trend['length'] <= 10:
+        if last_trend_node['length'] <= 10:
             return op
 
         # 主体趋势相同, 当前趋势不同

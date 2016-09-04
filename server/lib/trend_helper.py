@@ -493,7 +493,10 @@ if __name__ == "__main__":
     import_datamap = loaddata(sys.argv[1])
     print import_datamap
     daily_list = import_datamap['daily'][sid]
-    items = import_datamap['realtime'][sid]
+    rt_items = import_datamap['realtime'][sid]
+    items = []
+    for queue_item in rt_items:
+        items.extend(queue_item['items'])
 
     step = 5
     index = 0

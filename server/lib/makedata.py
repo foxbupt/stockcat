@@ -78,11 +78,10 @@ def pushdata(config_info, datamap, stock_id=0):
         if 0 == len(stock_set):
             break
 
-        offset += 5
         finished_set = set()
-
         for sid in stock_set:
-            for daily_item in datamap['daily'][sid][offset: offset + 5]:
+            daily_list = datamap['daily'][sid]
+            for daily_item in daily_list[offset: offset + 5]:
                 redis_conn.rpush("daily-queue", json.dumps(daily_item))
 
             realtime_list = datamap['realtime'][sid]
@@ -93,15 +92,17 @@ def pushdata(config_info, datamap, stock_id=0):
             else:
                 item = realtime_list[0]
                 realtime_count = len(item['items'])
-                loop_item = {"sid": item['sid'], "day": item['day']}
-                loop_item["items"] = item['items'][offset : min(offset + 5, realtime_count)]
-                redis_conn.rpush("realtime-queue", json.dumps(loop_item))
+                if offset < realtime_count:
+                    loop_item = {"sid": item['sid'], "day": item['day']}
+                    loop_item["items"] = item['items'][offset : min(offset + 5, realtime_count)]
+                    redis_conn.rpush("realtime-queue", json.dumps(loop_item))
 
-            print "op=pushdata sid=%d offset=%d realtime_count=%d" % (sid, offset, realtime_count)
+            print "op=pushdata sid=%d offset=%d daily_count=%d realtime_count=%d" % (sid, offset, len(daily_list), realtime_count)
             if offset >= len(datamap['daily'][sid]) and offset >= realtime_count:
                 finished_set.add(sid)
 
         stock_set = stock_set - finished_set
+        offset += 5
         time.sleep(1)
     print "finish"
 
