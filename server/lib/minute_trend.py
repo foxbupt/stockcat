@@ -16,6 +16,9 @@ class MinuteTrend(object):
     OP_LONG = 1
     OP_SHORT = 2
 
+    # 趋势 -> 操作
+    OP_MAP = {TrendHelper.TREND_FALL: OP_SHORT, TrendHelper.TREND_WAVE: OP_WAIT, TrendHelper.TREND_RISE: OP_LONG}
+
     # 趋势列表
     trend_list = []
     # 上次解析完最后一段趋势的起始下标
@@ -34,13 +37,17 @@ class MinuteTrend(object):
         if len(minute_items) < 3:
             return None
 
+        is_dapan = True if self.sid == 9609 else False
         trend_config = {'trend_vary_type': 'portion', 'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
+        if is_dapan: # DJI 道琼斯指数解析
+            trend_config = {'trend_vary_type': 'value', 'trend_vary_portion': 30, 'min_trend_length': 3, 'stage_vary_portion': 30, 'daily_vary_portion': 50, 'latest_count': 30}
 
         # TODO: 当len(minute_items) >= 60时, 保存上次解析结果的下标, 从最后一段趋势开始解析, 优化过程
         # 存在问题: parse中解析的部分结果, 需要和之前的趋势统一放到一起进行归并处理
         current_time = minute_items[-1]['time']
         price_list = [item['price'] for item in minute_items]
 
+        # 解析趋势分析
         trend_info = TrendHelper.core(price_list, trend_config)
         self.trend_list = trend_info['trend_list']
         daily_trend = trend_info['daily_trend']
@@ -52,18 +59,19 @@ class MinuteTrend(object):
 
         plan_config = {'time': 940, 'vary_portion': 3.00}
         chance_info = dict()
-        buy_chance = MinuteTrend.get_chance(daily_item, self.trend_list, TrendHelper.TREND_RISE, current_time, plan_config)
-        if buy_chance and buy_chance['op'] == MinuteTrend.OP_LONG:
-            chance_info = buy_chance
-        else:
-            chance_info = MinuteTrend.get_chance(daily_item, self.trend_list, TrendHelper.TREND_FALL, current_time, plan_config)
+        if not is_dapan:
+            buy_chance = MinuteTrend.get_chance(daily_item, self.trend_list, TrendHelper.TREND_RISE, current_time, plan_config)
+            if buy_chance and buy_chance['op'] == MinuteTrend.OP_LONG:
+                chance_info = buy_chance
+            else:
+                chance_info = MinuteTrend.get_chance(daily_item, self.trend_list, TrendHelper.TREND_FALL, current_time, plan_config)
 
         # TODO: 输出日志
         trend_stage = {"sid": self.sid, "code": daily_item['code'], "daily_trend": daily_trend,
                        "time": current_time, "chance": chance_info,
                        "trend_item": latest_trend_item, "daily_item": daily_item}
         #print format_log("op=minute_trend", trend_stage)
-        return (trend_stage, self.trend_list)
+        return (trend_stage, trend_info)
 
 
     '''

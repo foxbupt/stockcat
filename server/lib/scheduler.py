@@ -155,7 +155,7 @@ class Scheduler(object):
 
         # 美股取过去一周的股票池
         past_days = 5 if self.location == 3 else 1
-        last_open_day = get_past_openday(str(self.day), 1)
+        last_open_day = get_past_openday(str(self.day), past_days)
         print last_open_day
         pool_list = []
         try:

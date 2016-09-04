@@ -47,18 +47,20 @@ class TrendHelper(object):
         @param now_price 时间在后的价格
         @param vary_portion 涨跌幅, 缺省为1.0
         @param vary_type 趋势判断的类型, 缺省为portion(幅度), 对于指数取值为value(差值)
-        @return trend, 参见TREND_XXX
+        @return (trend, vary_portion), trend取值参见TREND_XXX
     '''
     @staticmethod
     def get_trend_by_price(pre_price, now_price, vary_portion=1.0, vary_type = "portion"):
-        portion = abs(now_price - pre_price) / pre_price * 100
-        diff = abs(now_price - pre_price)
+        portion = (now_price - pre_price) / pre_price * 100
+        diff = now_price - pre_price
         vary_value = portion if "portion" == vary_type else diff
 
-        if vary_value < vary_portion:
-            return TrendHelper.TREND_WAVE
+        trend = TrendHelper.TREND_WAVE
+        if abs(vary_value) < vary_portion:
+            trend = TrendHelper.TREND_WAVE
         else:
-            return TrendHelper.TREND_RISE if now_price > pre_price else TrendHelper.TREND_FALL
+            trend = TrendHelper.TREND_RISE if now_price > pre_price else TrendHelper.TREND_FALL
+        return (trend, vary_value)
 
     '''
         @desc 对价格列表分割成多段同一方向的子列表
@@ -158,44 +160,14 @@ class TrendHelper(object):
 
         return TrendHelper.merge_same_trend(price_list, result_list, trend_config, {})
 
-        '''
-        print item_list
-        result_list = []
-        current_item = None
-        i = 0
-        while i < len(item_list):
-            item = item_list[i]
-
-            # 由于往前合并, 上1个节点可能已被合并, 所以取结果中的最后1段节点
-            next_item = item_list[i + 1] if i < len(item_list) - 1 else None
-            count = item["length"]
-            need_append = False
-
-            if current_item is None:
-                current_item = item
-            elif current_item['trend'] == item['trend']:
-                current_item = TrendHelper.extend_trend(price_list, current_item, item, trend_config, "end")
-            elif item['trend'] == TrendHelper.TREND_WAVE:
-                # 中间为震荡节点, 前后2段趋势相同方向 且 突破新高或新低时, 合并震荡前后的趋势
-                if next_item and next_item['trend'] == current_item['trend'] and ((current_item['direction'] == TrendHelper.DIRECTION_UP and price_list[next_item['end']] >= price_list[current_item['end']]) or \
-                    (current_item['direction'] == TrendHelper.DIRECTION_DOWN and price_list[next_item['end']] <= price_list[current_item['end']])):
-                    current_item = TrendHelper.extend_trend(price_list, current_item, next_item, trend_config, "end")
-                    i += 1
-                else:
-                    current_item['vary_portion'] = (price_list[current_item['end']] - price_list[current_item['start']]) / price_list[current_item['start']] * 100
-                    result_list.append(current_item)
-                    current_item = item
-            else:
-                current_item['vary_portion'] = (price_list[current_item['end']] - price_list[current_item['start']]) / price_list[current_item['start']] * 100
-                result_list.append(current_item)
-                current_item = item
-
-            i += 1
-
-        result_list.append(current_item)
-        return result_list
-        '''
-
+    '''
+        @desc 合并相同趋势的节点
+        @param price_list list
+        @param range_list list
+        @param trend_config dict
+        @param options dict {'length': True/, 'direction'}
+        @return list
+    '''
     @staticmethod
     def merge_same_trend(price_list, range_list, trend_config, options):
         loop_count = 0
@@ -215,9 +187,7 @@ class TrendHelper(object):
             while index < len(range_list):
                 item = range_list[index]
                 if 'trend' not in item:
-                    item['trend'] = TrendHelper.get_trend_by_price(price_list[item['start']], price_list[item['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
-                if 'vary_portion' not in item:
-                    item['vary_portion'] = (price_list[item['end']] - price_list[item['start']]) / price_list[item['start']] * 100
+                    (item['trend'], item['vary_portion']) = TrendHelper.get_trend_by_price(price_list[item['start']], price_list[item['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
 
                 # 连续2段长度为2的上涨/下跌趋势需要合并
                 next_item = range_list[index + 1] if index < len(range_list) - 1 else None
@@ -233,7 +203,7 @@ class TrendHelper(object):
                     # 相邻同趋势的节点进行合并
                     while offset < len(range_list) - 2:
                         offset_item = range_list[offset + 1]
-                        offset_item_trend = TrendHelper.get_trend_by_price(price_list[offset_item['start']], price_list[offset_item['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
+                        (offset_item_trend, _) = TrendHelper.get_trend_by_price(price_list[offset_item['start']], price_list[offset_item['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
 
                         if offset_item_trend == item['trend']:
                             need_merge = False
@@ -303,9 +273,8 @@ class TrendHelper(object):
             extend_stage['length'] = extend_stage['end'] - extend_stage['start'] + 1
             #extend_stage['length'] += trend_item['length']
 
-        extend_stage['vary_portion'] = (price_list[extend_stage['end']] - price_list[extend_stage['start']]) / price_list[extend_stage['start']] * 100
         extend_stage['direction'] = TrendHelper.DIRECTION_UP if price_list[extend_stage['end']] >= price_list[extend_stage['start']] else TrendHelper.DIRECTION_DOWN
-        extend_stage['trend'] = TrendHelper.get_trend_by_price(price_list[extend_stage['start']], price_list[extend_stage['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
+        (extend_stage['trend'], extend_stage['vary_portion']) = TrendHelper.get_trend_by_price(price_list[extend_stage['start']], price_list[extend_stage['end']], trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
 
         return extend_stage
 
@@ -360,55 +329,36 @@ class TrendHelper(object):
     @staticmethod
     def get_pivot(price_list, stage_list, trend_config):
         current_stage = stage_list[-1]
-        pivot_info = dict()
+        pivot_info = {'resist_vary_portion': 0, 'support_vary_portion': 0}
         resist_price = 0.0
         support_price = 0.0
 
-        # 当前趋势节点为上涨/下跌时, 寻找过去的同方向趋势节点, 获取阻力位/支撑位信息
-        if current_stage['trend'] == TrendHelper.TREND_WAVE:
-            last_stage = stage_list[-2] if len(stage_list) >= 2 else None
-            if last_stage:
-                trend = last_stage['trend']
-                current_stage = last_stage
+        # 不管当前趋势为上涨/下跌/震荡, 都用当前趋势的最新值来比较阻力/支撑位, 实现方式更符合阻力位/支撑位的原始定义
+        base_price = price_list[current_stage["end"]]
+
+        for trend_item in stage_list[::-1]:
+            if trend_item['end'] == current_stage['end']:
+                continue
+
+            low_price = trend_item['low_price']
+            high_price = trend_item['high_price']
+
+            # 上涨趋势: 阻力位为大于当前趋势高点的最近点，支撑位为小于当前趋势高点的最近点
+            # 下跌趋势: 阻力位为大于当前趋势低点的最近点, 支撑位为小于当前趋势低点的最近点
+            if high_price >= base_price:
+                resist_price = high_price if resist_price == 0 else min(resist_price, high_price)
             else:
-                return pivot_info
-        else:
-            trend = current_stage['trend']
-
-        item_resist_price = price_list[current_stage["end"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["start"]]
-        item_support_price = price_list[current_stage["start"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["end"]]
-
-        # 上涨趋势时: 阻力/支撑位都是end, 下跌趋势时阻力是start, 支撑位是end
-        # TODO: 阻力/支撑位是不是用high_price/low_price更合理, 这段逻辑待重构优化, 理论上阻力位/支撑位与上涨/下跌趋势无关
-        same_trend_list = TrendHelper.rfind_same_trend(stage_list, len(stage_list) - 1, trend)
-        if same_trend_list:
-            for trend_item in same_trend_list:
-                if trend_item['end'] == current_stage['end']:
-                    continue
-
-                if trend == TrendHelper.TREND_RISE:
-                    if price_list[trend_item["end"]]  >= item_resist_price:
-                        resist_price = price_list[trend_item["end"]] if resist_price == 0 else min(resist_price, price_list[trend_item["end"]])
-                    elif price_list[trend_item["end"]] >= item_support_price:
-                        support_price = price_list[trend_item["end"]] if support_price == 0 else max(support_price, price_list[trend_item["end"]])
-                else:
-                    if price_list[trend_item["start"]]  >= item_resist_price:
-                        resist_price = price_list[trend_item["start"]] if resist_price == 0 else min(resist_price, price_list[trend_item["start"]])
-                    elif price_list[trend_item["start"]] <= item_support_price:
-                        support_price = price_list[trend_item["start"]] if support_price == 0 else max(support_price, price_list[trend_item["start"]])
-                    elif price_list[trend_item["end"]] <= item_support_price:
-                        support_price = price_list[trend_item["end"]] if support_price == 0 else max(support_price, price_list[trend_item["end"]])
-        else:
-            support_price = item_support_price #if current_stage['direction'] == TrendHelper.DIRECTION_UP else 0
-            resist_price = item_resist_price #if current_stage['direction'] == TrendHelper.DIRECTION_DOWN else 0
+                support_price = high_price if support_price == 0 else max(support_price, high_price)
 
         pivot_info['resist_price'] = resist_price
         pivot_info['support_price'] = support_price
+        item_resist_price = price_list[current_stage["end"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["start"]]
+        item_support_price = price_list[current_stage["start"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["end"]]
 
-        high_price = max(price_list[current_stage["end"]], price_list[current_stage["start"]])
-        low_price = min(price_list[current_stage["end"]], price_list[current_stage["start"]])
-        pivot_info['resist_vary_portion'] = (resist_price - high_price) / high_price * 100 if resist_price > 0 else 0
-        pivot_info['support_vary_portion'] = abs((support_price - low_price) / low_price * 100) if support_price > 0 else 0
+        if resist_price > 0:
+            (_, pivot_info['resist_vary_portion']) = TrendHelper.get_trend_by_price(resist_price, item_resist_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
+        if support_price > 0:
+            (_, pivot_info['support_vary_portion']) = TrendHelper.get_trend_by_price(support_price, item_support_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
 
         return pivot_info
 
@@ -445,7 +395,7 @@ class TrendHelper(object):
                         item = dict(stage_item)
                         item['start'] = latest_index
                         item['length'] = real_length
-                        item['vary_portion'] = (price_list[item['end']] - price_list[latest_index]) / price_list[latest_index] * 100
+                        (_, item['vary_portion']) = TrendHelper.get_trend_by_price(price_list[latest_index], price_list[item['end']], trend_config['stage_vary_portion'], trend_config['trend_vary_type'])
                         latest_stage_list.append(item)
                     break
                 else:
@@ -523,7 +473,7 @@ class TrendHelper(object):
         (trend_list, stage_list) = TrendHelper.parse(price_list, trend_config, True)
 
         latest_trend = dict()
-        daily_trend = TrendHelper.get_trend_by_price(price_list[0], price_list[-1], trend_config['daily_vary_portion'], trend_config['trend_vary_type'])
+        (daily_trend, daily_vary) = TrendHelper.get_trend_by_price(price_list[0], price_list[-1], trend_config['daily_vary_portion'], trend_config['trend_vary_type'])
         if stage_list:
             pivot_info = TrendHelper.get_pivot(price_list, stage_list, trend_config)
             if len(price_list) >= int(trend_config['latest_count'] / 2):
@@ -548,8 +498,9 @@ if __name__ == "__main__":
     step = 5
     index = 0
     min_count = len(items)
-    trend_config = {'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
-    #print min_count
+    #trend_config = {'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
+    trend_config = {'trend_vary_type': 'value', 'trend_vary_portion': 30, 'min_trend_length': 3, 'stage_vary_portion': 30, 'daily_vary_portion': 50, 'latest_count': 30}
+   #print min_count
 
     trend_snapshot_list = []
     while index <= min_count:

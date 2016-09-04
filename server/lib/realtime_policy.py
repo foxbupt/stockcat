@@ -10,6 +10,7 @@ sys.path.append('../../../../server')
 from pyutil.util import safestr, format_log
 import redis
 from base_policy import BasePolicy
+from trend_helper import TrendHelper
 from minute_trend import MinuteTrend
 
 class RTPolicy(BasePolicy):
@@ -38,13 +39,15 @@ class RTPolicy(BasePolicy):
     '''
     def realtime_trend(self, item):
         sid = int(item['sid'])
-        daily_key = "daily-" + str(sid) + "-" + str(item['day'])
+        day = item['day']
+
+        daily_key = "daily-" + str(sid) + "-" + str(day)
         daily_cache_value = self.redis_conn.get(daily_key);
         if daily_cache_value is None:
             return
 
         daily_item = json.loads(daily_cache_value)	
-        rt_key = "rt-" + str(sid) + "-" + str(item['day'])
+        rt_key = "rt-" + str(sid) + "-" + str(day)
         item_count = self.redis_conn.llen(rt_key)
         if item_count < 3:
             return
@@ -56,16 +59,91 @@ class RTPolicy(BasePolicy):
             for item_json in item_list:
                 minute_items.append(json.loads(item_json))
 
-            instance = MinuteTrend(sid)
-            (trend_stage, trend_list) = instance.core(daily_item, minute_items)
+            instance = MinuteTrend(sid, day)
+            (trend_stage, trend_info) = instance.core(daily_item, minute_items)
             self.logger.debug("%s", format_log("minute_trend", trend_stage))
+            self.logger.debug("%s", format_log("trend_parse", trend_info))
+
+            trend_detail = self.refresh_trend(sid, day, minute_items, trend_info)
+            self.logger.debug("%s", format_log("trend_detail", trend_detail))
+
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
-                self.logger.debug("%s", format_log("trend_list", trend_list))
 
     '''
-        @desc: 结合当日行情和分时价格行情分析趋势
+        @desc 更新整体趋势节点列表, 若趋势改变时建议
+        @param sid int
+        @param day int
+        @param minute_items list
+        @param trend_info dict
+        @return dict('trend', 'op', 'changed') 大盘趋势改变时op为建议操作方向
+    '''
+    def refresh_trend(self, sid, day, minute_items, trend_info):
+        item_count = len(minute_items)
+        trend_detail = dict()
+
+        # 存储(core_trend, active_trend, item_count, length) 到趋势队列中
+        if trend_info['latest_trend']:
+            trend_overview = {"trend": (trend_info['latest_trend']['core_item']['trend'], trend_info['latest_trend']['trend']), "count": item_count}
+            if 'pivot' in trend_info and trend_info['pivot']:
+                trend_overview['pivot'] = trend_info['pivot']
+
+            trend_key = "trend-" + str(sid) + "-" + str(day)
+            trend_node_count = self.redis_conn.llen(trend_key)
+            trend_changed = False
+            last_trend_node = None
+
+            if trend_node_count > 0:
+                last_trend_value = self.redis_conn.lrange(trend_key, -1, -1)
+                last_trend_node = json.loads(last_trend_value)
+                # 与上一段趋势相同, 延长长度, 把最后一个节点pop出来
+                if last_trend_node['trend'] == trend_overview['trend']:
+                    last_trend_node['length'] = last_trend_node['length'] + item_count - last_trend_node['count']
+                    last_trend_node['count'] = item_count
+                    last_trend_node['pivot'] = trend_overview['pivot']
+                    self.redis_conn.rpop(trend_key)
+                # 与上一段趋势不相同, 表明趋势发生了变化, 需要关注已有持仓和新的建仓机会
+                else:
+                    trend_overview['length'] = item_count - last_trend_node['count']
+                    trend_changed = True
+            else:
+                trend_overview['length'] = item_count
+
+            self.redis_conn.rpush(trend_key, json.dumps(trend_overview))
+            trend_detail['trend'] = trend_overview['trend']
+            trend_detail['changed'] = trend_changed
+            trend_detail['op'] = self.suggest_op(sid, day, last_trend_node, trend_overview) if trend_changed and last_trend_node else MinuteTrend.OP_MAP[trend_overview['trend'][0]]
+
+        return trend_detail
+
+    '''
+        @desc 趋势改变时提供建议操作
+        @param sid int
+        @param day int
+        @param last_trend_node dict(trend, count, length, pivot)
+        @param trend_node dict(trend, count, length, pivot)
+        @return op
+    '''
+    def suggest_op(self, sid, day, last_trend_node, trend_node):
+        last_trend = last_trend_node['trend']
+        trend = trend_node['trend']
+        op = MinuteTrend.OP_MAP[trend[1]]
+
+        if last_trend['length'] <= 10:
+            return op
+
+        # 主体趋势相同, 当前趋势不同
+        if last_trend[0] == trend[0]:
+            if last_trend[0] == TrendHelper.TREND_WAVE:
+                return MinuteTrend.OP_MAP[trend[1]] if trend[1] == TrendHelper.TREND_WAVE else MinuteTrend.OP_MAP[last_trend[1]]
+            else:
+                return MinuteTrend.OP_WAIT
+        else:
+            return MinuteTrend.OP_MAP[trend[0]]
+
+    '''
+        @desc: 结合当日行情和分时价格行情分析趋势 TODO: 待优化
         @param: item dict
             设置trend/op到daily-policy key中
             操作字段(op): 1 卖出  2 待定 3 买入
@@ -120,102 +198,9 @@ class RTPolicy(BasePolicy):
             op = 3
 
         trend_info = {'trend': trend, 'op': op}
-        #TODO: 结合(max_vary/day_vary/min_vary)分析当日K线图形状
-        if (trend == 3 and max_vary >= 0.5 * min_vary) or (trend == 1 and min_vary >= 0.5 * max_vary):
-            minute_trend_info = self.minute_trend(daily_item, trend, minute_items)
-            for key in minute_trend_info:
-                trend_info[key] = minute_trend_info[key]
-
         self.redis_conn.hmset(daily_policy_key, trend_info)
 
         trend_info['sid'] = item['sid']
         trend_info['day'] = item['day']
         self.logger.info("%s", format_log("daily_day_trend", trend_info))
 
-    '''
-        @desc: 根据分时价格分析盘中的实时趋势
-        @param: daily_item dict
-        @param: trend int
-        @param: minute_items list
-        @return dict('trend', 'op')
-    '''
-    def minute_trend(self, daily_item, trend, minute_items):
-        # 分时行情个数<=5, 直接忽略
-        if len(minute_items) <= 5:
-            return {'trend': trend}
-
-        max_vary = daily_item['high_price'] - daily_item['close_price']
-        min_vary = daily_item['close_price'] - daily_item['low_price']
-        price_list = list()
-
-        for item_json in minute_items:
-            item = json.loads(item_json)
-            #print item
-            price_list.append(item['price'])
-
-        start_price = -1
-        is_high = True
-        if trend == 3:
-            start_price = daily_item['high_price']
-        else:
-            start_price = daily_item['low_price']
-            is_high = False
-        start_index = price_list.index(start_price)
-        if start_index == -1:
-            return {'trend': trend}
-
-        range_items = minute_items[start_index: -1]
-        if len(range_items) <= 5:
-            return {'trend': trend}
-
-        range_price_list = price_list[start_index+1: -1]
-        peak_list = []
-        # mode: True表示下跌方向, False表示上涨
-        mode = is_high
-        last_peak = start_price
-
-        # 遍历从高点/低点后的分时价格, 最高点取用于后面的每个高点, 最低点取后面的每个低点
-        # TODO: 可以完善从日期区间的趋势波段中取波峰或波谷, 来判断当前股票的阻力位/支撑位和所处通道
-        for minute_price in range_price_list:
-            if mode and minute_price <= last_peak:
-                last_peak = minute_price
-            elif minute_price >= last_peak and not mode:
-                last_peak = minute_price
-            else:
-                if (trend == 3 and not mode) or (trend == 1 and mode):
-                    peak_list.append(last_peak)
-                mode = not mode
-
-        #TODO: 对取出的节点价格, 需要合并相邻且价格相近(1%)的点
-        # 若从最高点往后, 需要看每个高点是否越来越低, 验证为下跌
-        if trend == 3:
-            high_price = start_price
-            cont_fall = cont_rise = 0
-            for price in peak_list:
-                vary_portion = abs(price - high_price) / max(price, high_price) * 100
-                if (price <= high_price) or (vary_portion <= 1.00):
-                    cont_fall = cont_fall + 1
-                    high_price = min(price, high_price)
-                elif (price >= high_price) or (vary_portion <= 1.00):
-                    cont_rise = cont_rise + 1
-                    high_price = max(price, high_price)
-
-            if cont_fall / len(peak_list) >= 0.6:
-                return {'trend': 1, 'op': 1}
-        return {'trend': trend}
-        '''
-        else:
-            low_price = start_price
-            cont_fall = cont_rise = 0
-            for price in peak_list:
-                vary_portion = abs(price - low_price) / min(price, low_price) * 100
-                if (price >= low_price) or (vary_portion <= 1.00):
-                    cont_rise = cont_rise + 1
-                    low_price = max(price, low_price)
-                elif (price <= low_price) or (vary_portion <= 1.00):
-                    cont_fall = cont_fall + 1
-                    low_price = max(price, low_price)
-
-            if cont_rise / len(peak_list) >= 0.6:
-                return {'trend': 3, 'op': 3}
-        '''

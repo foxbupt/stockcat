@@ -302,6 +302,7 @@ class ParrelRealtime(ParrelFunc):
                     data_item = dict()
                     data_item['time'] = time
                     data_item['price'] = float(fields[1].replace(",", ""))
+                    # 美股拉取的成交量为累计成交量
                     data_item['volume'] = int(fields[2])
 
                     if data_item['volume'] <= 0:
