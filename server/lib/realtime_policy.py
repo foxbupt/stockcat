@@ -143,6 +143,6 @@ class RTPolicy(BasePolicy):
             if last_trend[0] == TrendHelper.TREND_WAVE:
                 return MinuteTrend.OP_MAP[trend[1]] if trend[1] != TrendHelper.TREND_WAVE else MinuteTrend.OP_MAP[last_trend[1]]
             else: # 暂时对(3,3) -> (3,1) 或(1,1) -> (1,3) 没有处理, 这种应该是过渡状态
-                return MinuteTrend.OP_WAIT
+                return MinuteTrend.OP_MAP[trend[1]] if 2 == abs(last_trend[1] - trend[1]) else MinuteTrend.OP_WAIT
         else:
             return MinuteTrend.OP_MAP[trend[0]]
