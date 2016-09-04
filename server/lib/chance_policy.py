@@ -109,11 +109,11 @@ class ChancePolicy(BasePolicy):
         self.last_chance_count = chance_count
         dapan_trend = TrendHelper.TREND_WAVE
         dapan_sid = self.chance_config[location]['index_stock']
-        daily_cache_value = self.redis_conn.get("daily-"+ str(dapan_sid) + "-" + str(day))
-        dapan_data = json.loads(daily_cache_value) if daily_cache_value is not None else dict()
 
-        if dapan_data:
-            dapan_trend = TrendHelper.TREND_RISE if (dapan_data['close_price'] - dapan_data['last_close_price']) >= 50 else TrendHelper.TREND_FALL
+        latest_trend_value = self.redis_conn.lindex("trend-"+ str(dapan_sid) + "-" + str(day), -1)
+        trend_node = json.loads(latest_trend_value) if latest_trend_value is not None else dict()
+        if trend_node:
+            dapan_trend = trend_node['trend'][0]
 
         item_list = []
         for data in data_list:
@@ -148,10 +148,14 @@ class ChancePolicy(BasePolicy):
                     continue
 
             # 价格高于max(昨日收盘价, 当日开盘价)*(1-3%), 不建议做空, 考虑到当日高开后低走下跌, 这种情况下低于开盘价也OK
-            elif item['chance']['op'] == MinuteTrend.OP_SHORT: 
+            elif item['chance']['op'] == MinuteTrend.OP_SHORT:
+                trend_detail = item['trend_detail']
+                if trend_detail['trend'][0] == TrendHelper.TREND_FALL and trend_detail['op'] == MinuteTrend.OP_SHORT:
+                    continue
+
                 base_price = max(daily_item['last_close_price'], daily_item['open_price'])
                 vary_portion = (daily_item['close_price'] - base_price) / base_price * 100
-                if vary_portion >= -3.0:
+                if vary_portion >= -3.0 or trend_detail['trend'][0] != TrendHelper.TREND_FALL:
                     self.logger.info("desc=short_not_match location=%d sid=%d code=%s day=%d time=%d op=%d close_price=%.2f base_price=%.2f vary_portion=%.2f",
                                  location, sid, item['code'], day, item['time'], item['chance']['op'], daily_item['close_price'], base_price, vary_portion)
                     continue
@@ -310,17 +314,34 @@ class ChancePolicy(BasePolicy):
                     need_close = True
                     reason = "profit"
                     break
+
         # 止损平仓: 越过止损位
         if not need_close and (stock_order['op'] == MinuteTrend.OP_LONG and current_price <= stock_order['stop_price']) or (stock_order['op'] == MinuteTrend.OP_SHORT and current_price >= stock_order['stop_price']):
             reason = "stop"
             need_close = True
+
+        # 结合最近30min趋势来分析是否平仓
+        if not need_close:
+            trend_key = "trend-" + str(sid) + "-" + str(day)
+            suggest_op = MinuteTrend.OP_WAIT
+
+            latest_trend_value = self.redis_conn.lindex(trend_key, -1)
+            trend_node = json.loads(latest_trend_value) if latest_trend_value else None
+            if trend_node:
+               suggest_op = MinuteTrend.OP_MAP[trend_node['trend'][0]]
+            elif item is not None:
+                suggest_op = item['trend_detail']['op']
+                if item['trend_detail']['changed']:
+                    need_close = True
+                    reason = "pivot"
+
+            if suggest_op != MinuteTrend.OP_WAIT and suggest_op != stock_order['op']:
+                need_close = True
+                reason = "pivot"
+
         # 超过指定时间平仓
         if not need_close and stock_time >= self.chance_config[location]['close_deadline_time']:
             reason = "time"
-            need_close = True
-        # TODO: 出现反方向机会时, 需要结合最近30min趋势来分析是否平仓, 暂时立即平仓
-        if not need_close and item is not None and item['chance']['op'] != stock_order['op']:
-            reason = "pivot"
             need_close = True
 
         item_json = "" if item is None else json.dumps(item)

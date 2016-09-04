@@ -66,9 +66,10 @@ class RTPolicy(BasePolicy):
             self.logger.debug("%s", format_log("trend_parse", trend_info))
 
             trend_detail = self.refresh_trend(sid, day, minute_items, trend_info)
-            self.logger.debug("%s sid=%d day=%d", format_log("trend_detail", trend_detail), sid, day)
+            self.logger.debug("%s sid=%d day=%d item_count=%d", format_log("trend_detail", trend_detail), sid, day, item_count)
 
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
+                trend_stage['trend_detail'] = trend_detail
                 self.redis_conn.rpush("chance-queue", json.dumps(trend_stage))
                 self.logger.info("%s", format_log("realtime_chance", trend_stage))
 
@@ -121,7 +122,7 @@ class RTPolicy(BasePolicy):
         return trend_detail
 
     '''
-        @desc 趋势改变时提供建议操作
+        @desc 趋势改变时提供建议操作, TODO: 对建议操作加上概率, 比如核心趋势变化是强建议, 当前趋势变化是弱建议
         @param sid int
         @param day int
         @param last_trend_node dict(trend, count, length, pivot)
@@ -139,8 +140,8 @@ class RTPolicy(BasePolicy):
         # 主体趋势相同, 当前趋势不同
         if last_trend[0] == trend[0]:
             if last_trend[0] == TrendHelper.TREND_WAVE:
-                return MinuteTrend.OP_MAP[trend[1]] if trend[1] == TrendHelper.TREND_WAVE else MinuteTrend.OP_MAP[last_trend[1]]
-            else:
+                return MinuteTrend.OP_MAP[trend[1]] if trend[1] != TrendHelper.TREND_WAVE else MinuteTrend.OP_MAP[last_trend[1]]
+            else: # 暂时对(3,3) -> (3,1) 或(1,1) -> (1,3) 没有处理, 这种应该是过渡状态
                 return MinuteTrend.OP_WAIT
         else:
             return MinuteTrend.OP_MAP[trend[0]]

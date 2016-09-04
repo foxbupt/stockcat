@@ -504,8 +504,9 @@ if __name__ == "__main__":
     step = 5
     index = 0
     min_count = len(items)
-    #trend_config = {'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
-    trend_config = {'trend_vary_type': 'value', 'trend_vary_portion': 30, 'min_trend_length': 3, 'stage_vary_portion': 30, 'daily_vary_portion': 50, 'latest_count': 30}
+    trend_config = {'trend_vary_portion': 1.0, 'min_trend_length': 3, 'stage_vary_portion': 1.0, 'daily_vary_portion': 2.0, 'latest_count': 30}
+    if sid == 9609:
+        trend_config = {'trend_vary_type': 'value', 'trend_vary_portion': 30, 'min_trend_length': 3, 'stage_vary_portion': 30, 'daily_vary_portion': 50, 'latest_count': 30}
    #print min_count
 
     trend_snapshot_list = []

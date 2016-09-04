@@ -51,7 +51,7 @@ class MinuteTrend(object):
         trend_info = TrendHelper.core(price_list, trend_config)
         self.trend_list = trend_info['trend_list']
         daily_trend = trend_info['daily_trend']
-        print self.trend_list
+        #print self.trend_list
 
         latest_trend_item = self.trend_list[-1]
         if latest_trend_item['length'] < 3 and len(self.trend_list) >= 2:
@@ -150,7 +150,11 @@ if __name__ == "__main__":
     import_datamap = loaddata(sys.argv[1])
     #print import_datamap
     daily_list = import_datamap['daily'][sid]
-    items = import_datamap['realtime'][sid]
+    rt_items = import_datamap['realtime'][sid]
+    items = []
+    for queue_item in rt_items:
+        items.extend(queue_item['items'])
+
     instance = MinuteTrend(sid)
 
     step = 5
@@ -169,9 +173,9 @@ if __name__ == "__main__":
         daily_item['close_price'] = close_price
         daily_item['vary_portion'] = (close_price - daily_item['last_close_price']) / daily_item['last_close_price'] * 100
 
-        (trend_stage, trend_list) = instance.core(daily_item, items[0 : offset])
+        (trend_stage, trend_info) = instance.core(daily_item, items[0 : offset])
         #print index, items[offset-1:offset]
-        for trend_item in trend_list:
+        for trend_item in trend_info['trend_list']:
             print trend_item, price_list[trend_item['start']], price_list[trend_item['end']]
         #print trend_stage
 
