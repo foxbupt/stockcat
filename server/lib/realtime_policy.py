@@ -60,13 +60,14 @@ class RTPolicy(BasePolicy):
             for item_json in item_list:
                 minute_items.append(json.loads(item_json))
 
+            now_time = minute_items[-1]['time']
             instance = MinuteTrend(sid)
             (trend_stage, trend_info) = instance.core(daily_item, minute_items)
             self.logger.debug("%s", format_log("minute_trend", trend_stage))
             self.logger.debug("%s", format_log("trend_parse", trend_info))
 
             trend_detail = self.refresh_trend(sid, day, minute_items, trend_info)
-            self.logger.debug("%s sid=%d day=%d item_count=%d", format_log("trend_detail", trend_detail), sid, day, item_count)
+            self.logger.debug("%s sid=%d day=%d item_count=%d time=%d", format_log("trend_detail", trend_detail), sid, day, item_count, now_time)
 
             if trend_stage['chance'] and trend_stage['chance']['op'] != MinuteTrend.OP_WAIT:
                 trend_stage['trend_detail'] = trend_detail
