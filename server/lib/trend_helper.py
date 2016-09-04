@@ -191,6 +191,8 @@ class TrendHelper(object):
 
                 # 连续2段长度为2的上涨/下跌趋势需要合并
                 next_item = range_list[index + 1] if index < len(range_list) - 1 else None
+
+                # TODO: 对于开盘高开/低开后震荡, 首段趋势可能长度只有2, 需要手动处理合并
                 if next_item and not verify_direction and item['trend'] != TrendHelper.TREND_WAVE and next_item['trend'] != TrendHelper.TREND_WAVE and \
                     item['trend'] != next_item['trend'] and item['length'] < trend_config['min_trend_length'] and next_item['length'] < trend_config['min_trend_length']:
                     item = TrendHelper.extend_trend(price_list, item, next_item, trend_config, "end")
@@ -345,6 +347,9 @@ class TrendHelper(object):
 
             # 上涨趋势: 阻力位为大于当前趋势高点的最近点，支撑位为小于当前趋势高点的最近点
             # 下跌趋势: 阻力位为大于当前趋势低点的最近点, 支撑位为小于当前趋势低点的最近点
+            if low_price <= base_price:
+                support_price = low_price if support_price == 0 else max(support_price, low_price)
+
             if high_price >= base_price:
                 resist_price = high_price if resist_price == 0 else min(resist_price, high_price)
             else:
@@ -352,13 +357,11 @@ class TrendHelper(object):
 
         pivot_info['resist_price'] = resist_price
         pivot_info['support_price'] = support_price
-        item_resist_price = price_list[current_stage["end"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["start"]]
-        item_support_price = price_list[current_stage["start"]] if current_stage['direction'] == TrendHelper.DIRECTION_UP else price_list[current_stage["end"]]
 
         if resist_price > 0:
-            (_, pivot_info['resist_vary_portion']) = TrendHelper.get_trend_by_price(resist_price, item_resist_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
+            (_, pivot_info['resist_vary_portion']) = TrendHelper.get_trend_by_price(base_price, resist_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
         if support_price > 0:
-            (_, pivot_info['support_vary_portion']) = TrendHelper.get_trend_by_price(support_price, item_support_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
+            (_, pivot_info['support_vary_portion']) = TrendHelper.get_trend_by_price(support_price, base_price, trend_config['trend_vary_portion'], trend_config['trend_vary_type'])
 
         return pivot_info
 

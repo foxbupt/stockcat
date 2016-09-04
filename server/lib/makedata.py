@@ -7,8 +7,6 @@
 import sys, re, json, os
 import datetime, time, traceback
 import redis
-sys.path.append('../../../../server')
-from pyutil.util import Util, safestr, format_log
 
 def loaddata(filename):
     datamap = {}
@@ -70,7 +68,7 @@ def loaddata(filename):
     return datamap
     
 def pushdata(config_info, datamap, stock_id=0):
-    redis_conn = redis.StrictRedis(config_info['REDIS']['host'], config_info['REDIS']['port'])
+    redis_conn = redis.StrictRedis(config_info['ip'], config_info['port'])
     stock_set = set(stock_id) if stock_id > 0 else set(datamap['daily'].keys())
     offset = 0
 
@@ -108,13 +106,14 @@ def pushdata(config_info, datamap, stock_id=0):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print "Usage: " + sys.argv[0] + " <conf> <filename>"
+        print "Usage: " + sys.argv[0] + " <ip:port> <filename>"
         sys.exit(1)
 
     filename = sys.argv[2]
-    config_info = Util.load_config(sys.argv[1])
-    config_info['DB']['port'] = int(config_info['DB']['port'])
-    config_info['REDIS']['port'] = int(config_info['REDIS']['port'])
+    (ip, port) = sys.argv[1].split(":")
+    config_info = dict()
+    config_info['port'] = int(port)
+    config_info['ip'] = ip
 
     datamap = loaddata(filename)  
     pushdata(config_info, datamap)
