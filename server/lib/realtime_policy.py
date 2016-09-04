@@ -53,7 +53,8 @@ class RTPolicy(BasePolicy):
         if item_count < 3:
             return
 
-        if item_count % 5 == 0: 
+        interval = 5 if item_count >= 120 else 3
+        if item_count % interval == 0:
             # 暂定每5分钟调用分析一次, 后续根据时间段调整
             item_list = self.redis_conn.lrange(rt_key, 0, -1)
             minute_items = []
