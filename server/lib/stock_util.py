@@ -13,7 +13,7 @@ import redis
 
 # 假期定义
 holidays = [{'start': 20160207, 'end': 20160213}, 20160404,
-        20160502, 20160609, 20160610, 20160915, 20160916, {'start': 20151001, 'end':20151007}]
+        20160502, 20160609, 20160610, 20160915, 20160916, {'start': 20161001, 'end':20161007}]
 us_holidays = [20160216,20160403,20160525,20160703,20160907,20161126,20161225]
 locations = {1:"cn", 2:"hk", 3:"us"}
 # ecode
@@ -454,6 +454,7 @@ if __name__ == "__main__":
     day = sys.argv[1]
     print get_past_openday(day, 1)
     print get_past_openday(day, 2)
+    print get_past_openday(day, 5)
 
     print time_diff(94310, 92500)
     print time_diff(142500, 93530)
