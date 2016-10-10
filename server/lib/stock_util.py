@@ -309,9 +309,10 @@ def get_predict_volume(cur_volume, cur_time, location):
     @param: db_config dict
     @param: cur_day int 当前日期
     @param: count int 过去的天数
+    @param: location int
     @return dict (sid -> past_data) sid为string
 '''
-def get_past_data(db_config, redis_config, cur_day, count):
+def get_past_data(db_config, redis_config, cur_day, count, location=1):
     key = "pastdata-" + str(cur_day)
     stock_datamap = dict()
     redis_conn = redis.StrictRedis(redis_config['host'], redis_config['port'])
@@ -322,7 +323,7 @@ def get_past_data(db_config, redis_config, cur_day, count):
         return datamap
 
     db_conn = SqlUtil.get_db(db_config)
-    start_day = get_past_openday(str(cur_day), count)
+    start_day = get_past_openday(str(cur_day), count, location)
 
     try:
         sql = "select sid, avg(volume) as avg_volume, sum(vary_price) as sum_vary_price, sum(vary_portion) as sum_vary_portion, \

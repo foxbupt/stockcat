@@ -29,16 +29,17 @@ class DailyPolicy(BasePolicy):
         sid_str = str(sid)
         if sid_str not in self.datamap['past_data']:
             self.logger.warning("op=non_exist_pastdata sid=%d day=%d", sid, item['day'])
-            return
-
-        past_data_value = self.datamap['past_data'][sid_str]
-        if past_data_value is None:
-            return
-        past_data = json.loads(past_data_value)
+            volume_ratio = 1
+        else:
+            past_data_value = self.datamap['past_data'][sid_str]
+            if past_data_value is None:
+                volume_ratio = 1
+            else:
+                past_data = json.loads(past_data_value)
+                volume_ratio = item['predict_volume'] / past_data['avg_volume']
 
         open_vary_portion = (item['open_price'] - item['last_close_price']) / item['last_close_price'] * 100
         day_vary_portion = (item['close_price'] - item['open_price']) / item['open_price'] * 100
-        volume_ratio = item['predict_volume'] / past_data['avg_volume']
         if abs(item['open_price'] - item['high_price']) < 0.01:
             high_portion = item['close_price'] / item['high_price']
         else:
