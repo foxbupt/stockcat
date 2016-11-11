@@ -69,7 +69,7 @@ get_curday()
     then
         day=`date "+%Y%m%d"`
     else
-        day=`date -d "12 hour ago" "+%Y%m%d"`
+        day=`date -d "13 hour ago" "+%Y%m%d"`
     fi
 
     echo "$day"
